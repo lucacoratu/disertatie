@@ -1,4 +1,4 @@
-package preliminary
+package detection
 
 import (
 	"errors"
@@ -43,6 +43,18 @@ func LoadRulesFromDirectory(rulesDirectory string, logger logging.ILogger) ([]Ya
 			//Check if an error occured when loading the yaml file
 			if err != nil {
 				logger.Warning("Skipping rule file", path, "error when parsing", err.Error())
+				return nil
+			}
+			//Check if the rule id is not already in the list of rules
+			var found bool = false
+			for _, ruleElem := range rulesList {
+				if ruleElem.Id == rule.Id {
+					found = true
+					break
+				}
+			}
+			if found {
+				logger.Warning("Skipping rule file", path, "a rule with this path already exists")
 				return nil
 			}
 			//Add the rule read from file to the list of rules

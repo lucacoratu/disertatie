@@ -23,6 +23,7 @@ type Configuration struct {
 	APIProtocol            string `json:"apiProtocol"`                                                //API protocol
 	APIIpAddress           string `json:"apiIpAddress"`                                               //API ip address
 	APIPort                string `json:"apiPort"`                                                    //API port
+	UUID                   string `json:"uuid"`                                                       //The UUID of the agent, received after registration to the API
 	RulesDirectory         string `json:"rulesDirectory"`                                             //The directory where rules can be found
 	//Mode of operation
 }

@@ -1,4 +1,4 @@
-package preliminary
+package detection
 
 import (
 	"net/http"

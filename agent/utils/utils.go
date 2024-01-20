@@ -60,8 +60,8 @@ func ReadLinesFromFile(filePath string) ([]string, error) {
 }
 
 // Check connection to the collector
-func CheckCollectorConnection(collectorBaseURL string) bool {
-	response, err := http.Get(collectorBaseURL + "/healthcheck")
+func CheckAPIConnection(apiBaseURL string) bool {
+	response, err := http.Get(apiBaseURL + "/healthcheck")
 	if err != nil {
 		return false
 	}

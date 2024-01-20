@@ -26,9 +26,11 @@ export default async function AgentsPage() {
             <Button className="self-end h-8">
                 <Play className="mr-2 h-4 w-4"/>Deploy Agent
             </Button>
-            {agents && agents.map((agent) => (
-                <AgentCard key={agent.id} agent={agent}/>
-            ))}
+            <div className="flex flex-row gap-2">
+                {agents && agents.map((agent) => (
+                    <AgentCard key={agent.id} agent={agent}/>
+                ))}
+            </div>
         </main>
     )
 }
