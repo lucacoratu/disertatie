@@ -20,6 +20,12 @@ const (
 	FLAG_OUT            int64 = 102
 )
 
+// Classifications and their string equivalent
+var ClassificationsMap = map[int64]string{
+	LFI_ATTACK:        "LFI",
+	SCRIPT_USER_AGENT: "Script UA",
+}
+
 // Severity types
 const (
 	LOW      int64 = 0

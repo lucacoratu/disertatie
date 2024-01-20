@@ -18,6 +18,7 @@ import (
 	"github.com/lucacoratu/disertatie/agent/data"
 	"github.com/lucacoratu/disertatie/agent/logging"
 	"github.com/lucacoratu/disertatie/agent/preliminary"
+	rules "github.com/lucacoratu/disertatie/agent/preliminary/rules"
 	"github.com/lucacoratu/disertatie/agent/runtimedata"
 	"github.com/lucacoratu/disertatie/agent/utils"
 )
@@ -29,6 +30,7 @@ type AgentServer struct {
 	configuration    config.Configuration
 	checkers         []preliminary.IValidator
 	runtimeData      runtimedata.RuntimeData
+	rules            []rules.YamlRule
 }
 
 func (agent *AgentServer) ForwardRequest(req *http.Request) (*http.Response, error) {
@@ -225,7 +227,7 @@ func (agent *AgentServer) handleRequest(rw http.ResponseWriter, r *http.Request)
 func (agent *AgentServer) Init() error {
 	//Initialize the logger
 	agent.logger = logging.NewDefaultDebugLogger()
-	agent.logger.Debug("Logger initialized")
+	agent.logger.Info("Logger initialized")
 
 	//Load the configuration from file
 	err := agent.configuration.LoadConfigurationFromFile(".\\agent.conf")
@@ -233,7 +235,23 @@ func (agent *AgentServer) Init() error {
 		agent.logger.Fatal("Error occured when loading the config from file,", err.Error())
 		return err
 	}
-	agent.logger.Debug("Loaded configuration from file")
+	agent.logger.Info("Loaded configuration from file")
+
+	//Check if the rules directory was specified in the configuration file
+	if agent.configuration.RulesDirectory != "" {
+		//Load the rules from the rules directory
+		allRules, err := rules.LoadRulesFromDirectory(agent.configuration.RulesDirectory, agent.logger)
+		if err != nil {
+			agent.logger.Error("Could not load rules from", agent.configuration.RulesDirectory, err.Error())
+		}
+		agent.logger.Info("Loaded", len(allRules), "rules from", agent.configuration.RulesDirectory)
+		//Add the list of rules to the server structure
+		agent.rules = allRules
+	} else {
+		agent.logger.Warning("No rules were loaded because the rules directory was not specified")
+		//Assign nil to the rules slice of the server structure
+		agent.rules = nil
+	}
 
 	//Assemble the collector base URL
 	agent.collectorBaseURL = agent.configuration.APIProtocol + "://" + agent.configuration.APIIpAddress + ":" + agent.configuration.APIPort + "/api/v1"

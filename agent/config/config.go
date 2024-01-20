@@ -23,6 +23,7 @@ type Configuration struct {
 	APIProtocol            string `json:"apiProtocol"`                                                //API protocol
 	APIIpAddress           string `json:"apiIpAddress"`                                               //API ip address
 	APIPort                string `json:"apiPort"`                                                    //API port
+	RulesDirectory         string `json:"rulesDirectory"`                                             //The directory where rules can be found
 	//Mode of operation
 }
 

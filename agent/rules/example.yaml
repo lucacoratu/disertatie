@@ -1,0 +1,32 @@
+id: <Unique_ID>
+
+info:
+  name: Some rule name
+  description: This rule matches some string in the request
+  severity: low
+  classification: lfi
+
+request:
+  url: 
+    match:
+    regex: 
+  headers:
+    - name: User-Agent 
+      regex:
+    - name: User-Agent 
+      regex:
+  body:
+    match:
+    regex: 
+
+response:
+  code: 
+    match: 
+  headers:
+    - name: User-Agent 
+      regex:
+    - name: User-Agent 
+      regex:
+  body:
+    match:
+    regex: 
