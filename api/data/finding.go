@@ -44,6 +44,7 @@ const (
 	CRITICAL int64 = 3
 )
 
+// ==========================FINDINGS===============================
 // Structure that holds the information about the finding
 type FindingData struct {
 	Line           int64  `json:"line"`           //The line from the request where the finding is located
@@ -58,7 +59,7 @@ type FindingData struct {
 // Structure that holds the information stored in the database about findings
 type FindingDataDatabase struct {
 	Id             string `json:"id"`             //The ID of the finding
-	LogId          string `json:"log_id"`         //The log ID
+	LogId          string `json:"logId"`          //The log ID
 	Line           int64  `json:"line"`           //The line from the request where the finding is located
 	LineIndex      int64  `json:"lineIndex"`      //The offset from the start of the line
 	Length         int64  `json:"length"`         //The length of the finding string
@@ -80,6 +81,52 @@ type FindingDatabase struct {
 	Response FindingDataDatabase `json:"response"` //The findings for the response
 }
 
+// ==========================END FINDINGS===============================
+
+// ==========================RULE FINDINGS===============================
+// Structure that will hold information about the rule finding
+type RuleFindingData struct {
+	RuleId          string `json:"ruleId"`          //The rule id specified on the agent rule
+	RuleName        string `json:"ruleName"`        //The name of the rule specified on the agent
+	RuleDescription string `json:"ruleDescription"` //The description of the rule
+	Line            int64  `json:"line"`            //The line from the request where the finding is located
+	LineIndex       int64  `json:"lineIndex"`       //The offset from the start of the line
+	Length          int64  `json:"length"`          //The length of the finding string
+	MatchedString   string `json:"matchedString"`   //The string on which the validator matched
+	Classification  string `json:"classification"`  //The classification of the finding based on the string specified in the rule file
+	Severity        int64  `json:"severity"`        //The severity of the finding
+}
+
+// Structure that will hold information stored in the database about rule findings
+type RuleFindingDataDatabase struct {
+	Id              string `json:"id"`              //The id of the rule finding from the database
+	LogId           string `json:"logId"`           //The log ID
+	RuleId          string `json:"ruleId"`          //The rule id specified on the agent rule
+	RuleName        string `json:"ruleName"`        //The name of the rule specified on the agent
+	RuleDescription string `json:"ruleDescription"` //The description of the rule
+	Line            int64  `json:"line"`            //The line from the request where the finding is located
+	LineIndex       int64  `json:"lineIndex"`       //The offset from the start of the line
+	Length          int64  `json:"length"`          //The length of the finding string
+	MatchedString   string `json:"matchedString"`   //The string on which the validator matched
+	Classification  string `json:"classification"`  //The classification of the finding based on the string specified in the rule file
+	Severity        int64  `json:"severity"`        //The severity of the finding
+}
+
+// Rule findings found by agent, one for request, one for response
+type RuleFinding struct {
+	Request  *RuleFindingData `json:"request"`  //The rule findings for the request
+	Response *RuleFindingData `json:"response"` //The rule findings for the response
+}
+
+// Rule findings extracted from the database
+type RuleFindingDatabase struct {
+	Request  *RuleFindingDataDatabase `json:"request"`  //The rule findings from the database for the request
+	Response *RuleFindingDataDatabase `json:"response"` //The rule findings from the database for the response
+}
+
+// ==========================END RULE FINDINGS===============================
+
+// ==========================FINDINGS===============================
 // Convert finding to JSON
 func (f *Finding) ToJSON(w io.Writer) error {
 	e := json.NewEncoder(w)
@@ -92,14 +139,43 @@ func (f *Finding) FromJSON(r io.Reader) error {
 	return d.Decode(f)
 }
 
-// Convert finding to JSON
+// Convert finding database to JSON
 func (fd *FindingDatabase) ToJSON(w io.Writer) error {
 	e := json.NewEncoder(w)
 	return e.Encode(fd)
 }
 
-// Convert finding from JSON
+// Convert finding database from JSON
 func (fd *FindingDatabase) FromJSON(r io.Reader) error {
 	d := json.NewDecoder(r)
 	return d.Decode(fd)
 }
+
+//==========================END FINDINGS===============================
+
+// ==========================RULE FINDINGS===============================
+// Convert rule finding to JSON
+func (f *RuleFinding) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(f)
+}
+
+// Convert rule finding from JSON
+func (f *RuleFinding) FromJSON(r io.Reader) error {
+	d := json.NewDecoder(r)
+	return d.Decode(f)
+}
+
+// Convert rule finding database to JSON
+func (fd *RuleFindingDatabase) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(fd)
+}
+
+// Convert rule finding database from JSON
+func (fd *RuleFindingDatabase) FromJSON(r io.Reader) error {
+	d := json.NewDecoder(r)
+	return d.Decode(fd)
+}
+
+//==========================END RULE FINDINGS===============================

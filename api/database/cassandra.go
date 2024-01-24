@@ -31,6 +31,7 @@ func (cassandra *CassandraConnection) createTables() error {
 	// _ = cassandra.session.Query("DROP TABLE api.agents").Exec()
 	//_ = cassandra.session.Query("DROP TABLE api.logs").Exec()
 	//_ = cassandra.session.Query("DROP TABLE api.findings").Exec()
+	//_ = cassandra.session.Query("DROP TABLE api.rulesfindings").Exec()
 
 	//Create the machines table
 	err := cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".machines (id TEXT PRIMARY KEY, os TEXT, hostname TEXT, ip_addresses TEXT)").Exec()
@@ -39,14 +40,14 @@ func (cassandra *CassandraConnection) createTables() error {
 		return errors.New("cannot create machines table, " + err.Error())
 	}
 
-	//Create the table agents instance
+	//Create the agents table
 	err = cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".agents (id text PRIMARY KEY, name TEXT, protocol TEXT, ip_address TEXT, port INT, webserver_protocol TEXT, webserver_ip TEXT, webserver_port INT, machine_id TEXT);").Exec()
 	//Check if an error occured when creating the agents table
 	if err != nil {
 		return errors.New("cannot create agents table, " + err.Error())
 	}
 
-	//Create the table that will hold the logs of the agent instance
+	//Create the table that will hold the logs of an agent
 	err = cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".logs (id TEXT, agent_id TEXT, request_preview TEXT, response_preview TEXT, remote_ip TEXT, timestamp INT, raw_request TEXT, raw_response TEXT, PRIMARY KEY (id, agent_id, timestamp))").Exec()
 	//Check if an error occured when creating the table logs
 	if err != nil {
@@ -58,6 +59,13 @@ func (cassandra *CassandraConnection) createTables() error {
 	//Check if an error occured when creating the findings table
 	if err != nil {
 		return errors.New("cannot create logs table, " + err.Error())
+	}
+
+	//Create the rule findings table which will hold all the rule based findings of a log
+	err = cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".rulefindings (id TEXT, log_id TEXT, rule_id TEXT, rule_name TEXT, rule_description TEXT, line INT, line_index INT, length INT, matched_string TEXT, classification TEXT, severity INT, finding_type INT, PRIMARY KEY (id, log_id))").Exec()
+	//Check if an error occured when creating the rules findings table
+	if err != nil {
+		return errors.New("cannot create rules findings table, " + err.Error())
 	}
 
 	//Create the index for the agent id in the logs table

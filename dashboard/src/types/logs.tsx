@@ -81,7 +81,7 @@ enum classification {
 
 type FindingData = {
     id: string,
-    log_id: string,
+    logId: string,
     line: number,
     lineIndex: number,
     length: number,
