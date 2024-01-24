@@ -11,9 +11,10 @@ import {
 type FindingProps = {
     finding: FindingData | null,
     findingsClassificationString: FindingClassificationString[],
+    matchedString: string | undefined,
 }
 
-const Finding: FC<FindingProps> = ({finding, findingsClassificationString}): JSX.Element => {
+const Finding: FC<FindingProps> = ({finding, findingsClassificationString, matchedString}): JSX.Element => {
     const severityColors = ['bg-[#fdc500]', 'bg-[#fd8c00]', 'bg-[#dc0000]', 'bg-[#780000]'];
     const severityTextColors = ['text-[#fdc500]', 'text-[#fd8c00]', 'text-[#dc0000]', 'text-[#780000]'];
     const severityNames = ['Low', 'Medium', 'High', 'Critical'];
@@ -36,7 +37,7 @@ const Finding: FC<FindingProps> = ({finding, findingsClassificationString}): JSX
                             <div className="flex flex-col gap-1 items-center">
                                 <p>{classificationDescription}</p>
                                 <p>Severity: <span className={severityTextColors[finding.severity]}>{severityNames[finding.severity]}</span> - Detected by: {finding.validatorName}</p>
-                                <p>Matched on line {finding.line}, position {finding.lineIndex} - Matched string: </p>
+                                <p>Matched on line {finding.line + 1}, position {finding.lineIndex} - String: {matchedString}</p>
                             </div>
                         </TooltipContent>
                     </Tooltip>

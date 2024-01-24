@@ -54,7 +54,7 @@ func (cassandra *CassandraConnection) createTables() error {
 	}
 
 	//Create the findings table which will hold all the findings of a log
-	err = cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".findings (id TEXT, log_id TEXT, line INT, line_index INT, length INT, classification INT, severity INT, validator_name TEXT, finding_type INT, PRIMARY KEY (id, log_id))").Exec()
+	err = cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".findings (id TEXT, log_id TEXT, line INT, line_index INT, length INT, matched_string TEXT, classification INT, severity INT, validator_name TEXT, finding_type INT, PRIMARY KEY (id, log_id))").Exec()
 	//Check if an error occured when creating the findings table
 	if err != nil {
 		return errors.New("cannot create logs table, " + err.Error())
@@ -151,7 +151,7 @@ func (cassandra *CassandraConnection) InsertFindings(log_id string, findings []d
 				cassandra.logger.Warning("could not save the request finding - uuid generation failed")
 			} else {
 				//Insert the request finding
-				err := cassandra.session.Query("INSERT INTO "+cassandra.configuration.CassandraKeyspace+".findings (id, log_id, line, line_index, length, classification, severity, validator_name, finding_type) VALUES (?,?,?,?,?,?,?,?,?)", id_request, log_id, finding.Request.Line, finding.Request.LineIndex, finding.Request.Length, finding.Request.Classification, finding.Request.Severity, finding.Request.ValidatorName, 0).Exec()
+				err := cassandra.session.Query("INSERT INTO "+cassandra.configuration.CassandraKeyspace+".findings (id, log_id, line, line_index, length, matched_string, classification, severity, validator_name, finding_type) VALUES (?,?,?,?,?,?,?,?,?,?)", id_request, log_id, finding.Request.Line, finding.Request.LineIndex, finding.Request.Length, finding.Request.MatchedString, finding.Request.Classification, finding.Request.Severity, finding.Request.ValidatorName, 0).Exec()
 				//Check if an error occured when inserting the request finding
 				if err != nil {
 					cassandra.logger.Error("Could not insert the request finding in the database", err.Error())
@@ -168,7 +168,7 @@ func (cassandra *CassandraConnection) InsertFindings(log_id string, findings []d
 				cassandra.logger.Warning("could not save the response finding - uuid generation failed")
 			} else {
 				//Insert the response finding
-				err := cassandra.session.Query("INSERT INTO "+cassandra.configuration.CassandraKeyspace+".findings (id, log_id, line, line_index, length, classification, severity, validator_name, finding_type) VALUES (?,?,?,?,?,?,?,?,?)", id_response, log_id, finding.Response.Line, finding.Response.LineIndex, finding.Response.Length, finding.Response.Classification, finding.Response.Severity, finding.Response.ValidatorName, 1).Exec()
+				err := cassandra.session.Query("INSERT INTO "+cassandra.configuration.CassandraKeyspace+".findings (id, log_id, line, line_index, length, matched_string, classification, severity, validator_name, finding_type) VALUES (?,?,?,?,?,?,?,?,?,?)", id_response, log_id, finding.Response.Line, finding.Response.LineIndex, finding.Response.Length, finding.Response.MatchedString, finding.Response.Classification, finding.Response.Severity, finding.Response.ValidatorName, 1).Exec()
 				//Check if an error occured when inserting the request finding
 				if err != nil {
 					cassandra.logger.Error("Could not insert the response finding in the database", err.Error())
@@ -322,23 +322,23 @@ func (cassandra *CassandraConnection) GetLogFindings(log_id string) ([]data.Find
 	}
 
 	//Prepare the query to select all the findings on the request of a specific log
-	query := cassandra.session.Query("SELECT id, log_id, line, line_index, length, classification, severity, validator_name FROM "+cassandra.configuration.CassandraKeyspace+".findings WHERE log_id = ? AND finding_type = 0 ALLOW FILTERING", log_id)
+	query := cassandra.session.Query("SELECT id, log_id, line, line_index, length, matched_string, classification, severity, validator_name FROM "+cassandra.configuration.CassandraKeyspace+".findings WHERE log_id = ? AND finding_type = 0 ALLOW FILTERING", log_id)
 	findings := make([]data.FindingDatabase, necessary_structures)
 	findingRequest := data.FindingDataDatabase{}
 	iter := query.Iter()
 	var index int64 = 0
-	for iter.Scan(&findingRequest.Id, &findingRequest.LogId, &findingRequest.Line, &findingRequest.LineIndex, &findingRequest.Length, &findingRequest.Classification, &findingRequest.Severity, &findingRequest.ValidatorName) {
+	for iter.Scan(&findingRequest.Id, &findingRequest.LogId, &findingRequest.Line, &findingRequest.LineIndex, &findingRequest.Length, &findingRequest.MatchedString, &findingRequest.Classification, &findingRequest.Severity, &findingRequest.ValidatorName) {
 		//cassandra.logger.Debug(findingRequest)
 		findings[index].Request = findingRequest
 		index += 1
 	}
 
 	//Prepare the query to select all the findings on the response of a specific log
-	query = cassandra.session.Query("SELECT id, log_id, line, line_index, length, classification, severity, validator_name FROM "+cassandra.configuration.CassandraKeyspace+".findings WHERE log_id = ? AND finding_type = 1 ALLOW FILTERING", log_id)
+	query = cassandra.session.Query("SELECT id, log_id, line, line_index, length, matched_string, classification, severity, validator_name FROM "+cassandra.configuration.CassandraKeyspace+".findings WHERE log_id = ? AND finding_type = 1 ALLOW FILTERING", log_id)
 	findingResponse := data.FindingDataDatabase{}
 	iter = query.Iter()
 	index = 0
-	for iter.Scan(&findingResponse.Id, &findingResponse.LogId, &findingResponse.Line, &findingResponse.LineIndex, &findingResponse.Length, &findingResponse.Classification, &findingResponse.Severity, &findingResponse.ValidatorName) {
+	for iter.Scan(&findingResponse.Id, &findingResponse.LogId, &findingResponse.Line, &findingResponse.LineIndex, &findingResponse.Length, &findingResponse.MatchedString, &findingResponse.Classification, &findingResponse.Severity, &findingResponse.ValidatorName) {
 		findings[index].Response = findingResponse
 		index += 1
 	}

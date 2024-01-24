@@ -60,7 +60,7 @@ func (userAgentVal *UserAgentValidator) ValidateRequest(r *http.Request) ([]data
 			}
 
 			//Create the structure which will be returned
-			returnData := data.FindingData{Line: lineNumber, LineIndex: lineIndex, Length: int64(len(line)), Classification: data.SCRIPT_USER_AGENT, Severity: data.MEDIUM, ValidatorName: userAgentVal.name}
+			returnData := data.FindingData{Line: lineNumber, LineIndex: lineIndex, Length: int64(len(line)), MatchedString: line, Classification: data.SCRIPT_USER_AGENT, Severity: data.MEDIUM, ValidatorName: userAgentVal.name}
 			findings = append(findings, returnData)
 			//break
 		}

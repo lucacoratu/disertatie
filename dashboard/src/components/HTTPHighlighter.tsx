@@ -68,12 +68,12 @@ const HTTPHighlighter: FC<HTTPHighlighterProps> = ({log}): JSX.Element => {
                 </div>
                 <ScrollArea>
                     {requestHeaders != "" &&
-                        <SyntaxHighlighter language="http" style={oneDark}>
+                        <SyntaxHighlighter language="http" style={oneDark} showLineNumbers>
                             {requestHeaders}
                         </SyntaxHighlighter>
                     }
                     {requestBody != "" && 
-                        <SyntaxHighlighter language="json" style={oneDark}>
+                        <SyntaxHighlighter language="json" style={oneDark} showLineNumbers>
                             {requestBody}
                         </SyntaxHighlighter>
                     }
@@ -88,12 +88,12 @@ const HTTPHighlighter: FC<HTTPHighlighterProps> = ({log}): JSX.Element => {
                 </div>
                 <ScrollArea>
                     {responseHeaders != "" &&
-                        <SyntaxHighlighter language="http" style={oneDark}>
+                        <SyntaxHighlighter language="http" style={oneDark} showLineNumbers>
                             {responseHeaders}
                         </SyntaxHighlighter>
                     }
                     {responseBody != "" && 
-                        <SyntaxHighlighter language="html" style={oneDark}>
+                        <SyntaxHighlighter language="html" style={oneDark} showLineNumbers>
                             {responseBody}
                         </SyntaxHighlighter>
                     }

@@ -39,6 +39,7 @@ type FindingData struct {
 	Line           int64  `json:"line"`           //The line from the request where the finding is located
 	LineIndex      int64  `json:"lineIndex"`      //The offset from the start of the line
 	Length         int64  `json:"length"`         //The length of the finding string
+	MatchedString  string `json:"matchedString"`  //The string on which the validator matched
 	Classification int64  `json:"classification"` //The classification of the finding based on the constants above
 	Severity       int64  `json:"severity"`       //The severity of the finding
 	ValidatorName  string `json:"validatorName"`  // The name of the validator who made the discovery

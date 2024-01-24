@@ -31,7 +31,7 @@ const FindingCard: FC<FindingCardProps> = ({findings, findingsClassificationStri
                 <div>
                     {requestFindings.map((finding) => {
                         return (
-                            <Finding key={finding?.id} finding={finding} findingsClassificationString={findingsClassificationString}/>
+                            <Finding key={finding?.id} finding={finding} findingsClassificationString={findingsClassificationString} matchedString={finding?.matchedString}/>
                         );
                     })}
                 </div>
@@ -44,7 +44,7 @@ const FindingCard: FC<FindingCardProps> = ({findings, findingsClassificationStri
                 <div>
                     {responseFindings.map((finding) => {
                         return (
-                            <Finding key={finding?.id} finding={finding} findingsClassificationString={findingsClassificationString}/>
+                            <Finding key={finding?.id} finding={finding} findingsClassificationString={findingsClassificationString} matchedString={finding?.matchedString}/>
                         );
                     })}
                 </div>
