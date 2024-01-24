@@ -1,4 +1,5 @@
 import { constants } from "@/app/constants";
+import FindingCard from "@/components/FindingsCard";
 import HTTPHighlighter from "@/components/HTTPHighlighter";
 
 async function GetLogFull(logid: string) : Promise<LogFull> {
@@ -16,13 +17,33 @@ async function GetLogFull(logid: string) : Promise<LogFull> {
     return logResponse.log;
 }
 
+async function getFindingsStringFormat(): Promise<FindingClassificationString[]> {
+	//Create the URL where the findings classfication in string format will be fetched from
+	const URL = `${constants.apiBaseURL}/findings/string`;
+	//Fetch the data (revalidate after 10 minutes)
+	const res = await fetch(URL, {next: {revalidate: 600}});
+	//Check if an error occured
+	if(!res.ok) {
+		throw new Error("could not load logs");
+	}
+	//Parse the json data
+	const findingsStringResponse: FindingClassificationStringResponse = await res.json();
+	return findingsStringResponse.findingsString;
+}
+
 export default async function LogDetails({ params }: { params: { logid: string } }) {
     const logId: string = params.logid;
 
     //Get the full log from the API
     const fullLog: LogFull = await GetLogFull(logId);
 
+    //Get the list of string descriptions of the findings based on the classification
+    const findingsClassficationString : FindingClassificationString[] = await getFindingsStringFormat();
+
     return (
-        <HTTPHighlighter log={fullLog}/>
+        <>
+            <HTTPHighlighter log={fullLog}/>
+            <FindingCard findings={fullLog.findings} findingsClassificationString={findingsClassficationString}/>
+        </>
     )
 }

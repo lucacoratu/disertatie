@@ -1,36 +1,44 @@
 import { FC } from "react";
 import { constants } from "@/app/constants";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Copy, Scroll } from "lucide-react";
+
+import CopyCliboardButton from "@/components/CopyClipboardButton";
+
+import { Button } from "@/components/ui/button";
+
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+  } from "@/components/ui/tooltip"
+
+import { useTheme } from "next-themes";
+
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 type HTTPHighlighterProps = {
     log: LogFull
 }
 
-//Returns the line in a highlighted fashion based on the findings
-function HighlightRequestLine(line: string, lineNumber: number, findings: Finding[]): string[] {
-    //Initialize the new line
-    let highlightedLine: string = '<p className="text-base line-clamp-1">';
-    const highlights: string[] = [];
-    //Loop through each finding
-    findings?.map((finding) => {
-        //Check if the finding is for this line
-        if(finding.request.line == lineNumber && finding.request.id != "") {
-            //The finding is for this line, so create the highlights
-            // console.log(line.length);
-            // console.log(finding.request.line);
-            // console.log(finding.request.lineIndex, finding.request.lineIndex + finding.request.length);
-            // console.log(line.slice(finding.request.lineIndex, finding.request.lineIndex + finding.request.length));
-            let highlight: string = "<span className=" + constants.severityTextColors[finding.request.severity] + ">"+ line.slice(finding.request.lineIndex, finding.request.lineIndex + finding.request.length) + "</span>";
-            console.log(highlight);
-            //highlights.push(highlight);
-        }
-    });
-
-
-    return highlights;
-    // return (
-    //     <>
-    //     </>
-    // );
+function SeparateHeadersAndBody(data: string): string[] {
+    //Get the body of the response
+    const dataLines: string[] = data.split("\n\n");
+    var dataParts: string[][] = dataLines.map((line) => line.split("\n"));
+    if(dataParts.length == 0) {
+        return ["", ""];
+    }
+    var dataHeaders: string = ""; 
+    var dataBody: string = "" ;
+    if(dataParts.length >= 1) {
+        dataHeaders = dataParts[0].join("\n");
+    }
+    if (dataParts.length == 2) {
+        dataBody = dataParts[1].join("\n");
+    }
+    return [dataHeaders, dataBody];
 }
 
 const HTTPHighlighter: FC<HTTPHighlighterProps> = ({log}): JSX.Element => {
@@ -39,35 +47,57 @@ const HTTPHighlighter: FC<HTTPHighlighterProps> = ({log}): JSX.Element => {
     //Get the response data from base64
     const logResponseRaw: string = atob(log?.response);
 
-    //console.log(log);
+    //Separate the headers from the body of the request
+    const requestValues = SeparateHeadersAndBody(logRequestRaw);
+    const requestHeaders = requestValues[0]; 
+    const requestBody = requestValues[1]; 
+
+    //Separate the headers from the body of the response
+    const responseValues = SeparateHeadersAndBody(logResponseRaw);
+    const responseHeaders = responseValues[0]; 
+    const responseBody = responseValues[1];
 
     return (
         <div className="flex flex-wrap flex-row gap-5 justify-center">
-            <div className="flex flex-col gap-0 min-w-[450px] grow w-1/3 p-4 rounded dark:bg-darksurface-100">
-                <div className="text-center">
-                    <h2>Request</h2>
+            <div className="flex flex-col gap-0 h-[500px] min-w-[450px] grow w-1/3 p-4 rounded dark:bg-darksurface-100">
+                <div className="flex flex-row items-center justify-between gap-10">
+                    <h2 className="text-xl">Request</h2>
+                    <CopyCliboardButton text={logRequestRaw} toastText="Request copied to clipboard" tooltipText="Copy to clipboard">
+                        <Copy className="w-4 h-4"/>
+                    </CopyCliboardButton>
                 </div>
-                <div className="flex flex-col gap-0">
-                {logRequestRaw.split('\n').map((line, index) => {
-                    const auxLine = line.trimEnd();
-                    //console.log(log?.findings);
-                    const out = HighlightRequestLine(line, index, log.findings);
-                    //console.log(out);
-                    return <p className="text-base line-clamp-1" key={index}>{auxLine}</p>;
-                })}
-                </div>
+                <ScrollArea>
+                    {requestHeaders != "" &&
+                        <SyntaxHighlighter language="http" style={oneDark}>
+                            {requestHeaders}
+                        </SyntaxHighlighter>
+                    }
+                    {requestBody != "" && 
+                        <SyntaxHighlighter language="json" style={oneDark}>
+                            {requestBody}
+                        </SyntaxHighlighter>
+                    }
+                </ScrollArea>
             </div>
-            <div className="flex flex-col gap-0 min-w-[450px] grow w-1/3 p-4 rounded dark:bg-darksurface-100">
-                <div className="text-center">
-                    <h2>Response</h2>
+            <div className="flex flex-col gap-0 h-[500px] min-w-[450px] grow w-1/3 p-4 rounded dark:bg-darksurface-100">
+                <div className="flex flex-row items-center justify-between gap-10">
+                    <h2 className="text-xl">Response</h2>
+                    <CopyCliboardButton text={logResponseRaw} toastText="Response copied to clipboard" tooltipText="Copy to clipboard" >
+                        <Copy className="w-4 h-4"/>
+                    </CopyCliboardButton>
                 </div>
-                <div>
-                    {logResponseRaw.split('\n').map((line, index) => {
-                        const auxLine = line.trimEnd();
-                        //HighlightRequestLine(line, index, log.findings);
-                        return <p className="text-base line-clamp-1" key={index}>{auxLine}</p>;
-                    })}
-                </div>
+                <ScrollArea>
+                    {responseHeaders != "" &&
+                        <SyntaxHighlighter language="http" style={oneDark}>
+                            {responseHeaders}
+                        </SyntaxHighlighter>
+                    }
+                    {responseBody != "" && 
+                        <SyntaxHighlighter language="html" style={oneDark}>
+                            {responseBody}
+                        </SyntaxHighlighter>
+                    }
+                </ScrollArea>
             </div>
         </div>
     );

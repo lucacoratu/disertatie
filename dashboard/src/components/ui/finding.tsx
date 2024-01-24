@@ -1,0 +1,49 @@
+import { useTheme } from "next-themes";
+import { FC } from "react";
+
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+  } from "@/components/ui/tooltip"
+
+type FindingProps = {
+    finding: FindingData | null,
+    findingsClassificationString: FindingClassificationString[],
+}
+
+const Finding: FC<FindingProps> = ({finding, findingsClassificationString}): JSX.Element => {
+    const severityColors = ['bg-[#fdc500]', 'bg-[#fd8c00]', 'bg-[#dc0000]', 'bg-[#780000]'];
+    const severityTextColors = ['text-[#fdc500]', 'text-[#fd8c00]', 'text-[#dc0000]', 'text-[#780000]'];
+    const severityNames = ['Low', 'Medium', 'High', 'Critical'];
+
+    const classificationString = findingsClassificationString.filter((classificationString) => classificationString.intFormat == finding?.classification).at(0)?.stringFormat;
+    const classificationDescription = findingsClassificationString.filter((classificationString) => classificationString.intFormat == finding?.classification).at(0)?.description;
+
+    return (
+        <div key={finding?.id} className="overflow-hidden">
+            {
+                finding && finding.id != '' && 
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger>
+                            <div className={"p-1 rounded w-fit text-center " + severityColors[finding.severity]}>
+                                {classificationString}
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <div className="flex flex-col gap-1 items-center">
+                                <p>{classificationDescription}</p>
+                                <p>Severity: <span className={severityTextColors[finding.severity]}>{severityNames[finding.severity]}</span> - Detected by: {finding.validatorName}</p>
+                                <p>Matched on line {finding.line}, position {finding.lineIndex} - Matched string: </p>
+                            </div>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            }
+        </div>
+    );
+}
+
+export default Finding;

@@ -15,7 +15,7 @@ import {
     SheetTrigger,
   } from "@/components/ui/sheet"
 
-import { Menu, Bell } from "lucide-react";
+import { Menu, Bell, Home, VenetianMask } from "lucide-react";
 import ProfileButton from "./ProfileButton";
 import ThemeButton from "./ThemeButton";
 import { DropdownMenuSeparator } from "./ui/dropdown-menu";
@@ -29,14 +29,17 @@ const Header = () => {
         {
             href: "/home",
             label: "Home",
+            icon: <Home/>,
         },
         {
             href: "/machines",
             label: "Machines",
+            icon: <VenetianMask/>,
         },
         {
             href: "/agents",
             label: "Agents",
+            icon: <VenetianMask/>,
         }
     ];
 
@@ -64,7 +67,10 @@ const Header = () => {
                                                     <Link key={i}
                                                         href={route.href}
                                                         className="text-sm font-medium transition-colors">
-                                                        {route.label}
+                                                            <div className="flex flex-row items-start gap-4">
+                                                                {/* {route.icon} */}
+                                                                {route.label}
+                                                            </div>
                                                     </Link>
                                                 </Button>
                                             )

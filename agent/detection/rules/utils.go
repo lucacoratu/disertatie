@@ -54,7 +54,7 @@ func LoadRulesFromDirectory(rulesDirectory string, logger logging.ILogger) ([]Ya
 				}
 			}
 			if found {
-				logger.Warning("Skipping rule file", path, "a rule with this path already exists")
+				logger.Warning("Skipping rule file", path, "a rule with this id already exists")
 				return nil
 			}
 			//Add the rule read from file to the list of rules
