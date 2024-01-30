@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"sort"
 	"strings"
 
 	"github.com/lucacoratu/disertatie/agent/data"
@@ -130,15 +131,20 @@ func DumpHTTPRequest(req *http.Request) ([]byte, error) {
 	rawRequest = append(rawRequest, '\n')
 	//Add all the headers and their values
 	// Loop over header names
-	for name, values := range req.Header {
+	keys := make([]string, 0, len(req.Header))
+	for k := range req.Header {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
 		//Append the name
-		rawRequest = append(rawRequest, []byte(name)...)
+		rawRequest = append(rawRequest, []byte(key)...)
 		rawRequest = append(rawRequest, ':')
 		rawRequest = append(rawRequest, ' ')
 		// Loop over all values for the name.
-		for _, value := range values {
+		for _, value := range req.Header[key] {
 			rawRequest = append(rawRequest, []byte(value)...)
-			if len(values) > 1 {
+			if len(req.Header[key]) > 1 {
 				rawRequest = append(rawRequest, ';')
 			}
 		}
@@ -179,15 +185,20 @@ func DumpHTTPResponse(res *http.Response) ([]byte, error) {
 	// rawResponse = append(rawResponse, '\n')
 	//Add all the headers and their values
 	// Loop over header names
-	for name, values := range res.Header {
+	keys := make([]string, 0, len(res.Header))
+	for k := range res.Header {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
 		//Append the name
-		rawResponse = append(rawResponse, []byte(name)...)
+		rawResponse = append(rawResponse, []byte(key)...)
 		rawResponse = append(rawResponse, ':')
 		rawResponse = append(rawResponse, ' ')
 		// Loop over all values for the name.
-		for _, value := range values {
+		for _, value := range res.Header[key] {
 			rawResponse = append(rawResponse, []byte(value)...)
-			if len(values) > 1 {
+			if len(res.Header[key]) > 1 {
 				rawResponse = append(rawResponse, ';')
 			}
 		}
@@ -232,5 +243,23 @@ func FindFindingDataInRequest(req *http.Request, searchString string) (int64, in
 		}
 	}
 
+	return -1, -1, nil
+}
+
+func FindFindingDataInRawdata(rawData string, searchString string) (int64, int64, error) {
+	var lineIndex int = 0
+	//Get the lines of the raw data
+	requestLines := strings.Split(rawData, "\n")
+
+	//Loop through all the request lines and find the one which has the searched string
+	for index, line := range requestLines {
+		lineIndex = strings.Index(strings.ToLower(line), strings.ToLower(searchString))
+		//If the searched string was found then return the line and the line offset
+		if lineIndex != -1 {
+			return int64(index), int64(lineIndex), nil
+		}
+	}
+
+	//The string was not found
 	return -1, -1, nil
 }

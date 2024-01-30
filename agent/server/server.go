@@ -25,7 +25,7 @@ type AgentServer struct {
 	apiBaseURL    string
 	configuration config.Configuration
 	checkers      []code.IValidator
-	rules         []rules.YamlRule
+	rules         []rules.Rule
 }
 
 // Initialize the proxy http server based on the configuration file
@@ -54,8 +54,8 @@ func (agent *AgentServer) Init() error {
 		agent.rules = allRules
 	} else {
 		agent.logger.Warning("No rules were loaded because the rules directory was not specified")
-		//Assign nil to the rules slice of the server structure
-		agent.rules = nil
+		//Assign empty slice to the rules slice of the server structure
+		agent.rules = make([]rules.Rule, 0)
 	}
 
 	//Assemble the collector base URL

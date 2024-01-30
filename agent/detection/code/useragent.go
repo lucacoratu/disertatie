@@ -30,7 +30,7 @@ func (userAgentVal *UserAgentValidator) GetName() string {
 func (userAgentVal *UserAgentValidator) ValidateRequest(r *http.Request) ([]data.FindingData, error) {
 	//Get the User-Agent value
 	userAgent := r.Header.Get("User-Agent")
-	userAgentVal.logger.Debug(userAgent)
+	//userAgentVal.logger.Debug(userAgent)
 
 	//Read the blacklisted User-Agents
 	blacklist, err := utils.ReadLinesFromFile(userAgentVal.configuration.BlacklistUserAgentPath)
@@ -47,7 +47,7 @@ func (userAgentVal *UserAgentValidator) ValidateRequest(r *http.Request) ([]data
 			userAgentVal.logger.Info(userAgentVal.name, "found blacklisted User-Agent:", line, "received header:", userAgent)
 			//Find the line number, line index the string appears
 			lineNumber, lineIndex, err := utils.FindFindingDataInRequest(r, line)
-			userAgentVal.logger.Debug(lineNumber, lineIndex)
+			//userAgentVal.logger.Debug(lineNumber, lineIndex)
 			//utils.FindFindingDataInRequest(r, line)
 			// //Check if an error occured when searching for the string in the request
 			if err != nil {

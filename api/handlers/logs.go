@@ -54,7 +54,7 @@ func (lh *LogsHandler) GetLogsShort(rw http.ResponseWriter, r *http.Request) {
 		return logs[i].Timestamp > logs[j].Timestamp
 	})
 
-	lh.logger.Debug(logs)
+	//lh.logger.Debug(logs)
 
 	//Send the logs back to the client
 	respData := response.LogsGetResponse{Logs: logs}
@@ -361,7 +361,19 @@ func (lh *LogsHandler) GetLog(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//Get the log rule findings
+	ruleFindings, err := lh.dbConnection.GetLogRuleFindings(log_uuid)
+	//Check if an error occured
+	if err != nil {
+		//Send an error message
+		rw.WriteHeader(http.StatusBadRequest)
+		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "could not retrieve the log rule findings"}
+		apiErr.ToJSON(rw)
+		return
+	}
+
 	log.Findings = append(log.Findings, findings...)
+	log.RuleFindings = append(log.RuleFindings, ruleFindings...)
 
 	//Send the log back to the client
 	resp := response.LogGetResponse{Log: log}

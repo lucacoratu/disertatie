@@ -31,7 +31,7 @@ func (cassandra *CassandraConnection) createTables() error {
 	// _ = cassandra.session.Query("DROP TABLE api.agents").Exec()
 	//_ = cassandra.session.Query("DROP TABLE api.logs").Exec()
 	//_ = cassandra.session.Query("DROP TABLE api.findings").Exec()
-	//_ = cassandra.session.Query("DROP TABLE api.rulesfindings").Exec()
+	// _ = cassandra.session.Query("DROP TABLE api.rulefindings").Exec()
 
 	//Create the machines table
 	err := cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".machines (id TEXT PRIMARY KEY, os TEXT, hostname TEXT, ip_addresses TEXT)").Exec()
@@ -62,7 +62,7 @@ func (cassandra *CassandraConnection) createTables() error {
 	}
 
 	//Create the rule findings table which will hold all the rule based findings of a log
-	err = cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".rulefindings (id TEXT, log_id TEXT, rule_id TEXT, rule_name TEXT, rule_description TEXT, line INT, line_index INT, length INT, matched_string TEXT, classification TEXT, severity INT, finding_type INT, PRIMARY KEY (id, log_id))").Exec()
+	err = cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".rulefindings (id TEXT, log_id TEXT, rule_id TEXT, rule_name TEXT, rule_description TEXT, line INT, line_index INT, length INT, matched_string TEXT, matched_hash TEXT, matched_hash_alg TEXT, classification TEXT, severity INT, finding_type INT, PRIMARY KEY (id, log_id))").Exec()
 	//Check if an error occured when creating the rules findings table
 	if err != nil {
 		return errors.New("cannot create rules findings table, " + err.Error())
@@ -187,6 +187,44 @@ func (cassandra *CassandraConnection) InsertFindings(log_id string, findings []d
 	return true, nil
 }
 
+// Insert the rule findings from an agent
+func (cassandra *CassandraConnection) InsertRuleFindings(log_id string, ruleFindings []data.RuleFinding) (bool, error) {
+	for _, ruleFinding := range ruleFindings {
+		//If the rule finding has request field defined
+		if ruleFinding.Request != nil {
+			//Generate a new UUID
+			id_request := uuid.New().String()
+			//Check if the UUID has been sucessfully generated
+			if id_request == "" {
+				cassandra.logger.Warning("could not save the request finding - uuid generation failed")
+			} else {
+				//Insert the request finding
+				err := cassandra.session.Query("INSERT INTO "+cassandra.configuration.CassandraKeyspace+".rulefindings (id, log_id, line, line_index, length, matched_string, matched_hash, matched_hash_alg, classification, severity, rule_id, rule_name, rule_description, finding_type) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", id_request, log_id, ruleFinding.Request.Line, ruleFinding.Request.LineIndex, ruleFinding.Request.Length, ruleFinding.Request.MatchedString, ruleFinding.Request.MatchedBodyHash, ruleFinding.Request.MatchedBodyHashAlg, ruleFinding.Request.Classification, ruleFinding.Request.Severity, ruleFinding.Request.RuleId, ruleFinding.Request.RuleName, ruleFinding.Request.RuleDescription, 0).Exec()
+				if err != nil {
+					cassandra.logger.Error("Could not insert the request rule findings in the database", err.Error())
+				}
+			}
+		}
+		//If the rule finding has the response field defined
+		if ruleFinding.Response != nil {
+			//Generate a new UUID
+			id_response := uuid.New().String()
+			//Check if the UUID has been sucessfully generated
+			if id_response == "" {
+				cassandra.logger.Warning("could not save the request finding - uuid generation failed")
+			} else {
+				//Insert the request finding
+				err := cassandra.session.Query("INSERT INTO "+cassandra.configuration.CassandraKeyspace+".rulefindings (id, log_id, line, line_index, length, matched_string, matched_hash, matched_hash_alg, classification, severity, rule_id, rule_name, rule_description, finding_type) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", id_response, log_id, ruleFinding.Response.Line, ruleFinding.Response.LineIndex, ruleFinding.Response.Length, ruleFinding.Response.MatchedString, ruleFinding.Response.MatchedBodyHash, ruleFinding.Response.MatchedBodyHashAlg, ruleFinding.Response.Classification, ruleFinding.Response.Severity, ruleFinding.Response.RuleId, ruleFinding.Response.RuleName, ruleFinding.Response.RuleDescription, 0).Exec()
+				if err != nil {
+					cassandra.logger.Error("Could not insert the request rule findings in the database", err.Error())
+				}
+			}
+		}
+	}
+
+	return true, nil
+}
+
 // Insert a log from an agent
 func (cassandra *CassandraConnection) InsertLog(logData data.LogData) (bool, error) {
 	//Generate a new UUID
@@ -225,6 +263,9 @@ func (cassandra *CassandraConnection) InsertLog(logData data.LogData) (bool, err
 
 	//Insert all the findings from the agent in the findings table
 	cassandra.InsertFindings(id, logData.Findings)
+
+	//Insert all rule findings from the agent in the findings table
+	cassandra.InsertRuleFindings(id, logData.RuleFindings)
 
 	return true, nil
 }
@@ -355,6 +396,76 @@ func (cassandra *CassandraConnection) GetLogFindings(log_id string) ([]data.Find
 	return findings, nil
 }
 
+// Get number of findings of a certain type of a log
+func (cassandra *CassandraConnection) GetLogRuleFindingsCount(log_id string, finding_type int64) (int64, error) {
+	//Prepare the query to select the number of findings for the specified type
+	query := cassandra.session.Query("SELECT COUNT(id) FROM "+cassandra.configuration.CassandraKeyspace+".rulefindings WHERE log_id = ? AND finding_type = ? ALLOW FILTERING", log_id, finding_type)
+	var count int64
+	result := query.Iter().Scan(&count)
+	if !result {
+		return -1, errors.New("could not get the number of findings for the specified type")
+	}
+	return count, nil
+}
+
+// Get all the rule findings of the log
+func (cassandra *CassandraConnection) GetLogRuleFindings(log_id string) ([]data.RuleFindingDatabase, error) {
+	//Get the count for request
+	request_findings_count, err := cassandra.GetLogRuleFindingsCount(log_id, 0)
+	//Check if an error occured when getting the count for request
+	if err != nil {
+		return nil, err
+	}
+
+	//Get the count for response
+	response_findings_count, err := cassandra.GetLogRuleFindingsCount(log_id, 1)
+	//Check if an error occured when getting the count for request
+	if err != nil {
+		return nil, err
+	}
+
+	//Check which one is larger and initialize the return findings structure array size to that value
+	var necessary_structures int64 = 0
+	if request_findings_count > response_findings_count {
+		necessary_structures = request_findings_count
+	} else {
+		necessary_structures = response_findings_count
+	}
+
+	if necessary_structures == 0 {
+		return make([]data.RuleFindingDatabase, 0), nil
+	}
+
+	//cassandra.logger.Debug("Necessary structures rule findings", necessary_structures)
+
+	//Prepare the query to select all the findings on the request of a specific log
+	query := cassandra.session.Query("SELECT id, log_id, line, line_index, length, matched_string, classification, severity, rule_id, rule_name, rule_description, matched_hash, matched_hash_alg FROM "+cassandra.configuration.CassandraKeyspace+".rulefindings WHERE log_id = ? AND finding_type = 0 ALLOW FILTERING", log_id)
+	findings := make([]data.RuleFindingDatabase, necessary_structures)
+	findingRequest := data.RuleFindingDataDatabase{}
+	iter := query.Iter()
+	var index int64 = 0
+	for iter.Scan(&findingRequest.Id, &findingRequest.LogId, &findingRequest.Line, &findingRequest.LineIndex, &findingRequest.Length, &findingRequest.MatchedString, &findingRequest.Classification, &findingRequest.Severity, &findingRequest.RuleId, &findingRequest.RuleName, &findingRequest.RuleDescription, &findingRequest.MatchedBodyHash, &findingRequest.MatchedBodyHashAlg) {
+		//cassandra.logger.Debug(findingRequest)
+		findings[index].Request = &findingRequest
+		index += 1
+	}
+
+	//Prepare the query to select all the findings on the response of a specific log
+	query = cassandra.session.Query("SELECT id, log_id, line, line_index, length, matched_string, classification, severity, rule_id, rule_name, rule_description, matched_hash, matched_hash_alg FROM "+cassandra.configuration.CassandraKeyspace+".rulefindings WHERE log_id = ? AND finding_type = 1 ALLOW FILTERING", log_id)
+	findingResponse := data.RuleFindingDataDatabase{}
+	iter = query.Iter()
+	index = 0
+	for iter.Scan(&findingResponse.Id, &findingResponse.LogId, &findingResponse.Line, &findingResponse.LineIndex, &findingResponse.Length, &findingResponse.MatchedString, &findingResponse.Classification, &findingResponse.Severity, &findingResponse.RuleId, &findingResponse.RuleName, &findingResponse.RuleDescription, &findingResponse.MatchedBodyHash, &findingResponse.MatchedBodyHashAlg) {
+		findings[index].Response = &findingResponse
+		index += 1
+	}
+
+	//cassandra.logger.Debug(findings)
+
+	//Return the data to the client
+	return findings, nil
+}
+
 // Get all the logs of an agent in a short format
 func (cassandra *CassandraConnection) GetAgentLogsShort(agent_id string) ([]data.LogDataShort, error) {
 	//Prepare the query to select all the logs that are generated by the specified agent
@@ -371,9 +482,19 @@ func (cassandra *CassandraConnection) GetAgentLogsShort(agent_id string) ([]data
 			cassandra.logger.Warning("Could not get the findings for the log", log.Id)
 			continue
 		}
+		//Get all the rule findings for the log
+		ruleFindings, err := cassandra.GetLogRuleFindings(log.Id)
+		//Check if an error occured when getting the rule findings for the log
+		if err != nil {
+			cassandra.logger.Warning("Could not get the rule findings for the log", log.Id)
+			continue
+		}
 		//Add the findings to the logs findings array
 		if len(findings) > 0 {
 			log.Findings = findings
+		}
+		if len(ruleFindings) > 0 {
+			log.RuleFindings = ruleFindings
 		}
 		//Append the selected log to the list of logs
 		logs = append(logs, log)

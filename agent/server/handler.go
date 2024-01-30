@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/lucacoratu/disertatie/agent/api"
@@ -18,18 +19,23 @@ import (
 	"github.com/lucacoratu/disertatie/agent/utils"
 )
 
+/*
+ * Structure which holds all the information needed by the handler for the HTTP requests
+ */
 type AgentHandler struct {
-	logger        logging.ILogger
-	apiBaseURL    string
-	configuration config.Configuration
-	checkers      []code.IValidator
-	rules         []rules.YamlRule
+	logger        logging.ILogger      //The logger interface
+	apiBaseURL    string               //The API base URL
+	configuration config.Configuration //The configuration structure
+	checkers      []code.IValidator    //The list of validators which will be run on the request and the response to find malicious activity
+	rules         []rules.Rule         //The list of rules which will try to find anomalies in the requests and the responses
 }
 
-func NewAgentHandler(logger logging.ILogger, apiBaseURL string, configuration config.Configuration, checkers []code.IValidator, rules []rules.YamlRule) *AgentHandler {
+// Creates a new AgentHandlerStructure
+func NewAgentHandler(logger logging.ILogger, apiBaseURL string, configuration config.Configuration, checkers []code.IValidator, rules []rules.Rule) *AgentHandler {
 	return &AgentHandler{logger: logger, apiBaseURL: apiBaseURL, configuration: configuration, checkers: checkers, rules: rules}
 }
 
+// Forwards the request to the target server
 func (agentHandler *AgentHandler) forwardRequest(req *http.Request) (*http.Response, error) {
 	// we need to buffer the body if we want to read it here and send it
 	// in the request.
@@ -64,6 +70,7 @@ func (agentHandler *AgentHandler) forwardRequest(req *http.Request) (*http.Respo
 	return resp, nil
 }
 
+// Forwards the response back to the client
 func (agentHandler *AgentHandler) forwardResponse(rw http.ResponseWriter, response *http.Response) {
 	//Send the status code
 	rw.WriteHeader(response.StatusCode)
@@ -89,81 +96,8 @@ func (agentHandler *AgentHandler) forwardResponse(rw http.ResponseWriter, respon
 	rw.Write(body)
 }
 
-func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.Request) {
-	agentHandler.logger.Debug("Received request on", r.URL.Path)
-	//Create the raw HTTP request string
-	rawRequest, _ := utils.DumpHTTPRequest(r)
-	//agent.logger.Debug(string(rawRequest))
-
-	//Create the list of findings
-	requestFindings := make([]data.FindingData, 0)
-
-	//Run all the validators to check if the request seems valid
-	for _, valid := range agentHandler.checkers {
-		//Call the validate method of the validator for the request
-		findingsRequest, err := valid.ValidateRequest(r)
-		//Check if there was an error when looking for malicious input in the request
-		if err != nil {
-			agentHandler.logger.Error("Error occured when trying to find malicious input in the request", err.Error())
-		}
-		//Check if there was a finding returned by the validator
-		if findingsRequest != nil {
-			//Add the findings to the list of findings for the request
-			requestFindings = append(requestFindings, findingsRequest...)
-			//Log the findings
-			for _, finding := range findingsRequest {
-				agentHandler.logger.Debug(finding)
-			}
-		}
-	}
-
-	//Log request findings
-	agentHandler.logger.Debug("Request findings", requestFindings)
-
-	//Forward the request to the destination web server
-	response, err := agentHandler.forwardRequest(r)
-	if err != nil {
-		agentHandler.logger.Error(err.Error())
-		return
-	}
-
-	//Create the structure which will hold response findings
-	responseFindings := make([]data.FindingData, 0)
-
-	//Run all the validators to check if the response seems valid
-	for _, valid := range agentHandler.checkers {
-		//Call the validate method of the validator for the response
-		findingsResponse, err := valid.ValidateResponse(response)
-		//Check if an error occured when looking for malicious input in the response
-		if err != nil {
-			agentHandler.logger.Error("Error occured when trying to find malicious input in the response", err.Error())
-		}
-		//Check if there was any finding
-		if findingsResponse != nil {
-			//Add the finding to the list of response findings
-			responseFindings = append(responseFindings, findingsResponse...)
-			//Log the findings
-			for _, finding := range findingsResponse {
-				agentHandler.logger.Debug(finding)
-			}
-		}
-	}
-
-	//Log response findings
-	agentHandler.logger.Debug("Response findings", responseFindings)
-
-	//Dump the response as raw string
-	rawResponse, err := utils.DumpHTTPResponse(response)
-	//Check if an error occured when dumping the response as raw string
-	if err != nil {
-		agentHandler.logger.Error(err.Error())
-		return
-	}
-	//Convert raw request to base64
-	b64RawRequest := b64.StdEncoding.EncodeToString(rawRequest)
-	//Convert raw response to base64
-	b64RawResponse := b64.StdEncoding.EncodeToString(rawResponse)
-
+// Combines the request and response findings into a single slice
+func (agentHandler *AgentHandler) combineFindings(requestFindings []data.FindingData, responseFindings []data.FindingData) []data.Finding {
 	//Add all the findings from all the validators to a list which will be sent to the API
 	allFindings := make([]data.Finding, 0)
 	//Add all request findings
@@ -186,16 +120,117 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 		}
 	}
 
+	return allFindings
+}
+
+func (agentHandler *AgentHandler) combineRuleFindings(requestRuleFindings []*data.RuleFindingData, responseRuleFindings []*data.RuleFindingData) []data.RuleFinding {
+	//Add all the findings from all the validators to a list which will be sent to the API
+	allFindings := make([]data.RuleFinding, 0)
+	//Add all request findings
+	for index, finding := range requestRuleFindings {
+		if index < len(responseRuleFindings) {
+			allFindings = append(allFindings, data.RuleFinding{Request: finding, Response: responseRuleFindings[index]})
+		} else {
+			allFindings = append(allFindings, data.RuleFinding{Request: finding, Response: nil})
+		}
+	}
+
+	//Add the response findings
+	for index, finding := range responseRuleFindings {
+		//If the index is less than the length of the all findings list then complete the index structure with the response findings
+		if index < len(allFindings) {
+			allFindings[index].Response = finding
+		} else {
+			//Otherwise add a new structure to the list of all findings which will have the Request empty
+			allFindings = append(allFindings, data.RuleFinding{Request: nil, Response: finding})
+		}
+	}
+
+	return allFindings
+}
+
+// Converts the request and the response to raw string then base64 encodes both of them
+func (agentHandler *AgentHandler) convertRequestAndResponseToB64(req *http.Request, resp *http.Response) (string, string, error) {
+	//Dump the HTTP request to raw string
+	rawRequest, _ := utils.DumpHTTPRequest(req)
+	//Dump the response as raw string
+	rawResponse, err := utils.DumpHTTPResponse(resp)
+	//Check if an error occured when dumping the response as raw string
+	if err != nil {
+		agentHandler.logger.Error(err.Error())
+		return "", "", err
+	}
+	//Convert raw request to base64
+	b64RawRequest := b64.StdEncoding.EncodeToString(rawRequest)
+	//Convert raw response to base64
+	b64RawResponse := b64.StdEncoding.EncodeToString(rawResponse)
+	//Return the base64 string of the request and the response
+	return b64RawRequest, b64RawResponse, nil
+}
+
+// Handles the requests received by the agent
+func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.Request) {
+	//Log the endpoint where the request was made
+	agentHandler.logger.Info("Received request on", r.URL.Path)
+
+	//Create the validator runner
+	validatorRunner := code.NewValidatorRunner(agentHandler.checkers, agentHandler.logger)
+	//Create the rule runner
+	ruleRunner := rules.NewRuleRunner(agentHandler.logger, agentHandler.rules)
+
+	//Run all the validators on the request
+	requestFindings, _ := validatorRunner.RunValidatorsOnRequest(r)
+	//Run all the rules on the request
+	requestRuleFindings, _ := ruleRunner.RunRulesOnRequest(r)
+
+	//Log request findings
+	agentHandler.logger.Debug("Request findings", requestFindings)
+	//Log the request rule findings
+	agentHandler.logger.Debug("Request rule findings", requestRuleFindings)
+
+	//Forward the request to the destination web server
+	response, err := agentHandler.forwardRequest(r)
+	if err != nil {
+		agentHandler.logger.Error(err.Error())
+		return
+	}
+
+	//Run the validators on the response
+	responseFindings, _ := validatorRunner.RunValidatorsOnResponse(response)
+	//Run the rules on the response
+	responseRuleFindings, _ := ruleRunner.RunRulesOnResponse(response)
+
+	//Log response findings
+	agentHandler.logger.Debug("Response findings", responseFindings)
+	//Log the rules response findings
+	agentHandler.logger.Debug("Response rule findings", responseRuleFindings)
+
+	//Combine the findings into a single structure
+	allFindings := agentHandler.combineFindings(requestFindings, responseFindings)
+	//Combine the rule findings into a single structure
+	allRuleFindings := agentHandler.combineRuleFindings(requestRuleFindings, responseRuleFindings)
+
+	//Convert the request and response to base64 string
+	b64RawRequest, b64RawResponse, _ := agentHandler.convertRequestAndResponseToB64(r, response)
+
 	//Create the log structure that should be sent to the API
-	//logData := data.LogData{AgentId: agent.runtimeData.Uuid, RemoteIP: r.RemoteAddr, Timestamp: time.Now().Unix(), Request: b64RawRequest, Response: b64RawResponse, Findings: make([]data.Finding, 0)}
-	logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: r.RemoteAddr, Timestamp: time.Now().Unix(), Request: b64RawRequest, Response: b64RawResponse, Findings: allFindings}
-	agentHandler.logger.Debug(logData)
+	logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: r.RemoteAddr, Timestamp: time.Now().Unix(), Request: b64RawRequest, Response: b64RawResponse, Findings: allFindings, RuleFindings: allRuleFindings}
+	if false {
+		agentHandler.logger.Debug(logData)
+	}
 	//Send log information to the API
 	apiHandler := api.NewAPIHandler(agentHandler.logger, agentHandler.configuration)
 	_, err = apiHandler.SendLog(agentHandler.apiBaseURL, logData)
 	//Check if an error occured when sending log to the API
 	if err != nil {
 		agentHandler.logger.Error(err.Error())
+		return
+	}
+
+	//If the mode is testing then send the log data as response
+	if strings.EqualFold(agentHandler.configuration.OperationMode, "testing") {
+		rw.WriteHeader(http.StatusOK)
+		logData.ToJSON(rw)
 		return
 	}
 

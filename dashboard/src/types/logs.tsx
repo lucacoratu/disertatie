@@ -96,6 +96,43 @@ type Finding = {
     response: FindingData,
 }
 
+/*
+type RuleFindingData struct {
+	RuleId             string `json:"ruleId"`             //The rule id specified on the agent rule
+	RuleName           string `json:"ruleName"`           //The name of the rule specified on the agent
+	RuleDescription    string `json:"ruleDescription"`    //The description of the rule
+	Line               int64  `json:"line"`               //The line from the request where the finding is located
+	LineIndex          int64  `json:"lineIndex"`          //The offset from the start of the line
+	Length             int64  `json:"length"`             //The length of the finding string
+	MatchedString      string `json:"matchedString"`      //The string on which the rule matched
+	MatchedBodyHash    string `json:"matchedBodyHash"`    //The hash of the body which matched
+	MatchedBodyHashAlg string `json:"matchedBodyHashAlg"` //The algorithm used for hashing the body
+	Classification     string `json:"classification"`     //The classification of the finding based on the string specified in the rule file
+	Severity           int64  `json:"severity"`           //The severity of the finding
+}
+*/
+
+type RuleFindingData = {
+	id: string,
+	logId: string,
+	ruleId: string            
+	ruleName: string
+	ruleDescription: string
+	line: number  
+	lineIndex: number
+	length: number
+	matchedString: string
+	matchedBodyHash: string 
+	matchedBodyHashAlg:  string
+	classification: string 
+	severity: number
+}
+
+type RuleFinding = {
+	request: RuleFindingData | null | undefined
+	response: RuleFindingData | null | undefined
+}
+
 type LogShort = {
     id: string,
     agentId: string,
@@ -104,6 +141,7 @@ type LogShort = {
     request_preview: string,
     response_preview: string,
     findings: Finding[],
+	ruleFindings: RuleFinding[],
 }
 
 type LogShortResponse = {
@@ -138,7 +176,8 @@ type LogFull = {
 	response_preview: string,
 	request: string,
 	response: string,
-	findings: Finding[], 
+	findings: Finding[],
+	ruleFindings: RuleFinding[], 
 }
 
 type LogFullResponse = {

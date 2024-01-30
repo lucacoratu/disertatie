@@ -57,15 +57,17 @@ type Finding struct {
 // ==========================RULE FINDINGS===============================
 // Structure that will hold information about the rule finding
 type RuleFindingData struct {
-	RuleId          string `json:"ruleId"`          //The rule id specified on the agent rule
-	RuleName        string `json:"ruleName"`        //The name of the rule specified on the agent
-	RuleDescription string `json:"ruleDescription"` //The description of the rule
-	Line            int64  `json:"line"`            //The line from the request where the finding is located
-	LineIndex       int64  `json:"lineIndex"`       //The offset from the start of the line
-	Length          int64  `json:"length"`          //The length of the finding string
-	MatchedString   string `json:"matchedString"`   //The string on which the validator matched
-	Classification  string `json:"classification"`  //The classification of the finding based on the string specified in the rule file
-	Severity        int64  `json:"severity"`        //The severity of the finding
+	RuleId             string `json:"ruleId"`             //The rule id specified on the agent rule
+	RuleName           string `json:"ruleName"`           //The name of the rule specified on the agent
+	RuleDescription    string `json:"ruleDescription"`    //The description of the rule
+	Line               int64  `json:"line"`               //The line from the request where the finding is located
+	LineIndex          int64  `json:"lineIndex"`          //The offset from the start of the line
+	Length             int64  `json:"length"`             //The length of the finding string
+	MatchedString      string `json:"matchedString"`      //The string on which the rule matched
+	MatchedBodyHash    string `json:"matchedBodyHash"`    //The hash of the body which matched
+	MatchedBodyHashAlg string `json:"matchedBodyHashAlg"` //The algorithm used for hashing the body
+	Classification     string `json:"classification"`     //The classification of the finding based on the string specified in the rule file
+	Severity           int64  `json:"severity"`           //The severity of the finding
 }
 
 // Rule findings found by agent, one for request, one for response

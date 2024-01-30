@@ -15,4 +15,5 @@ type IConnection interface {
 	InsertLog(logData data.LogData) (bool, error)
 	GetLog(uuid string) (data.LogDataDatabase, error)
 	GetLogFindings(log_uuid string) ([]data.FindingDatabase, error)
+	GetLogRuleFindings(log_uuid string) ([]data.RuleFindingDatabase, error)
 }

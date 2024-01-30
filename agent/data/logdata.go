@@ -7,13 +7,14 @@ import (
 
 // This structure holds the log data that is sent to the api
 type LogData struct {
-	Id        string    `json:"id"`        //The UUID of the log from the database
-	AgentId   string    `json:"agentId"`   //The UUID of the agent that collected the log data
-	RemoteIP  string    `json:"remoteIp"`  //The IP address of the sender of the request
-	Timestamp int64     `json:"timestamp"` //Timestamp when the request was received
-	Request   string    `json:"request"`   //The request base64 encoded
-	Response  string    `json:"response"`  // The response base64 encoded
-	Findings  []Finding `json:"findings"`  //A list of findings
+	//Id           string        `json:"id"`           //The UUID of the log from the database
+	AgentId      string        `json:"agentId"`      //The UUID of the agent that collected the log data
+	RemoteIP     string        `json:"remoteIp"`     //The IP address of the sender of the request
+	Timestamp    int64         `json:"timestamp"`    //Timestamp when the request was received
+	Request      string        `json:"request"`      //The request base64 encoded
+	Response     string        `json:"response"`     // The response base64 encoded
+	Findings     []Finding     `json:"findings"`     //A list of findings
+	RuleFindings []RuleFinding `json:"ruleFindings"` //The list of rule findings
 }
 
 // Convert json data to LogData structure

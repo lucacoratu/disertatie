@@ -26,7 +26,7 @@ const FindingCard: FC<FindingCardProps> = ({findings, findingsClassificationStri
             {/* Request findings div*/}
             <div className="flex flex-col gap-1 min-w-[450px] grow w-1/3 p-4 rounded dark:bg-darksurface-100">
                 <div>
-                    Request findings
+                    <h2 className="text-xl">Request findings</h2>
                 </div>
                 <div>
                     {requestFindings.map((finding) => {
@@ -39,7 +39,7 @@ const FindingCard: FC<FindingCardProps> = ({findings, findingsClassificationStri
             {/* Response findings div */}
             <div className="flex flex-col gap-1 min-w-[450px] grow w-1/3 p-4 rounded dark:bg-darksurface-100">
                 <div>
-                    Response findings
+                    <h2 className="text-xl">Response findings</h2>
                 </div>
                 <div>
                     {responseFindings.map((finding) => {

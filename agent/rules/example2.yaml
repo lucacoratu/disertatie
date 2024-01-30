@@ -1,8 +1,8 @@
-id: <Unique_ID>
+id: Parameters rule
 
 info:
-  name: Some rule name
-  description: This rule matches some string in the request
+  name: Parameters rule
+  description: This rule matches some string in the request parameters
   severity: low
   classification: lfi
 
@@ -12,12 +12,14 @@ request:
     regex: 
   headers:
     - name: User-Agent 
-      regex:
-    - name: User-Agent 
-      regex:
+      match: python-requests
+  params:
+    - name: q
+      match: test
   body:
-    match:
-    regex: 
+    - match:
+      regex:
+      sha256sum: 5eac52ec8457e6c7d41d1a716d5350f0bab78314f233788f2cac6a930dbad671 
 
 response:
   code: 
@@ -28,5 +30,5 @@ response:
     - name: User-Agent 
       regex:
   body:
-    match:
-    regex: 
+    - match:
+      regex: 

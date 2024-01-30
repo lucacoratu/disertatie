@@ -1,5 +1,6 @@
 import { constants } from "@/app/constants";
 import FindingCard from "@/components/FindingsCard";
+import RuleFindingCard from "@/components/RuleFindingCard";
 import HTTPHighlighter from "@/components/HTTPHighlighter";
 
 async function GetLogFull(logid: string) : Promise<LogFull> {
@@ -44,6 +45,7 @@ export default async function LogDetails({ params }: { params: { logid: string }
         <>
             <HTTPHighlighter log={fullLog}/>
             <FindingCard findings={fullLog.findings} findingsClassificationString={findingsClassficationString}/>
+            <RuleFindingCard findings={fullLog.ruleFindings}/>
         </>
     )
 }

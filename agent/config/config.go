@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/lucacoratu/disertatie/agent/utils"
@@ -12,20 +13,37 @@ import (
 
 // Structure that will hold the configuration parameters of the proxy
 type Configuration struct {
-	ListeningProtocol      string `json:"protocol" validate:"required"`                               //The protocol the agent uses to communicate to users
-	ListeningAddress       string `json:"address" validate:"required,ipv4"`                           //Address to listen on (127.0.0.1, 0.0.0.0, etc.)
-	ListeningPort          string `json:"port" validate:"required,number,gt=0,lt=65536"`              //Port to listen on
-	ForbiddenPagePath      string `json:"forbiddenPagePath" validate:"required"`                      //Forbidden page location
-	BlacklistUserAgentPath string `json:"blacklistUserAgentPath" validate:"required"`                 //Path to the wordlist of banned User-Agents
-	ForwardServerProtocol  string `json:"forwardServerProtocol" validate:"required"`                  //Protocol used when forwarding request to webserver
-	ForwardServerAddress   string `json:"forwardServerAddress" validate:"required,ipv4"`              //Address of the webserver to send the request to
-	ForwardServerPort      string `json:"forwardServerPort" validate:"required,number,gt=0,lt=65536"` //Port to forward the request to
-	APIProtocol            string `json:"apiProtocol"`                                                //API protocol
-	APIIpAddress           string `json:"apiIpAddress"`                                               //API ip address
-	APIPort                string `json:"apiPort"`                                                    //API port
-	UUID                   string `json:"uuid"`                                                       //The UUID of the agent, received after registration to the API
-	RulesDirectory         string `json:"rulesDirectory"`                                             //The directory where rules can be found
+	ListeningProtocol      string `json:"protocol" validate:"required"`                                             //The protocol the agent uses to communicate to users
+	ListeningAddress       string `json:"address" validate:"required,ipv4"`                                         //Address to listen on (127.0.0.1, 0.0.0.0, etc.)
+	ListeningPort          string `json:"port" validate:"required,number,gt=0,lt=65536"`                            //Port to listen on
+	ForbiddenPagePath      string `json:"forbiddenPagePath" validate:"required"`                                    //Forbidden page location
+	BlacklistUserAgentPath string `json:"blacklistUserAgentPath" validate:"required"`                               //Path to the wordlist of banned User-Agents
+	ForwardServerProtocol  string `json:"forwardServerProtocol" validate:"required"`                                //Protocol used when forwarding request to webserver
+	ForwardServerAddress   string `json:"forwardServerAddress" validate:"required,ipv4"`                            //Address of the webserver to send the request to
+	ForwardServerPort      string `json:"forwardServerPort" validate:"required,number,gt=0,lt=65536"`               //Port to forward the request to
+	APIProtocol            string `json:"apiProtocol"`                                                              //API protocol
+	APIIpAddress           string `json:"apiIpAddress"`                                                             //API ip address
+	APIPort                string `json:"apiPort"`                                                                  //API port
+	UUID                   string `json:"uuid"`                                                                     //The UUID of the agent, received after registration to the API
+	RulesDirectory         string `json:"rulesDirectory"`                                                           //The directory where rules can be found
+	OperationMode          string `json:"operationMode" validate:"required,oneof_insensitive=testing waf adaptive"` //The mode the agent will operate on (can be testing, waf, adaptive) - case insensitive
 	//Mode of operation
+}
+
+// Validate function for one of (case insensitive)
+// @param fl - the field level
+// Returns true if the field value matches one of the specified values in the struct tag else false
+func validateOneOfInsensitive(fl validator.FieldLevel) bool {
+	fieldValue := fl.Field().String()
+	allowedValues := strings.Split(fl.Param(), " ")
+
+	for _, allowedValue := range allowedValues {
+		if strings.EqualFold(fieldValue, allowedValue) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Load the configuration from a file
@@ -48,6 +66,7 @@ func (conf *Configuration) LoadConfigurationFromFile(filePath string) error {
 	}
 	//Initialize the validator of the json data
 	validate := validator.New(validator.WithRequiredStructEnabled())
+	validate.RegisterValidation("oneof_insensitive", validateOneOfInsensitive)
 	//Validate the fields of the struct
 	err = validate.Struct(conf)
 	return err
