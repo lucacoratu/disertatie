@@ -85,6 +85,8 @@ func (api *APIServer) Init() error {
 	apiGetSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/logs-ipaddresses-metrics", logsHandler.GetIPAddressesMetrics)
 	//Create the route that will send a specific log
 	apiGetSubrouter.HandleFunc("/logs/{loguuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}", logsHandler.GetLog)
+	//Create the route that will send the exploit code of a log
+	apiGetSubrouter.HandleFunc("/logs/{loguuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/exploit", logsHandler.GetLogExploitPythonCode)
 	//Create the route that will send the string format of all findings
 	apiGetSubrouter.HandleFunc("/findings/string", logsHandler.GetFindingsClassificationString)
 	//Create the route that will send all the registered machines

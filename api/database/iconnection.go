@@ -14,6 +14,8 @@ type IConnection interface {
 	GetAgentLogsShort(agent_id string) ([]data.LogDataShort, error)
 	InsertLog(logData data.LogData) (bool, error)
 	GetLog(uuid string) (data.LogDataDatabase, error)
+	GetLogRequest(uuid string) (string, error)
 	GetLogFindings(log_uuid string) ([]data.FindingDatabase, error)
 	GetLogRuleFindings(log_uuid string) ([]data.RuleFindingDatabase, error)
+	CheckExploitCodeExists(log_uuid string) (bool, error)
 }

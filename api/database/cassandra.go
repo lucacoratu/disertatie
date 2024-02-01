@@ -32,6 +32,7 @@ func (cassandra *CassandraConnection) createTables() error {
 	//_ = cassandra.session.Query("DROP TABLE api.logs").Exec()
 	//_ = cassandra.session.Query("DROP TABLE api.findings").Exec()
 	// _ = cassandra.session.Query("DROP TABLE api.rulefindings").Exec()
+	// _ = cassandra.session.Query("DROP TABLE api.exploitcodes").Exec()
 
 	//Create the machines table
 	err := cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".machines (id TEXT PRIMARY KEY, os TEXT, hostname TEXT, ip_addresses TEXT)").Exec()
@@ -63,6 +64,13 @@ func (cassandra *CassandraConnection) createTables() error {
 
 	//Create the rule findings table which will hold all the rule based findings of a log
 	err = cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".rulefindings (id TEXT, log_id TEXT, rule_id TEXT, rule_name TEXT, rule_description TEXT, line INT, line_index INT, length INT, matched_string TEXT, matched_hash TEXT, matched_hash_alg TEXT, classification TEXT, severity INT, finding_type INT, PRIMARY KEY (id, log_id))").Exec()
+	//Check if an error occured when creating the rules findings table
+	if err != nil {
+		return errors.New("cannot create rules findings table, " + err.Error())
+	}
+
+	//Create the exploitcodes table which will hold the exploit code of a log
+	err = cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".exploitcodes (id TEXT, log_id TEXT, exploit_code TEXT, PRIMARY KEY (id, log_id))").Exec()
 	//Check if an error occured when creating the rules findings table
 	if err != nil {
 		return errors.New("cannot create rules findings table, " + err.Error())
@@ -529,4 +537,35 @@ func (cassandra *CassandraConnection) GetLog(uuid string) (data.LogDataDatabase,
 		log.Response = b64.StdEncoding.EncodeToString([]byte(log.Response))
 	}
 	return log, nil
+}
+
+// Get log request
+func (cassandra *CassandraConnection) GetLogRequest(uuid string) (string, error) {
+	query := cassandra.session.Query("SELECT raw_request FROM "+cassandra.configuration.CassandraKeyspace+".logs WHERE id = ?", uuid)
+	var rawRequest string = ""
+	result := query.Iter().Scan(&rawRequest)
+	if !result {
+		return "", errors.New("could not get the raw request of the log")
+	}
+	// rawReq, err := b64.StdEncoding.DecodeString(rawRequest)
+	// //Check if an error occured when decoding the raw request
+	// if err != nil {
+	// 	return "", errors.New("could not decode raw request from base64")
+	// }
+	return rawRequest, nil
+}
+
+// Check if exploit code exists for a log
+func (cassandra *CassandraConnection) CheckExploitCodeExists(log_uuid string) (bool, error) {
+	//Prepare the query which will get the exploit codes number for a log
+	query := cassandra.session.Query("SELECT COUNT(id) FROM "+cassandra.configuration.CassandraKeyspace+".exploitcodes WHERE log_id = ? ALLOW FILTERING", log_uuid)
+	var countLogExploits int64 = 0
+	//Get the result
+	result := query.Iter().Scan(&countLogExploits)
+	//Check if an error occured
+	if !result {
+		return false, errors.New("cannot get the number of exploit codes for log " + log_uuid)
+	}
+	//Return the result
+	return countLogExploits > 0, nil
 }

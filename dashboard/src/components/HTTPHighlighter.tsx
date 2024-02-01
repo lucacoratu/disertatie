@@ -58,8 +58,8 @@ const HTTPHighlighter: FC<HTTPHighlighterProps> = ({log}): JSX.Element => {
     const responseBody = responseValues[1];
 
     return (
-        <div className="flex flex-wrap flex-row gap-5 justify-center">
-            <div className="flex flex-col gap-0 h-[500px] min-w-[450px] grow w-1/3 p-4 rounded dark:bg-darksurface-100">
+        <div className="flex flex-wrap flex-row gap-3 justify-center">
+            <div className="flex flex-col gap-0 h-[500px] min-w-[450px] grow w-1/3 p-4 rounded dark:bg-darksurface-100 dark:border-darksurface-400 border-2 dark:bg-darksurface-100 b-2 rounded-xl">
                 <div className="flex flex-row items-center justify-between gap-10">
                     <h2 className="text-xl">Request</h2>
                     <CopyCliboardButton text={logRequestRaw} toastText="Request copied to clipboard" tooltipText="Copy to clipboard">
@@ -79,7 +79,7 @@ const HTTPHighlighter: FC<HTTPHighlighterProps> = ({log}): JSX.Element => {
                     }
                 </ScrollArea>
             </div>
-            <div className="flex flex-col gap-0 h-[500px] min-w-[450px] grow w-1/3 p-4 rounded dark:bg-darksurface-100">
+            <div className="flex flex-col gap-0 h-[500px] min-w-[450px] grow w-1/3 p-4 rounded dark:bg-darksurface-100 dark:border-darksurface-400 border-2 dark:bg-darksurface-100 b-2 rounded-xl">
                 <div className="flex flex-row items-center justify-between gap-10">
                     <h2 className="text-xl">Response</h2>
                     <CopyCliboardButton text={logResponseRaw} toastText="Response copied to clipboard" tooltipText="Copy to clipboard" >

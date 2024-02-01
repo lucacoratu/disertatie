@@ -12,6 +12,9 @@ import (
 	"github.com/lucacoratu/disertatie/api/data"
 	"github.com/lucacoratu/disertatie/api/database"
 	"github.com/lucacoratu/disertatie/api/logging"
+	"github.com/lucacoratu/disertatie/api/utils"
+
+	b64 "encoding/base64"
 
 	response "github.com/lucacoratu/disertatie/api/data/response"
 )
@@ -379,6 +382,63 @@ func (lh *LogsHandler) GetLog(rw http.ResponseWriter, r *http.Request) {
 	resp := response.LogGetResponse{Log: log}
 	rw.WriteHeader(http.StatusOK)
 	resp.ToJSON(rw)
+}
+
+// Handler for getting the exploit code of the log
+func (lh *LogsHandler) GetLogExploitPythonCode(rw http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	//Get the log id from the URL
+	log_uuid := vars["loguuid"]
+	if log_uuid == "" {
+		//Send an error message
+		rw.WriteHeader(http.StatusBadRequest)
+		apiErr := data.APIError{Code: data.REQUEST_ERROR, Message: "log uuid missing"}
+		apiErr.ToJSON(rw)
+		return
+	}
+
+	//Check if the exploit code exists for the log in the database
+	exploitExists, err := lh.dbConnection.CheckExploitCodeExists(log_uuid)
+	if err != nil {
+		//Send an error message
+		rw.WriteHeader(http.StatusBadRequest)
+		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "could not retrieve the number of exploit codes from database"}
+		apiErr.ToJSON(rw)
+		return
+	}
+
+	//If the exploit code does not exist then create it
+	if !exploitExists {
+		//Get the request from the database
+		raw_request, err := lh.dbConnection.GetLogRequest(log_uuid)
+		if err != nil {
+			//Send an error message
+			rw.WriteHeader(http.StatusBadRequest)
+			apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "could not retrieve the log request from database, " + err.Error()}
+			apiErr.ToJSON(rw)
+			return
+		}
+		exploitCode, err := utils.CreatePythonExploitCode(raw_request)
+		if err != nil {
+			//Send an error message
+			rw.WriteHeader(http.StatusBadRequest)
+			apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "could not create the exploit code, " + err.Error()}
+			apiErr.ToJSON(rw)
+			return
+		}
+
+		//lh.logger.Debug(exploitCode)
+		encExploitCode := b64.StdEncoding.EncodeToString([]byte(exploitCode))
+		exploitResponse := response.ExploitResponse{Exploit: encExploitCode}
+
+		rw.WriteHeader(http.StatusOK)
+		exploitResponse.ToJSON(rw)
+	}
+	// //Save the newly created exploit code to the database
+
+	// if exploitExists {
+
+	// }
 }
 
 // Handler for getting finding string
