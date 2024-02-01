@@ -2,7 +2,11 @@
 Master's degree final project - Adaptive Honeypot System
 
 # Architecture
-The honeypot system consists of 4 main components: an agent which will be deployed on the target machine, an API which will handle all the data processing and database interaction, a dashboard which will display the data in a human friendly manner and a Apache Cassandra cluster which will store all the data provided by the agents. 
+The honeypot system consists of 4 main components: 
+- an agent which will be deployed on the target machine
+- an API which will handle all the data processing and database interaction
+- a dashboard which will display the data in a human friendly manner 
+- an Apache Cassandra cluster which will store all the data provided by the agents. 
 
 # Dependencies
 The honeypot system is built using Golang and NextJS
