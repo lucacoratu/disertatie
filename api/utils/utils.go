@@ -16,9 +16,9 @@ import (
 // Check if the filepath is valid and exists on the disk
 func CheckFileExists(filePath string) bool {
 	//Get the current directory
-	pwd, _ := os.Getwd()
+	//pwd, _ := os.Getwd()
 	//Check if the file exists
-	_, err := os.Stat(pwd + "\\" + filePath)
+	_, err := os.Stat(filePath)
 	//Return the result
 	return !os.IsNotExist(err)
 }
@@ -26,9 +26,9 @@ func CheckFileExists(filePath string) bool {
 // Read all lines in the file
 func ReadLinesFromFile(filePath string) ([]string, error) {
 	//Get the current directory
-	pwd, _ := os.Getwd()
+	//pwd, _ := os.Getwd()
 	//Check if the file exists
-	exists := CheckFileExists(pwd + "\\" + filePath)
+	exists := CheckFileExists(filePath)
 	if !exists {
 		return nil, errors.New("file does not exist")
 	}
@@ -68,7 +68,7 @@ func (er *ExploitRequest) ToJSON(w io.Writer) error {
 }
 
 // Create python exploit code from request
-func CreatePythonExploitCode(rawRequest string) (string, error) {
+func CreatePythonExploitCode(rawRequest string, exploitTemplatePath string) (string, error) {
 	ioReader := bytes.NewReader([]byte(rawRequest))
 	reader := bufio.NewReader(ioReader)
 	req, err := http.ReadRequest(reader)
@@ -114,7 +114,7 @@ func CreatePythonExploitCode(rawRequest string) (string, error) {
 	req.Body = io.NopCloser(bytes.NewReader(bodyData))
 	exploitReq.Body = string(bodyData)
 
-	tmpl, err := template.New("exploit.tmpl").Funcs(funcMap).ParseFiles("templates\\exploit.tmpl")
+	tmpl, err := template.New("exploit.tmpl").Funcs(funcMap).ParseFiles(exploitTemplatePath)
 	if err != nil {
 		fmt.Println(err.Error())
 		return "", err

@@ -418,7 +418,7 @@ func (lh *LogsHandler) GetLogExploitPythonCode(rw http.ResponseWriter, r *http.R
 			apiErr.ToJSON(rw)
 			return
 		}
-		exploitCode, err := utils.CreatePythonExploitCode(raw_request)
+		exploitCode, err := utils.CreatePythonExploitCode(raw_request, lh.configuration.ExploitTemplatePath)
 		if err != nil {
 			//Send an error message
 			rw.WriteHeader(http.StatusBadRequest)

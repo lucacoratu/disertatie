@@ -15,7 +15,7 @@ const OsCard: FC<OSProps> = ({os}): JSX.Element => {
         //If the os is linux
         return (
             <div className="min-w-9 p-1 b-1 rounded-lg flex items-center bg-orange-600">
-                <img className='size-3' src='/icons8-linux-30.png'>
+                <img className='machine-os-image' src='/icons8-linux-30.png'>
                 </img>
             </div>
         );
@@ -23,7 +23,7 @@ const OsCard: FC<OSProps> = ({os}): JSX.Element => {
 
     return (
         <div className="min-w-9 p-1 b-1 rounded-lg flex items-center bg-orange-600">
-            <img className='size-3' src='/icons8-linux-30.png'>
+            <img className='machine-os-image' src='/icons8-linux-30.png'>
             </img>
         </div>
     )

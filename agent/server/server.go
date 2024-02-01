@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"flag"
 	"net/http"
 	"os"
 	"os/signal"
@@ -26,6 +27,7 @@ type AgentServer struct {
 	configuration config.Configuration
 	checkers      []code.IValidator
 	rules         []rules.Rule
+	configFile    string
 }
 
 // Initialize the proxy http server based on the configuration file
@@ -34,8 +36,13 @@ func (agent *AgentServer) Init() error {
 	agent.logger = logging.NewDefaultDebugLogger()
 	agent.logger.Info("Logger initialized")
 
+	//Define command line arguments of the agent
+	flag.StringVar(&agent.configFile, "config", "", "The path to the configuration file")
+	//Parse command line arguments
+	flag.Parse()
+
 	//Load the configuration from file
-	err := agent.configuration.LoadConfigurationFromFile(".\\agent.conf")
+	err := agent.configuration.LoadConfigurationFromFile(agent.configFile)
 	if err != nil {
 		agent.logger.Fatal("Error occured when loading the config from file,", err.Error())
 		return err
@@ -94,7 +101,7 @@ func (agent *AgentServer) Init() error {
 		agent.logger.Debug("UUID received", uuid)
 		//Save the UUID into the configuration structure and write the config JSON to disk
 		agent.configuration.UUID = uuid
-		file, err := os.OpenFile(".\\agent.conf", os.O_WRONLY|os.O_TRUNC, 0644)
+		file, err := os.OpenFile(agent.configFile, os.O_WRONLY|os.O_TRUNC, 0644)
 		//Check if an error occured when trying to open the configuration file to update it
 		if err != nil {
 			agent.logger.Error("Could not save the configuration file to disk, failed to open configuration file for writing, UUID not saved", err.Error())

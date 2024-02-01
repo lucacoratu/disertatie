@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"time"
+	"flag"
 
 	"github.com/gorilla/mux"
 	"github.com/lucacoratu/disertatie/api/config"
@@ -19,6 +20,7 @@ type APIServer struct {
 	logger        logging.ILogger
 	configuration config.Configuration
 	dbConnection  database.IConnection
+	configFile string
 }
 
 func (api *APIServer) LoggingMiddleware(next http.Handler) http.Handler {
@@ -37,8 +39,13 @@ func (api *APIServer) Init() error {
 	api.logger = logging.NewDefaultDebugLogger()
 	api.logger.Debug("Logger initialized")
 
+	//Define command line arguments of the agent
+	flag.StringVar(&api.configFile, "config", "", "The path to the configuration file")
+	//Parse command line arguments
+	flag.Parse()
+
 	//Load the configuration from file
-	err := api.configuration.LoadConfigurationFromFile(".\\api.conf")
+	err := api.configuration.LoadConfigurationFromFile(api.configFile)
 	if err != nil {
 		api.logger.Fatal("Error occured when loading the config from file,", err.Error())
 		return err

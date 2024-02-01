@@ -29,8 +29,8 @@ func NewCassandraConnection(logger logging.ILogger, configuration config.Configu
 func (cassandra *CassandraConnection) createTables() error {
 	// _ = cassandra.session.Query("DROP TABLE api.machines").Exec()
 	// _ = cassandra.session.Query("DROP TABLE api.agents").Exec()
-	//_ = cassandra.session.Query("DROP TABLE api.logs").Exec()
-	//_ = cassandra.session.Query("DROP TABLE api.findings").Exec()
+	// _ = cassandra.session.Query("DROP TABLE api.logs").Exec()
+	// _ = cassandra.session.Query("DROP TABLE api.findings").Exec()
 	// _ = cassandra.session.Query("DROP TABLE api.rulefindings").Exec()
 	// _ = cassandra.session.Query("DROP TABLE api.exploitcodes").Exec()
 

@@ -12,10 +12,11 @@ import (
 
 // Structure that will hold the configuration parameters of the proxy
 type Configuration struct {
-	ListeningAddress  string   `json:"address" validate:"required,ipv4"`              //Address to listen on (127.0.0.1, 0.0.0.0, etc.)
-	ListeningPort     string   `json:"port" validate:"required,number,gt=0,lt=65536"` //Port to listen on
-	CassandraNodes    []string `json:"cassandraNodes" validate:"required"`            //Cassandra nodes
-	CassandraKeyspace string   `json:"cassandraKeyspace" validate:"required"`         //Cassandra database (keyspace)
+	ListeningAddress    string   `json:"address" validate:"required,ipv4"`              //Address to listen on (127.0.0.1, 0.0.0.0, etc.)
+	ListeningPort       string   `json:"port" validate:"required,number,gt=0,lt=65536"` //Port to listen on
+	CassandraNodes      []string `json:"cassandraNodes" validate:"required"`            //Cassandra nodes
+	CassandraKeyspace   string   `json:"cassandraKeyspace" validate:"required"`         //Cassandra database (keyspace)
+	ExploitTemplatePath string   `json:"exploitTemplatePath" validate:"required"`       //The template used for generating the exploit
 }
 
 // Load the configuration from a file

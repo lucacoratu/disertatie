@@ -18,9 +18,9 @@ import (
 // Check if the filepath is valid and exists on the disk
 func CheckFileExists(filePath string) bool {
 	//Get the current directory
-	pwd, _ := os.Getwd()
+	//pwd, _ := os.Getwd()
 	//Check if the file exists
-	_, err := os.Stat(pwd + "\\" + filePath)
+	_, err := os.Stat(filePath)
 	//Return the result
 	return !os.IsNotExist(err)
 }
@@ -34,9 +34,9 @@ func ReadAllDataFromFile(filePath string) (string, error) {
 // Read all lines in the file
 func ReadLinesFromFile(filePath string) ([]string, error) {
 	//Get the current directory
-	pwd, _ := os.Getwd()
+	//pwd, _ := os.Getwd()
 	//Check if the file exists
-	exists := CheckFileExists(pwd + "\\" + filePath)
+	exists := CheckFileExists(filePath)
 	if !exists {
 		return nil, errors.New("file does not exist")
 	}
