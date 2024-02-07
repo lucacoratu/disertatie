@@ -20,8 +20,8 @@ import {
 export type LogColumn = {
     id: string,
     agentId: string,
-    remoteIp: string,
-    requestMethod: string,
+    remoteip: string,
+    requestmethod: string,
     url: string,
     response: string,
     timestamp: string,
@@ -31,7 +31,7 @@ export type LogColumn = {
 
 export const columns: ColumnDef<LogColumn>[] = [
     {
-        accessorKey: "remoteIp",
+        accessorKey: "remoteip",
         header: ({ column }) => {
             return (
               <Button
@@ -45,7 +45,7 @@ export const columns: ColumnDef<LogColumn>[] = [
           },
     },
     {
-        accessorKey: "requestMethod",
+        accessorKey: "requestmethod",
         header: "Request Method"
     },
     {
@@ -106,7 +106,9 @@ export const columns: ColumnDef<LogColumn>[] = [
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="dark:hover:bg-darksurface-400">
+                  <Link href={`/logs/${encodeURIComponent(log.id)}/exploit`}>
                     View Exploit Code
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="dark:bg-darksurface-400" />
                 <DropdownMenuItem className="dark:hover:bg-darksurface-400">Copy Request</DropdownMenuItem>

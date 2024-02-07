@@ -290,6 +290,17 @@ func (cassandra *CassandraConnection) GetAgents() ([]data.Agent, error) {
 	return agents, nil
 }
 
+// Get a single agent from the database
+func (cassandra *CassandraConnection) GetAgent(id string) (data.Agent, error) {
+	query := cassandra.session.Query("SELECT id, name, protocol, ip_address, port, webserver_protocol, webserver_ip, webserver_port, machine_id FROM "+cassandra.configuration.CassandraKeyspace+".agents WHERE id = ?", id)
+	agent := data.Agent{}
+	res := query.Iter().Scan(&agent.ID, &agent.Name, &agent.ListeningProtocol, &agent.ListeningAddress, &agent.ListeningPort, &agent.ForwardServerProtocol, &agent.ForwardServerAddress, &agent.ForwardServerPort, &agent.MachineId)
+	if !res {
+		return agent, errors.New("agent does not exist")
+	}
+	return agent, nil
+}
+
 // Get number of agents deployed on machine based on id
 func (cassandra *CassandraConnection) GetNumberAgentsDeployed(machineId string) (int64, error) {
 	//Prepare the query which will get the number of agents deployed on the machine
@@ -338,6 +349,13 @@ func (cassandra *CassandraConnection) GetMachine(id string) (data.MachineInforma
 	//Convert the string of ip_addresses to a list
 	machine.IPAddresses = strings.Split(ip_addreses, " ")
 	return machine, nil
+}
+
+// Delete a specific machine based on the id
+func (cassandra *CassandraConnection) DeleteMachine(id string) error {
+	//Prepare the query to delete the machine
+	err := cassandra.session.Query("DELETE FROM "+cassandra.configuration.CassandraKeyspace+".machines WHERE id = ?", id).Exec()
+	return err
 }
 
 // Get number of request findings of a log

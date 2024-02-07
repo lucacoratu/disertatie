@@ -95,13 +95,9 @@ func CreatePythonExploitCode(rawRequest string, exploitTemplatePath string) (str
 	if req.TLS != nil {
 		protocol = "https"
 	}
-	exploitReq.URL = protocol + "://" + req.Host + req.URL.RawPath
+
+	exploitReq.URL = protocol + "://" + req.Host + req.URL.Path
 	exploitReq.GetParams = req.URL.Query()
-	err = req.ParseForm()
-	if err != nil {
-		return "", err
-	}
-	exploitReq.PostParams = req.PostForm
 
 	//Read the data from the body
 	bodyData, err := io.ReadAll(req.Body)
@@ -113,6 +109,29 @@ func CreatePythonExploitCode(rawRequest string, exploitTemplatePath string) (str
 	//Reassign the body so other function can read the data
 	req.Body = io.NopCloser(bytes.NewReader(bodyData))
 	exploitReq.Body = string(bodyData)
+
+	err = req.ParseForm()
+	if err != nil {
+		exploitReq.PostParams = nil
+		//return "", err
+	} else {
+		exploitReq.PostParams = req.PostForm
+	}
+
+	fmt.Println(exploitReq.PostParams)
+
+	// //Read the data from the body
+	// bodyData, err := io.ReadAll(req.Body)
+	// //Check if the body could have been read
+	// if err != nil {
+	// 	return rawRequest, errors.New("could not read the request body")
+	// }
+
+	// //Reassign the body so other function can read the data
+	// req.Body = io.NopCloser(bytes.NewReader(bodyData))
+	// exploitReq.Body = string(bodyData)
+
+	// fmt.Println(exploitReq.Body)
 
 	tmpl, err := template.New("exploit.tmpl").Funcs(funcMap).ParseFiles(exploitTemplatePath)
 	if err != nil {

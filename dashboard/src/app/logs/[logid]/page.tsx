@@ -40,7 +40,7 @@ async function getLogExploit(log_id: string): Promise<Exploit> {
 	const res = await fetch(URL, {next: {revalidate: 600}});
     //Check if an error occured
 	if(!res.ok) {
-		throw new Error("could not load logs");
+		throw new Error("could not load log exploit");
 	}
     const exploit: Exploit = await res.json();
     return exploit;

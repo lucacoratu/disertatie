@@ -259,8 +259,15 @@ func (rl *RuleRunner) RunRulesOnRequest(r *http.Request) ([]*data.RuleFindingDat
 		allMatches = append(allMatches, matches...)
 
 		//Check the POST parameters
+		bodyData, err := io.ReadAll(r.Body)
+		if err != nil {
+			rl.logger.Error("Error occured when reading the body contents from the request in order to parse the form", err.Error())
+		} else {
+			//Reassign the body so other function can read the data
+			r.Body = io.NopCloser(bytes.NewReader(bodyData))
+		}
 		//Parse the form
-		err := r.ParseForm()
+		err = r.ParseForm()
 		//Check if an error occured
 		if err != nil {
 			rl.logger.Error("Error occured when parsing the request form when running rules on request", err.Error())
@@ -270,12 +277,15 @@ func (rl *RuleRunner) RunRulesOnRequest(r *http.Request) ([]*data.RuleFindingDat
 			allMatches = append(allMatches, matches...)
 		}
 
+		//Reasign the body after parsing the form
+		r.Body = io.NopCloser(bytes.NewReader(bodyData))
+
 		//Append matches to the list of findings
 		for _, match := range allMatches {
 			findings = append(findings, &data.RuleFindingData{RuleId: rule.Id, RuleName: rule.Info.Name, RuleDescription: rule.Info.Description, Classification: rule.Info.Classification, Severity: ConvertSeverityStringToInteger(rule.Info.Severity), MatchedString: match, Length: int64(len(match))})
 		}
 		//Check the body of the request
-		bodyData, err := io.ReadAll(r.Body)
+		bodyData, err = io.ReadAll(r.Body)
 		//Check if an error occured when getting the body data
 		if err != nil {
 			rl.logger.Error("Error occured when reading the body contents from the request", err.Error())

@@ -2,11 +2,11 @@ package server
 
 import (
 	"context"
+	"flag"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
-	"flag"
 
 	"github.com/gorilla/mux"
 	"github.com/lucacoratu/disertatie/api/config"
@@ -20,7 +20,7 @@ type APIServer struct {
 	logger        logging.ILogger
 	configuration config.Configuration
 	dbConnection  database.IConnection
-	configFile string
+	configFile    string
 }
 
 func (api *APIServer) LoggingMiddleware(next http.Handler) http.Handler {
@@ -77,9 +77,12 @@ func (api *APIServer) Init() error {
 	//Create the subrouter for the API path
 	apiGetSubrouter := r.PathPrefix("/api/v1/").Methods("GET").Subrouter()
 	apiPostSubrouter := r.PathPrefix("/api/v1/").Methods("POST").Subrouter()
+	apiDeleteSubrouter := r.PathPrefix("/api/v1/").Methods("DELETE").Subrouter()
 
 	//Create the route that will send all the registered agents
 	apiGetSubrouter.HandleFunc("/agents", agentsHandler.GetAgents)
+	//Create the route that will send a single agent details
+	apiGetSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}", agentsHandler.GetAgent)
 	//Create the route that will send the logs of an agent
 	apiGetSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/logs", logsHandler.GetLogsShort)
 	//Create the route that will send the logs methods metrics
@@ -103,8 +106,13 @@ func (api *APIServer) Init() error {
 	apiPostSubrouter.HandleFunc("/registeragent", agentsHandler.RegisterAgent)
 	//Create route to receive logs from agents
 	apiPostSubrouter.HandleFunc("/addlog", agentsHandler.AddLog)
+	//Create the route to register a new machine
+	apiPostSubrouter.HandleFunc("/machines", machinesHandler.RegisterMachine)
 
-	//Create a healthcheck route
+	//Create the route to delete a machine
+	apiDeleteSubrouter.HandleFunc("/machines/{machineuuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}", machinesHandler.DeleteMachine)
+
+	//Create the healthcheck route
 	apiGetSubrouter.HandleFunc("/healthcheck", healthCheckHandler.HealthCheck)
 
 	api.srv = &http.Server{

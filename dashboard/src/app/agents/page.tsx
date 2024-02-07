@@ -1,7 +1,8 @@
 import AgentCard from "@/components/AgentCard";
 import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react"
-import {constants} from "@/app/constants"
+import { Play } from "lucide-react";
+import {constants} from "@/app/constants";
+import Link from "next/link";
 
 async function getAgents() : Promise<Agent[]> {
     //Create the URL where the data will be fetched from
@@ -24,7 +25,9 @@ export default async function AgentsPage() {
     return (
         <main className="h-full w-full flex flex-col py-2 gap-2 px-2 dark:bg-darksurface-200">
             <Button className="self-end h-8">
-                <Play className="mr-2 h-4 w-4"/>Deploy Agent
+                <Link href={`/agents/deploy`} className="flex flex-row gap-1 items-center">
+                    <Play className="mr-2 h-4 w-4"/>Deploy Agent
+                </Link>
             </Button>
             <div className="flex flex-row gap-2">
                 {agents && agents.map((agent) => (

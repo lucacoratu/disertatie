@@ -47,9 +47,7 @@ func (userAgentVal *UserAgentValidator) ValidateRequest(r *http.Request) ([]data
 			userAgentVal.logger.Info(userAgentVal.name, "found blacklisted User-Agent:", line, "received header:", userAgent)
 			//Find the line number, line index the string appears
 			lineNumber, lineIndex, err := utils.FindFindingDataInRequest(r, line)
-			//userAgentVal.logger.Debug(lineNumber, lineIndex)
-			//utils.FindFindingDataInRequest(r, line)
-			// //Check if an error occured when searching for the string in the request
+			//Check if an error occured when searching for the string in the request
 			if err != nil {
 				userAgentVal.logger.Error("Error occured when searching for bad user agent in request", err.Error())
 				return nil, err

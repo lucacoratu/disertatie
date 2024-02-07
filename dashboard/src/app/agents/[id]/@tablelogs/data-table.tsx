@@ -1,6 +1,24 @@
 "use client"
-
+ 
 import * as React from "react"
+ 
+import { cn } from "@/lib/utils"
+import { Check, ChevronDown } from "lucide-react";
+
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+ 
+
 
 import {
   ColumnDef,
@@ -48,6 +66,30 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
 }
+
+const tableColumns = [
+  {
+    value: "remoteip",
+    label: "Remote IP",
+  },
+  {
+    value: "requestmethod",
+    label: "Request Method",
+  },
+  {
+    value: "url",
+    label: "URL",
+    columnName: "url",
+  },
+  {
+    value: "response",
+    label: "Response",
+  },
+  {
+    value: "timestamp",
+    label: "Timestamp",
+  },
+]
  
 export function DataTable<TData, TValue>({
   columns,
@@ -76,15 +118,59 @@ export function DataTable<TData, TValue>({
     },
   })
  
+  const [open, setOpen] = React.useState(false);
+  const [searchColumn, setSearchColumn] = React.useState("");
 
   return (
     <div>
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-4 gap-1">
+          <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className="w-[200px] justify-between"
+            >
+              {searchColumn
+                ? tableColumns.find((tableColumn) => tableColumn.value === searchColumn)?.label
+                : "Select column..."}
+              <ChevronDown/>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[200px] p-0">
+            <Command>
+              <CommandInput placeholder="Search columns..." className="h-9" />
+              <CommandEmpty>No column found.</CommandEmpty>
+              <CommandGroup>
+                {tableColumns.map((tableColumn) => (
+                  <CommandItem
+                    key={tableColumn.value}
+                    value={tableColumn.value}
+                    onSelect={(currentValue) => {
+                      setSearchColumn(currentValue === searchColumn ? "" : currentValue);
+                      setOpen(false);
+                    }}
+                  >
+                    {tableColumn.label}
+                    <Check
+                      className={cn(
+                        "ml-auto h-4 w-4",
+                        searchColumn === tableColumn.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
+        </Popover>
+
         <Input
-          placeholder="Filter methods..."
-          value={(table.getColumn("requestMethod")?.getFilterValue() as string) ?? ""}
+          placeholder={`Filter ${searchColumn}...`}
+          value={(table.getColumn(searchColumn)?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("requestMethod")?.setFilterValue(event.target.value)
+            table.getColumn(searchColumn)?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
@@ -169,7 +255,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-        <div className="flex items-center justify-end space-x-2 py-4">
+        {/* <div className="flex items-center justify-end space-x-2 py-4">
           <Button
             variant="outline"
             size="sm"
@@ -186,23 +272,17 @@ export function DataTable<TData, TValue>({
           >
             Next
           </Button>
-        </div>
-          {/* <Pagination>
+        </div> */}
+          <Pagination>
             <PaginationContent>
-              <PaginationItem>
                 <PaginationPrevious onClick={() => table.previousPage()} />
-              </PaginationItem>
-              <PaginationItem>
-                <PaginationLink href="#">1</PaginationLink>
-              </PaginationItem>
-              <PaginationItem>
+                {/* {[...Array(table.getPageCount())].map((page) => {
+                    return <PaginationLink href="#">{page}</PaginationLink>;
+                })} */}
                 <PaginationEllipsis />
-              </PaginationItem>
-              <PaginationItem>
                 <PaginationNext onClick={() => table.nextPage()} />
-              </PaginationItem>
             </PaginationContent>
-          </Pagination> */}
+          </Pagination>
       </div>
   )
 }

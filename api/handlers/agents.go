@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/gorilla/mux"
 	"github.com/lucacoratu/disertatie/api/config"
 	"github.com/lucacoratu/disertatie/api/data"
 	request "github.com/lucacoratu/disertatie/api/data/request"
@@ -153,4 +154,33 @@ func (ah *AgentsHandler) GetAgents(rw http.ResponseWriter, r *http.Request) {
 	//Return the agents
 	rw.WriteHeader(http.StatusOK)
 	agResponse.ToJSON(rw)
+}
+
+// Function for getting a single agent
+func (ah *AgentsHandler) GetAgent(rw http.ResponseWriter, r *http.Request) {
+	//Get the machine uuid from mux vars
+	vars := mux.Vars(r)
+	agent_uuid := vars["uuid"]
+	//Check if the agent UUID has been specified
+	if agent_uuid == "" {
+		//Create the custom error message and return to client
+		ah.logger.Error("Error occured when getting an agent details, missing UUID")
+		rw.WriteHeader(http.StatusInternalServerError)
+		retErr := data.APIError{Code: data.REQUEST_ERROR, Message: "missing agent uuid"}
+		retErr.ToJSON(rw)
+		return
+	}
+	//Get the agent details from the database
+	agent, err := ah.dbConnection.GetAgent(agent_uuid)
+	//Check if an error occured when getting the agent from the database
+	if err != nil {
+		ah.logger.Error("Error occured when retrieving the agent from the database", err.Error())
+		rw.WriteHeader(http.StatusInternalServerError)
+		retErr := data.APIError{Code: data.DATABASE_ERROR, Message: err.Error()}
+		retErr.ToJSON(rw)
+		return
+	}
+	//Return the agent back to the client
+	rw.WriteHeader(http.StatusOK)
+	agent.ToJSON(rw)
 }

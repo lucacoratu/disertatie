@@ -8,8 +8,10 @@ type IConnection interface {
 	InsertMachine(os string, hostname string, ip_addresses []string) (string, error)
 	InsertAgent(protocol string, ip_address string, port string, webserver_protocol string, webserver_ip string, webserver_port string, machine_id string) (string, error)
 	GetAgents() ([]data.Agent, error)
+	GetAgent(id string) (data.Agent, error)
 	GetMachines() ([]data.MachineDatabase, error)
 	GetMachine(id string) (data.MachineInformation, error)
+	DeleteMachine(id string) error
 	GetAgentLogs(uuid string) ([]data.LogData, error)
 	GetAgentLogsShort(agent_id string) ([]data.LogDataShort, error)
 	InsertLog(logData data.LogData) (bool, error)

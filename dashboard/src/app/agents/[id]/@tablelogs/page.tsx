@@ -44,8 +44,8 @@ export default async function TableLogsPage({ params }: { params: { id: string }
 		const logCol: LogColumn = {
 			id: log.id,
 			agentId: agentId,
-			remoteIp: log.remoteIp,
-			requestMethod: log.request_preview.split(" ")[0],
+			remoteip: log.remoteIp,
+			requestmethod: log.request_preview.split(" ")[0],
 			url: log.request_preview.split(" ")[1],
 			response: log.response_preview.split(" ").slice(1, Infinity).join(" "),
 			timestamp: logDate.toLocaleString(),

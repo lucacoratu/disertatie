@@ -34,10 +34,8 @@ const CopyClipboardButton: FC<CopyClipboardButtonProps> = ({text, tooltipText,to
     return (
         <TooltipProvider>
             <Tooltip>
-                <TooltipTrigger>
-                    <Button variant="outline" size="icon" onClick={() => copyText(text, toastText)}>
-                        {children}
-                    </Button>
+                <TooltipTrigger onClick={() => copyText(text, toastText)}>
+                    {children}
                 </TooltipTrigger>
                 <TooltipContent>
                     <p>{tooltipText}</p>

@@ -20,3 +20,12 @@ func (ag *MachinesGetResponse) FromJSON(r io.Reader) error {
 	d := json.NewDecoder(r)
 	return d.Decode(ag)
 }
+
+type MachinesRegisterResponse struct {
+	Uuid string `json:"uuid"` //The UUID of the created machine
+}
+
+func (mrr *MachinesRegisterResponse) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(mrr)
+}

@@ -27,7 +27,7 @@ const Header = () => {
 
     const routes = [
         {
-            href: "/home",
+            href: "/",
             label: "Home",
             icon: <Home/>,
         },

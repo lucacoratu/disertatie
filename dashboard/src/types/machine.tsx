@@ -25,3 +25,7 @@ interface MachineProps {
 interface OSProps {
     os: string
 }
+
+type MachineRegisterResponse = {
+    uuid: string
+}

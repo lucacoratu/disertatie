@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -162,8 +163,11 @@ func DumpHTTPRequest(req *http.Request) ([]byte, error) {
 
 	//Reassign the body so other function can read the data
 	req.Body = io.NopCloser(bytes.NewReader(bodyData))
+	fmt.Println(bodyData)
+	//bodyData, _ = io.ReadAll(req.Body)
 
 	rawRequest = append(rawRequest, bodyData...)
+	//fmt.Println(bodyData)
 	return rawRequest, nil
 }
 
