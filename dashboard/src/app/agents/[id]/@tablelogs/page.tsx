@@ -51,6 +51,7 @@ export default async function TableLogsPage({ params }: { params: { id: string }
 			timestamp: logDate.toLocaleString(),
 			findings: log.findings,
 			findingsClassificationString: findingsClassficationString,
+			rulefindings: log.ruleFindings,
 		}
 		//Return the new column
 		return logCol;

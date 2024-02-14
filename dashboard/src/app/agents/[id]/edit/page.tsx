@@ -1,4 +1,5 @@
 import { constants } from "@/app/constants";
+import AgentEditForm from "@/components/AgentEditForm";
 import {
     HoverCard,
     HoverCardContent,
@@ -20,13 +21,29 @@ async function GetAgent(id: string): Promise<Agent|undefined> {
     } 
 }
 
+async function getMachines() : Promise<Machine[]> {
+    //Create the URL for fetching the machines
+    const url = constants.apiBaseURL + "/machines" 
+    //Revalidate the data once every 10 mins
+    const res = await fetch(url, { next: { revalidate: 600 } });
+    //Check if there was an error
+    if(!res.ok) {
+        throw new Error("could not get machines data");
+    }
+    
+    const machines: MachineResponse = await res.json();
+    //Return the data
+    return machines.machines;
+}
+
 export default async function AgentEditPage({ params }: { params: { id: string } }) {
     //Get the agent details
     const agentId: string = params.id; 
     const agent = await GetAgent(agentId);
+    const machines = await getMachines();
 
     return (
-        <div className="p-6 w-1/2 h-[700px] min-w-[400px] dark:bg-darksurface-100 m-auto rounded-xl dark:border-darksurface-400 border-2">
+        <div className="p-6 w-2/3 h-[700px] min-w-[400px] dark:bg-darksurface-100 m-auto rounded-xl dark:border-darksurface-400 border-2">
             <div className="flex flex-row justify-between items-center mb-[10px]">
                 <h1 className="text-xl">Edit Agent</h1>
                 <HoverCard>
@@ -44,6 +61,7 @@ export default async function AgentEditPage({ params }: { params: { id: string }
                     </HoverCardContent>
                 </HoverCard>
             </div>
+            <AgentEditForm agent={agent} machines={machines}/>
         </div>
     )
 }

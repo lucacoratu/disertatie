@@ -78,6 +78,7 @@ func (api *APIServer) Init() error {
 	apiGetSubrouter := r.PathPrefix("/api/v1/").Methods("GET").Subrouter()
 	apiPostSubrouter := r.PathPrefix("/api/v1/").Methods("POST").Subrouter()
 	apiDeleteSubrouter := r.PathPrefix("/api/v1/").Methods("DELETE").Subrouter()
+	apiPutSubrouter := r.PathPrefix("/api/v1/").Methods("PUT").Subrouter()
 
 	//Create the route that will send all the registered agents
 	apiGetSubrouter.HandleFunc("/agents", agentsHandler.GetAgents)
@@ -111,6 +112,9 @@ func (api *APIServer) Init() error {
 
 	//Create the route to delete a machine
 	apiDeleteSubrouter.HandleFunc("/machines/{machineuuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}", machinesHandler.DeleteMachine)
+
+	//Create the route to update an agent
+	apiPutSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}", agentsHandler.ModifyAgent)
 
 	//Create the healthcheck route
 	apiGetSubrouter.HandleFunc("/healthcheck", healthCheckHandler.HealthCheck)

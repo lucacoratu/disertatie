@@ -158,7 +158,7 @@ func (ah *AgentsHandler) GetAgents(rw http.ResponseWriter, r *http.Request) {
 
 // Function for getting a single agent
 func (ah *AgentsHandler) GetAgent(rw http.ResponseWriter, r *http.Request) {
-	//Get the machine uuid from mux vars
+	//Get the agent uuid from mux vars
 	vars := mux.Vars(r)
 	agent_uuid := vars["uuid"]
 	//Check if the agent UUID has been specified
@@ -183,4 +183,45 @@ func (ah *AgentsHandler) GetAgent(rw http.ResponseWriter, r *http.Request) {
 	//Return the agent back to the client
 	rw.WriteHeader(http.StatusOK)
 	agent.ToJSON(rw)
+}
+
+// Handler for modifying an agent
+func (ah *AgentsHandler) ModifyAgent(rw http.ResponseWriter, r *http.Request) {
+	//Get the agent uuid from mux vars
+	vars := mux.Vars(r)
+	agent_uuid := vars["uuid"]
+	//Check if the agent UUID has been specified
+	if agent_uuid == "" {
+		//Create the custom error message and return to client
+		ah.logger.Error("Error occured when modifying an agent details, missing UUID")
+		rw.WriteHeader(http.StatusInternalServerError)
+		retErr := data.APIError{Code: data.REQUEST_ERROR, Message: "missing agent uuid"}
+		retErr.ToJSON(rw)
+		return
+	}
+	//Get the data from the request body
+	agent := data.UpdateAgent{}
+	err := agent.FromJSON(r.Body)
+	//Check if an error occured when parsing request data from body
+	if err != nil {
+		//Create the custom error message and return to client
+		ah.logger.Error("Error occured when modifying an agent details, failed to parse request body from JSON", err.Error())
+		rw.WriteHeader(http.StatusInternalServerError)
+		retErr := data.APIError{Code: data.REQUEST_ERROR, Message: "failed to parse body from JSON"}
+		retErr.ToJSON(rw)
+		return
+	}
+
+	//Update the agent in the database
+	err = ah.dbConnection.ModifyAgent(agent_uuid, agent)
+	//Check if an erorr occured
+	if err != nil {
+		ah.logger.Error("Error occured when modifying an agent details, failed to update agent row in the database", err.Error())
+		rw.WriteHeader(http.StatusInternalServerError)
+		retErr := data.APIError{Code: data.DATABASE_ERROR, Message: "failed to update row in the database"}
+		retErr.ToJSON(rw)
+		return
+	}
+
+	rw.WriteHeader(http.StatusOK)
 }

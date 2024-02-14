@@ -301,6 +301,14 @@ func (cassandra *CassandraConnection) GetAgent(id string) (data.Agent, error) {
 	return agent, nil
 }
 
+// Modify the agent
+func (cassandra *CassandraConnection) ModifyAgent(id string, agent data.UpdateAgent) error {
+	//Check the machine with UUID received exists in the database
+
+	err := cassandra.session.Query("UPDATE "+cassandra.configuration.CassandraKeyspace+".agents SET name = ?, protocol = ?, ip_address = ?, port = ?, webserver_protocol = ?, webserver_ip = ?, webserver_port = ?, machine_id = ? WHERE id = ?", agent.Name, agent.ListeningProtocol, agent.ListeningAddress, agent.ListeningPort, agent.ForwardServerProtocol, agent.ForwardServerAddress, agent.ForwardServerPort, agent.MachineId, id).Exec()
+	return err
+}
+
 // Get number of agents deployed on machine based on id
 func (cassandra *CassandraConnection) GetNumberAgentsDeployed(machineId string) (int64, error) {
 	//Prepare the query which will get the number of agents deployed on the machine
@@ -472,7 +480,8 @@ func (cassandra *CassandraConnection) GetLogRuleFindings(log_id string) ([]data.
 	var index int64 = 0
 	for iter.Scan(&findingRequest.Id, &findingRequest.LogId, &findingRequest.Line, &findingRequest.LineIndex, &findingRequest.Length, &findingRequest.MatchedString, &findingRequest.Classification, &findingRequest.Severity, &findingRequest.RuleId, &findingRequest.RuleName, &findingRequest.RuleDescription, &findingRequest.MatchedBodyHash, &findingRequest.MatchedBodyHashAlg) {
 		//cassandra.logger.Debug(findingRequest)
-		findings[index].Request = &findingRequest
+		aux := findingRequest
+		findings[index].Request = &aux
 		index += 1
 	}
 
@@ -482,7 +491,8 @@ func (cassandra *CassandraConnection) GetLogRuleFindings(log_id string) ([]data.
 	iter = query.Iter()
 	index = 0
 	for iter.Scan(&findingResponse.Id, &findingResponse.LogId, &findingResponse.Line, &findingResponse.LineIndex, &findingResponse.Length, &findingResponse.MatchedString, &findingResponse.Classification, &findingResponse.Severity, &findingResponse.RuleId, &findingResponse.RuleName, &findingResponse.RuleDescription, &findingResponse.MatchedBodyHash, &findingResponse.MatchedBodyHashAlg) {
-		findings[index].Response = &findingResponse
+		aux := findingResponse
+		findings[index].Response = &aux
 		index += 1
 	}
 

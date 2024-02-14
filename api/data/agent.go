@@ -31,3 +31,24 @@ func (ag *Agent) ToJSON(w io.Writer) error {
 	e := json.NewEncoder(w)
 	return e.Encode(ag)
 }
+
+type UpdateAgent struct {
+	Name                  string `json:"name"`                  //The name of the agent
+	ListeningProtocol     string `json:"listeningProtocol"`     //The listening protocol of the agent
+	ListeningAddress      string `json:"listeningAddress"`      //The listening address of the agent
+	ListeningPort         int64  `json:"listeningPort"`         //The port the agent is listening on
+	ForwardServerProtocol string `json:"forwardServerProtocol"` //The protocol of the webserver that the agent sends requests to
+	ForwardServerAddress  string `json:"forwardServerAddress"`  //The address of the webserver that the agent sends requests to
+	ForwardServerPort     int64  `json:"forwardServerPort"`     //The port of the webserver that the agent sends requests to
+	MachineId             string `json:"machineId"`             //The id of the machine the agent is deployed on
+}
+
+func (ua *UpdateAgent) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(ua)
+}
+
+func (ua *UpdateAgent) FromJSON(r io.Reader) error {
+	d := json.NewDecoder(r)
+	return d.Decode(ua)
+}

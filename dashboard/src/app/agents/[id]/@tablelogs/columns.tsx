@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import RuleFindingPreview from "@/components/ui/rulefinding-preview";
 
 //Create another type which will define the columns of the table
 export type LogColumn = {
@@ -26,6 +27,7 @@ export type LogColumn = {
     response: string,
     timestamp: string,
     findings: Finding[],
+    rulefindings: RuleFinding[],
     findingsClassificationString: FindingClassificationString[],
 }
 
@@ -68,10 +70,11 @@ export const columns: ColumnDef<LogColumn>[] = [
             //console.log(log);
             if(log.findings != null) {
               return (
-                  <div className="overflow-hidden flex flex-row gap-2 max-w-36">
-                    {log.findings.map((finding: Finding) => (
+                  <div className="overflow-hidden flex flex-row gap-2 max-w-36 max-h-8">
+                    {
+                      log.findings.map((finding: Finding) => (
                         <FindingPreview key={finding.request.id} finding={finding} findingsClassificationString={log.findingsClassificationString}/>
-                    ))
+                      ))
                     }
                   </div>
               );
@@ -84,6 +87,28 @@ export const columns: ColumnDef<LogColumn>[] = [
         }
     },
     {
+      accessorKey: "rulefindings",
+      header: "Rule Findings",
+      cell: ({row}) => {
+          const log = row.original;
+          if(log.rulefindings != null) {
+            return (
+                <div className="overflow-hidden flex flex-row gap-2 max-w-52 max-h-8">
+                  {log.rulefindings.map((ruleFinding: RuleFinding) => (
+                      <RuleFindingPreview key={ruleFinding.request?.id} ruleFinding={ruleFinding}/>
+                  ))
+                  }
+                </div>
+            );
+          } else {
+            return (
+              <>
+              </>
+            );
+          }
+      }
+    },
+    {
         id: "actions",
         header: "Actions",
         cell: ({ row }) => {
@@ -92,7 +117,7 @@ export const columns: ColumnDef<LogColumn>[] = [
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
+                <Button variant="ghost" className="h-8 w-8 p-0 max-w-9">
                   <span className="sr-only">Open menu</span>
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>

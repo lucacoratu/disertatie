@@ -14,7 +14,7 @@
 */
 
 type Agent = {
-    id:                    number,
+    id:                    string,
     name:                  string,
     listeningProtocol:     string,
     listeningAddress:      string,
@@ -34,4 +34,15 @@ type AgentResponse = {
 
 interface AgentProps {
     agent: Agent
+}
+
+type UpdateAgent = {
+	name:                  string,
+    listeningProtocol:     string,
+    listeningAddress:      string,
+    listeningPort:         number,
+    forwardServerProtocol: string,
+	forwardServerAddress:  string,   
+	forwardServerPort:     number,
+	machineId: 			   string,
 }

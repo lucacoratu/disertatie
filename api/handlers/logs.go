@@ -380,6 +380,7 @@ func (lh *LogsHandler) GetLog(rw http.ResponseWriter, r *http.Request) {
 
 	//Send the log back to the client
 	resp := response.LogGetResponse{Log: log}
+	lh.logger.Debug(log.RuleFindings)
 	rw.WriteHeader(http.StatusOK)
 	resp.ToJSON(rw)
 }

@@ -27,7 +27,7 @@ const RuleFindingCard: FC<FindingCardProps> = ({findings}): JSX.Element => {
                 <div>
                     <h2 className="text-xl">Request rule findings</h2>
                 </div>
-                <div>
+                <div className="flex flex-row gap-1 flex-wrap">
                     {requestFindings?.map((finding) => {
                         return (
                             <RuleFinding key={finding?.id} finding={finding} matchedString={finding?.matchedString}/>
@@ -40,12 +40,18 @@ const RuleFindingCard: FC<FindingCardProps> = ({findings}): JSX.Element => {
                 <div>
                     <h2 className="text-xl">Response rule findings</h2>
                 </div>
-                <div>
+                <div className="flex flex-row gap-1 flex-wrap">
                     {responseFindings?.map((finding) => {
                         return (
                             <RuleFinding key={finding?.id} finding={finding} matchedString={finding?.matchedString}/>
                         );
                     })}
+                    
+                    {responseFindings.length == 0 && 
+                        <div className="flex items-center text-center text-accent">
+                            No response rule findings
+                        </div>
+                    }
                 </div>
             </div>
         </div>

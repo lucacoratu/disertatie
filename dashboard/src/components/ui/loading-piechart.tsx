@@ -16,8 +16,8 @@ const LoadingCustomPieChart: FC<LoadingCustomPieChartProps> = ({ numberLabels, t
                 <Skeleton className="h-60 w-60 rounded-full" />
                 <div className="flex flex-col gap-2">
                     {
-                        [...Array(numberLabels)].map(() => (
-                            <div className="flex flex-row gap-2">
+                        [...Array(numberLabels)].map((value) => (
+                            <div key={value} className="flex flex-row gap-2">
                                 <Skeleton className="h-[20px] w-[20px] rounded-none" />
                                 <Skeleton className="h-[20px] w-[70px]" />
                             </div>
