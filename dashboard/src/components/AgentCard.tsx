@@ -18,6 +18,7 @@ import OsCard from "@/components/OsCard";
 import Link from 'next/link';
 import { Separator } from "@/components/ui/separator"
 import { FC } from "react";
+import {Trash, Pencil, GanttChartSquare } from "lucide-react";
 
 const AgentCard: FC<AgentProps> = ({agent}): JSX.Element => {
     return (
@@ -27,9 +28,12 @@ const AgentCard: FC<AgentProps> = ({agent}): JSX.Element => {
                     <Link href={`/agents/${encodeURIComponent(agent.id)}`}>
                         <CardHeader>
                             <CardTitle>{agent?.name ? agent?.name : "No name"}</CardTitle>
-                            <CardDescription className="flex flex-col gap-0">
-                                <span>{agent?.id}</span>
-                                <span>Deployed on {agent?.machineHostname}</span>
+                            <CardDescription className="flex flex-row items-center justify-between">
+                                <span className="flex flex-col items-start">
+                                    <span>{agent?.id}</span>
+                                    <span>Deployed on {agent?.machineHostname}</span>
+                                </span>
+                                <span className="rounded-full bg-red-500 w-5 h-5 mr-2"/>
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="flex flex-row gap-4 justify-between items-center">
@@ -47,17 +51,19 @@ const AgentCard: FC<AgentProps> = ({agent}): JSX.Element => {
             </ContextMenuTrigger>
             <ContextMenuContent>
                 <ContextMenuItem className="dark:hover:bg-darksurface-400">
-                    <Link href={`/agents/${encodeURIComponent(agent.id)}`}>
-                        Details
+                    <Link className="flex flex-row items-center gap-4" href={`/agents/${encodeURIComponent(agent.id)}`}>
+                        <GanttChartSquare className="w-4 h-4"/>Details
                     </Link>
                 </ContextMenuItem>
-                <ContextMenuItem className="dark:hover:bg-darksurface-400">
-                    <Link href={`/agents/${encodeURIComponent(agent.id)}/edit`}>
-                        Edit
+                <ContextMenuItem className="dark:hover:bg-darksurface-400 flex flex-row items-center gap-4">
+                    <Link className="flex flex-row items-center gap-4" href={`/agents/${encodeURIComponent(agent.id)}/edit`}>
+                        <Pencil className="w-4 h-4"/>Edit
                     </Link>
                 </ContextMenuItem>
                 <Separator orientation="horizontal"/>
-                <ContextMenuItem className="mt-1 bg-red-600 dark:hover:bg-red-600/[0.8]">Delete</ContextMenuItem>
+                <ContextMenuItem className="mt-1 bg-red-600 dark:hover:bg-red-600/[0.8] flex flex-row items-center gap-4">
+                    <Trash className="w-4 h-4"/> Delete
+                </ContextMenuItem>
             </ContextMenuContent>
         </ContextMenu>
     );

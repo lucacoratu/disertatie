@@ -15,7 +15,7 @@ import {
     SheetTrigger,
   } from "@/components/ui/sheet"
 
-import { Menu, Bell, Home, VenetianMask } from "lucide-react";
+import { Menu, Bell, Server, Home, VenetianMask } from "lucide-react";
 import ProfileButton from "./ProfileButton";
 import ThemeButton from "./ThemeButton";
 import { DropdownMenuSeparator } from "./ui/dropdown-menu";
@@ -29,17 +29,17 @@ const Header = () => {
         {
             href: "/",
             label: "Home",
-            icon: <Home/>,
+            icon: <Home className="w-5 h-5  "/>,
         },
         {
             href: "/machines",
             label: "Machines",
-            icon: <VenetianMask/>,
+            icon: <Server className="w-5 h-5"/>,
         },
         {
             href: "/agents",
             label: "Agents",
-            icon: <VenetianMask/>,
+            icon: <VenetianMask className="w-5 h-5"/>,
         }
     ];
 
@@ -52,7 +52,7 @@ const Header = () => {
                             <SheetTrigger>
                                 <Menu className="h-6 w-6"/>
                             </SheetTrigger>
-                            <SheetContent side="left" className="w-[250px] flex flex-col justify-between items-center dark:bg-darksurface-100">
+                            <SheetContent side="left" className="w-[250px] flex flex-col justify-between dark:bg-darksurface-100">
                                 <SheetHeader>
                                     <SheetTitle className="text-center">Navigation Menu</SheetTitle>
                                     {/* <SheetDescription className="text-center">
@@ -61,25 +61,22 @@ const Header = () => {
                                     <DropdownMenuSeparator/>
                                     <div className="flex flex-col">
                                         {routes.map((route, i) => {
-                                            //console.log(i);
                                             return (
-                                                <Button key={i} asChild variant="ghost" className="flex flex-col dark:hover:bg-primary light:hover:bg-secondary">
+                                                <Button key={i} asChild variant="ghost" className="justify-start dark:hover:bg-primary light:hover:bg-secondary">
                                                     <Link key={i}
                                                         href={route.href}
-                                                        className="text-sm font-medium transition-colors">
-                                                            <div className="flex flex-row items-start gap-4">
-                                                                {/* {route.icon} */}
-                                                                {route.label}
-                                                            </div>
+                                                        className="transition-colors flex flex-row justify-start gap-6">
+                                                            {route.icon}
+                                                            <p className="text-base font-medium">{route.label}</p>
                                                     </Link>
                                                 </Button>
                                             )
                                         })}
                                     </div>
                                 </SheetHeader>
-                                <SheetFooter>
+                                <SheetFooter className="self-center">
                                     <DropdownMenuSeparator/>
-                                    <p className="text-center justify-center">v{constants.appVersion}</p>
+                                    <p className="text-center">v{constants.appVersion}</p>
                                 </SheetFooter>
                             </SheetContent>
                         </Sheet>

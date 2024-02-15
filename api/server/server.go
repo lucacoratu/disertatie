@@ -13,6 +13,7 @@ import (
 	"github.com/lucacoratu/disertatie/api/database"
 	"github.com/lucacoratu/disertatie/api/handlers"
 	"github.com/lucacoratu/disertatie/api/logging"
+	"github.com/lucacoratu/disertatie/api/websocket"
 )
 
 type APIServer struct {
@@ -61,6 +62,11 @@ func (api *APIServer) Init() error {
 	}
 	api.logger.Debug("Connection to the database has been initialized")
 
+	//Create the pool
+	pool := websocket.NewPool(api.logger, api.dbConnection, api.configuration)
+	//Start the pool in a goroutine
+	go pool.Start()
+
 	//Create the router
 	r := mux.NewRouter()
 	//Use the logging middleware
@@ -72,6 +78,7 @@ func (api *APIServer) Init() error {
 	agentsHandler := handlers.NewAgentsHandler(api.logger, api.configuration, api.dbConnection)
 	logsHandler := handlers.NewLogsHandler(api.logger, api.configuration, api.dbConnection)
 	machinesHandler := handlers.NewMachinesHandler(api.logger, api.configuration, api.dbConnection)
+	wsHandler := handlers.NewWebsocketHandler(api.logger, api.configuration, api.dbConnection)
 
 	//Add the routes
 	//Create the subrouter for the API path
@@ -102,6 +109,16 @@ func (api *APIServer) Init() error {
 	apiGetSubrouter.HandleFunc("/findings/string", logsHandler.GetFindingsClassificationString)
 	//Create the route that will send all the registered machines
 	apiGetSubrouter.HandleFunc("/machines", machinesHandler.GetMachines)
+
+	//Create the route which will handle websocket dashboard connections
+	apiGetSubrouter.HandleFunc("/ws", func(rw http.ResponseWriter, r *http.Request) {
+		wsHandler.ServeDashboardWs(pool, rw, r)
+	})
+
+	//Create the route which will handle websocket agent connections
+	apiGetSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/ws", func(rw http.ResponseWriter, r *http.Request) {
+		wsHandler.ServeAgentWs(pool, rw, r)
+	})
 
 	//Create route to register agent
 	apiPostSubrouter.HandleFunc("/registeragent", agentsHandler.RegisterAgent)

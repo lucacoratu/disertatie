@@ -9,6 +9,7 @@ const (
 	DATABASE_ERROR int64 = 1
 	PARSE_ERROR    int64 = 2
 	REQUEST_ERROR  int64 = 3
+	WS_ERROR       int64 = 4
 )
 
 type APIError struct {

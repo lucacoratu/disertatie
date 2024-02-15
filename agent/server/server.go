@@ -18,6 +18,7 @@ import (
 	rules "github.com/lucacoratu/disertatie/agent/detection/rules"
 	"github.com/lucacoratu/disertatie/agent/logging"
 	"github.com/lucacoratu/disertatie/agent/utils"
+	"github.com/lucacoratu/disertatie/agent/websocket"
 )
 
 type AgentServer struct {
@@ -122,6 +123,22 @@ func (agent *AgentServer) Init() error {
 			}
 		}
 	}
+
+	//Connect to the API websocket
+	apiWsURL := "ws://" + agent.configuration.APIIpAddress + ":" + agent.configuration.APIPort + "/api/v1/agents/" + agent.configuration.UUID + "/ws"
+	apiWsConnection := websocket.NewAPIWebSocketConnection(agent.logger, apiWsURL, agent.configuration)
+	_, err = apiWsConnection.Connect()
+	//Check if an error occured when connection to the API ws endpoint for the agent
+	if err != nil {
+		agent.logger.Error("Cannot connect to the API ws endpoint")
+		return errors.New("could not connect to the API ws endpoint")
+	}
+
+	//Start waiting for messages from the server
+	go apiWsConnection.Start()
+
+	//Send a test notification
+	apiWsConnection.SendNotification("Connected to the WS endpoint")
 
 	//Add the validators to the list of validators
 	agent.checkers = append(agent.checkers, code.NewUserAgentValidator(agent.logger, agent.configuration))
