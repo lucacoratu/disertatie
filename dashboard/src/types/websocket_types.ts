@@ -3,6 +3,9 @@ export const enum WsMessageTypes {
     WSNotification = 1,
     WsAgentStatusRequest = 2,
     WsAgentStatusResponse = 3,
+    WsAgentDisconnectedNotification = 4,
+    WsAgentConnectedNotification = 5,
+    WsAgentRuleDetectionAlert = 6,
 }
 
 export type WSMessage = {
@@ -22,4 +25,14 @@ export type WSAgentStatusRequest = {
 export type WSAgentStatusResponse = {
 	agentId: string, 
 	status:  string
+}
+
+export type WsRuleDetectionAlert = {
+    agentId:         string,
+	ruleId:          string, 
+	ruleName:        string,
+	ruleDescription: string,
+	classification:  string,
+	severity:        string,
+	timestamp:       number, 
 }

@@ -64,7 +64,7 @@ export const columns: ColumnDef<LogColumn>[] = [
     },
     {
         accessorKey: "findings",
-        header: "Findings",
+        header: "Code Findings",
         cell: ({row}) => {
             const log = row.original;
             //console.log(log);

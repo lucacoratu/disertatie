@@ -3,18 +3,12 @@ package websocket
 import (
 	"github.com/gorilla/websocket"
 	"github.com/lucacoratu/disertatie/agent/config"
-	"github.com/lucacoratu/disertatie/agent/data"
 	"github.com/lucacoratu/disertatie/agent/logging"
 )
 
 type message struct {
 	Type int    `json:"type"`
 	Body string `json:"body"`
-}
-
-type Notification struct {
-	AgentId string `json:"agentId"`
-	Message string `json:"message"`
 }
 
 type APIWebSocketConnection struct {
@@ -80,5 +74,10 @@ func (awsc *APIWebSocketConnection) Start() {
 // Function to send a notification to the API
 func (awsc *APIWebSocketConnection) SendNotification(message string) error {
 	notif := Notification{AgentId: awsc.configuration.UUID, Message: message}
-	return awsc.connection.WriteJSON(data.WebSocketMessage{Type: data.Notification, Data: notif})
+	return awsc.connection.WriteJSON(WebSocketMessage{Type: WsNotification, Data: notif})
+}
+
+// Function to send an alert when a high or critical payload is detected
+func (awsc *APIWebSocketConnection) SendRuleDetectionAlert(alert RuleDetectionAlert) error {
+	return awsc.connection.WriteJSON(WebSocketMessage{Type: WsRuleDetectionAlert, Data: alert})
 }

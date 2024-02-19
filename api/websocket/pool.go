@@ -52,11 +52,11 @@ func NewPool(l logging.ILogger, dbConn database.IConnection, conf config.Configu
  * It should be registered in the pool
  */
 func (pool *Pool) DashboardClientRegistered(c *DashboardClient) {
-	pool.logger.Debug("Dashboard client connected to websocket")
+	pool.logger.Info("Dashboard client connected to websocket")
 }
 
 func (pool *Pool) DashboardClientUnregistered(c *DashboardClient) {
-	pool.logger.Debug("Dashboard client disconnected from websocket")
+	pool.logger.Info("Dashboard client disconnected from websocket")
 }
 
 /*
@@ -70,12 +70,32 @@ func (pool *Pool) DashboardMessageReceived(message DashboardMessage) {
 
 func (pool *Pool) AgentRegistered(c *AgentClient) {
 	c.Status = "online"
-	pool.logger.Debug("Agent connected to websocket")
+	pool.logger.Info("Agent connected to websocket, id:", c.Id)
+	//Send a notification to all the dashboard client to announce that the agent connected to the API
+	message := Notification{AgentId: c.Id, Message: "Agent connected"}
+	wsMessage := WebSocketMessage{Type: WsAgentConnectedNotification, Data: message}
+	for client := range pool.DashboardClients {
+		err := client.Conn.WriteJSON(wsMessage)
+		//Check if an error occured when sending the notification to the dashboard client
+		if err != nil {
+			pool.logger.Error("Error occured when sending agent connect notification to dashboard client, id:", client.Id)
+		}
+	}
 }
 
 func (pool *Pool) AgentUnregistered(c *AgentClient) {
 	c.Status = "offline"
-	pool.logger.Debug("Agent disconnected from websocket")
+	pool.logger.Info("Agent disconnected from websocket, id: ", c.Id)
+	//Send a disconnect message to all the dashboard clients
+	message := Notification{AgentId: c.Id, Message: "Agent disconnected"}
+	wsMessage := WebSocketMessage{Type: WsAgentDisconnectedNotification, Data: message}
+	for client := range pool.DashboardClients {
+		err := client.Conn.WriteJSON(wsMessage)
+		//Check if an error occured when sending the notification to the dashboard client
+		if err != nil {
+			pool.logger.Error("Error occured when sending agent disconnect notification to dashboard client, id:", client.Id)
+		}
+	}
 }
 
 /*
@@ -122,6 +142,14 @@ func (pool *Pool) AgentMessageReceived(message AgentMessage) {
 		}
 		//Send the response back to the client
 		message.C.Conn.WriteJSON(response)
+	case WsRuleDetectionAlert:
+		err = pool.HandleRuleDetectionAlert(wsMessage)
+		if err != nil {
+			//Send an error message back to the client
+			errMessage := WebSocketMessage{Type: WsError, Data: data.APIError{Code: data.WS_ERROR, Message: err.Error()}}
+			message.C.Conn.WriteJSON(errMessage)
+			return
+		}
 	}
 }
 
@@ -151,18 +179,19 @@ func (pool *Pool) Start() {
 			pool.DashboardMessageReceived(message)
 
 		case client := <-pool.RegisterAgent:
+			//Agent connected to the websocket
 			pool.AgentClients[client] = true
 			pool.logger.Debug("Size of agents connection pool", len(pool.AgentClients))
 			pool.AgentRegistered(client)
 
 		case client := <-pool.UnregisterAgent:
-			//A client disconnected from the chat service
+			//Agent client disconnected from the websocket
 			pool.AgentUnregistered(client)
 			delete(pool.AgentClients, client)
 			pool.logger.Debug("Size of agents connection pool: ", len(pool.AgentClients))
 
 		case message := <-pool.AgentBroadcast:
-			//Message received on the websocket
+			//Message received from the agent on the websocket
 			pool.AgentMessageReceived(message)
 		}
 	}
@@ -207,4 +236,12 @@ func (pool *Pool) HandleAgentStatusRequest(msg WebSocketMessage) (AgentStatusRes
 	}
 	//Return the response
 	return response, nil
+}
+
+func (pool *Pool) HandleRuleDetectionAlert(msg WebSocketMessage) error {
+	//Send the alert to all the dashboard clients
+	for client := range pool.DashboardClients {
+		client.Conn.WriteJSON(msg)
+	}
+	return nil
 }

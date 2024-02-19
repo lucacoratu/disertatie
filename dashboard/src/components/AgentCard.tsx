@@ -1,3 +1,5 @@
+"use client";
+
 import {
     Card,
     CardContent,
@@ -16,11 +18,35 @@ import {
 
 import OsCard from "@/components/OsCard";
 import Link from 'next/link';
-import { Separator } from "@/components/ui/separator"
-import { FC } from "react";
+import { Separator } from "@/components/ui/separator";
+import { FC, useEffect } from "react";
 import {Trash, Pencil, GanttChartSquare } from "lucide-react";
+import WebSocketConnection from "@/types/websocket";
+import {WSNotification} from "@/types/websocket_types";
+import { useState } from "react";
 
 const AgentCard: FC<AgentProps> = ({agent}): JSX.Element => {
+    const [status, setStatus] = useState("offline");
+
+    useEffect(() => {
+        //Connect to the websocket of the API
+        const wsConnection: WebSocketConnection = WebSocketConnection.getInstance();
+
+        //Add connect callback
+        wsConnection.addAgentConnectedCallback((message: string) => {
+            //const notif: WSNotification = JSON.parse(message);
+            setStatus("online");
+        });
+        
+        //Add disconnect callback
+        wsConnection.addAgentDisconnectedCallback((message: string) => {
+            //const notif: WSNotification = JSON.parse(message);
+            setStatus("offline");
+        });
+    }, [])
+
+
+
     return (
         <ContextMenu>
             <ContextMenuTrigger className="min-w-96 w-1/4 rounded-lg hover:shadow-lg hover:dark:bg-darksurface-100/[.8] dark:bg-darksurface-100 dark:border-darksurface-400">
@@ -33,7 +59,12 @@ const AgentCard: FC<AgentProps> = ({agent}): JSX.Element => {
                                     <span>{agent?.id}</span>
                                     <span>Deployed on {agent?.machineHostname}</span>
                                 </span>
-                                <span className="rounded-full bg-red-500 w-5 h-5 mr-2"/>
+                                {
+                                    status === "offline" && <span className="rounded-full w-5 h-5 mr-2 bg-red-500"/>
+                                }
+                                {
+                                    status === "online" && <span className="rounded-full w-5 h-5 mr-2 bg-green-500"/>
+                                }
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="flex flex-row gap-4 justify-between items-center">

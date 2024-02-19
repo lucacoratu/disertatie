@@ -26,8 +26,11 @@ const RuleFinding: FC<RuleFindingProps> = ({finding, matchedString}): JSX.Elemen
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger>
-                            <div className={"p-1 rounded w-fit text-center " + severityColors[finding.severity]}>
-                                {finding.ruleId}
+                            <div className="flex flex-row gap-2 items-center">
+                                <div className={"w-5 h-5 rounded-full " + severityColors[finding.severity]}/>
+                                <div>{finding.ruleId},</div>
+                                <div>Severity: {severityNames[finding.severity]},</div>
+                                <div>Classification: {finding.classification.toUpperCase()}</div>
                             </div>
                         </TooltipTrigger>
                         <TooltipContent>

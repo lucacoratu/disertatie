@@ -1,3 +1,5 @@
+"use client"
+
 import { FC } from "react";
 import { constants } from "@/app/constants";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -57,6 +59,8 @@ const HTTPHighlighter: FC<HTTPHighlighterProps> = ({log}): JSX.Element => {
     const responseHeaders = responseValues[0]; 
     const responseBody = responseValues[1];
 
+    const {theme, setTheme} = useTheme();
+
     return (
         <div className="flex flex-wrap flex-row gap-3 justify-center">
             <div className="flex flex-col gap-0 h-[500px] min-w-[450px] grow w-1/3 p-4 rounded dark:bg-darksurface-100 dark:border-darksurface-400 border-2 dark:bg-darksurface-100 b-2 rounded-xl">
@@ -68,12 +72,12 @@ const HTTPHighlighter: FC<HTTPHighlighterProps> = ({log}): JSX.Element => {
                 </div>
                 <ScrollArea>
                     {requestHeaders != "" &&
-                        <SyntaxHighlighter language="http" style={oneDark} showLineNumbers>
+                        <SyntaxHighlighter language="http" style={theme === "light" ? oneLight : oneDark} showLineNumbers>
                             {requestHeaders}
                         </SyntaxHighlighter>
                     }
                     {requestBody != "" && 
-                        <SyntaxHighlighter language="json" style={oneDark} showLineNumbers>
+                        <SyntaxHighlighter language="json" style={theme === "light" ? oneLight : oneDark} showLineNumbers>
                             {requestBody}
                         </SyntaxHighlighter>
                     }
@@ -88,12 +92,12 @@ const HTTPHighlighter: FC<HTTPHighlighterProps> = ({log}): JSX.Element => {
                 </div>
                 <ScrollArea>
                     {responseHeaders != "" &&
-                        <SyntaxHighlighter language="http" style={oneDark} showLineNumbers>
+                        <SyntaxHighlighter language="http" style={theme === "light" ? oneLight : oneDark} showLineNumbers>
                             {responseHeaders}
                         </SyntaxHighlighter>
                     }
                     {responseBody != "" && 
-                        <SyntaxHighlighter language="html" style={oneDark} showLineNumbers>
+                        <SyntaxHighlighter language="html" style={theme === "light" ? oneLight : oneDark} showLineNumbers>
                             {responseBody}
                         </SyntaxHighlighter>
                     }

@@ -10,21 +10,26 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/lucacoratu/disertatie/agent/config"
 	"github.com/lucacoratu/disertatie/agent/data"
 	"github.com/lucacoratu/disertatie/agent/logging"
 	"github.com/lucacoratu/disertatie/agent/utils"
+	"github.com/lucacoratu/disertatie/agent/websocket"
 )
 
 // Structure which will hold all the necessary data to match the rules on the request and the response
 type RuleRunner struct {
-	logger logging.ILogger
-	rules  []Rule
+	logger        logging.ILogger
+	rules         []Rule
+	apiWsConn     *websocket.APIWebSocketConnection
+	configuration config.Configuration
 }
 
 // Creates a new rule runner struct
-func NewRuleRunner(logger logging.ILogger, rules []Rule) *RuleRunner {
-	return &RuleRunner{logger: logger, rules: rules}
+func NewRuleRunner(logger logging.ILogger, rules []Rule, apiWsConn *websocket.APIWebSocketConnection, configuration config.Configuration) *RuleRunner {
+	return &RuleRunner{logger: logger, rules: rules, apiWsConn: apiWsConn, configuration: configuration}
 }
 
 // Searches for case insensitive match on the value or if the regex can find any matches on the given value
@@ -300,6 +305,16 @@ func (rl *RuleRunner) RunRulesOnRequest(r *http.Request) ([]*data.RuleFindingDat
 			//Add the hash matches to the list of matches
 			for _, hashMatch := range hashMatches {
 				findings = append(findings, &data.RuleFindingData{RuleId: rule.Id, RuleName: rule.Info.Name, RuleDescription: rule.Info.Description, Line: -1, LineIndex: -1, Classification: rule.Info.Classification, Severity: ConvertSeverityStringToInteger(rule.Info.Severity), MatchedString: "", MatchedBodyHash: hashMatch.BodyHash, MatchedBodyHashAlg: hashMatch.BodyHashAlgorithm, Length: int64(len(hashMatch.BodyHash))})
+			}
+		}
+
+		//Check if the rule has at least high severity
+		if ConvertSeverityStringToInteger(rule.Info.Severity) >= data.HIGH {
+			//Send an alert to the API via WebSocket
+			err := rl.apiWsConn.SendRuleDetectionAlert(websocket.RuleDetectionAlert{AgentId: rl.configuration.UUID, RuleId: rule.Id, RuleName: rule.Info.Name, RuleDescription: rule.Info.Description, Classification: rule.Info.Classification, Severity: rule.Info.Severity, Timestamp: time.Now().Unix()})
+			//Check if an error occured when sending the alert
+			if err != nil {
+				rl.logger.Error("Error occured when sending alert to API when a high or critical payload was detected")
 			}
 		}
 	}

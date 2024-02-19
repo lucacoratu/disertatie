@@ -138,7 +138,7 @@ func (agent *AgentServer) Init() error {
 	go apiWsConnection.Start()
 
 	//Send a test notification
-	apiWsConnection.SendNotification("Connected to the WS endpoint")
+	//apiWsConnection.SendNotification("Connected to the WS endpoint")
 
 	//Add the validators to the list of validators
 	agent.checkers = append(agent.checkers, code.NewUserAgentValidator(agent.logger, agent.configuration))
@@ -147,7 +147,7 @@ func (agent *AgentServer) Init() error {
 	r := mux.NewRouter()
 
 	//Create the handler which will contain the function to handle requests
-	handler := NewAgentHandler(agent.logger, agent.apiBaseURL, agent.configuration, agent.checkers, agent.rules)
+	handler := NewAgentHandler(agent.logger, agent.apiBaseURL, agent.configuration, agent.checkers, agent.rules, apiWsConnection)
 
 	//Create a single route that will catch every request on every method
 	r.PathPrefix("/").HandlerFunc(handler.HandleRequest)

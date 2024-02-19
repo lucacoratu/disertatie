@@ -17,22 +17,24 @@ import (
 	rules "github.com/lucacoratu/disertatie/agent/detection/rules"
 	"github.com/lucacoratu/disertatie/agent/logging"
 	"github.com/lucacoratu/disertatie/agent/utils"
+	"github.com/lucacoratu/disertatie/agent/websocket"
 )
 
 /*
  * Structure which holds all the information needed by the handler for the HTTP requests
  */
 type AgentHandler struct {
-	logger        logging.ILogger      //The logger interface
-	apiBaseURL    string               //The API base URL
-	configuration config.Configuration //The configuration structure
-	checkers      []code.IValidator    //The list of validators which will be run on the request and the response to find malicious activity
-	rules         []rules.Rule         //The list of rules which will try to find anomalies in the requests and the responses
+	logger        logging.ILogger                   //The logger interface
+	apiBaseURL    string                            //The API base URL
+	configuration config.Configuration              //The configuration structure
+	checkers      []code.IValidator                 //The list of validators which will be run on the request and the response to find malicious activity
+	rules         []rules.Rule                      //The list of rules which will try to find anomalies in the requests and the responses
+	apiWsConn     *websocket.APIWebSocketConnection //The WS connection to the API
 }
 
 // Creates a new AgentHandlerStructure
-func NewAgentHandler(logger logging.ILogger, apiBaseURL string, configuration config.Configuration, checkers []code.IValidator, rules []rules.Rule) *AgentHandler {
-	return &AgentHandler{logger: logger, apiBaseURL: apiBaseURL, configuration: configuration, checkers: checkers, rules: rules}
+func NewAgentHandler(logger logging.ILogger, apiBaseURL string, configuration config.Configuration, checkers []code.IValidator, rules []rules.Rule, apiWsConn *websocket.APIWebSocketConnection) *AgentHandler {
+	return &AgentHandler{logger: logger, apiBaseURL: apiBaseURL, configuration: configuration, checkers: checkers, rules: rules, apiWsConn: apiWsConn}
 }
 
 // Forwards the request to the target server
@@ -176,7 +178,7 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 	//Create the validator runner
 	validatorRunner := code.NewValidatorRunner(agentHandler.checkers, agentHandler.logger)
 	//Create the rule runner
-	ruleRunner := rules.NewRuleRunner(agentHandler.logger, agentHandler.rules)
+	ruleRunner := rules.NewRuleRunner(agentHandler.logger, agentHandler.rules, agentHandler.apiWsConn, agentHandler.configuration)
 
 	//Run all the validators on the request
 	requestFindings, _ := validatorRunner.RunValidatorsOnRequest(r)

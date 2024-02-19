@@ -29,8 +29,9 @@ const Finding: FC<FindingProps> = ({finding, findingsClassificationString, match
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger>
-                            <div className={"p-1 rounded w-fit text-center " + severityColors[finding.severity]}>
-                                {classificationString}
+                            <div className="flex flex-row gap-2 items-center">
+                                <div className={"w-5 h-5 rounded-full " + severityColors[finding.severity]}/>
+                                <div>{classificationString}</div>
                             </div>
                         </TooltipTrigger>
                         <TooltipContent>

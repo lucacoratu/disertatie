@@ -29,25 +29,25 @@ const Header = () => {
         {
             href: "/",
             label: "Home",
-            icon: <Home className="w-5 h-5  "/>,
+            icon: <Home className="w-4 h-4"/>,
         },
         {
             href: "/machines",
             label: "Machines",
-            icon: <Server className="w-5 h-5"/>,
+            icon: <Server className="w-4 h-4"/>,
         },
         {
             href: "/agents",
             label: "Agents",
-            icon: <VenetianMask className="w-5 h-5"/>,
+            icon: <VenetianMask className="w-4 h-4"/>,
         }
     ];
 
     return (
-        <header className="sm:flex sm:justify-start py-3 border-b dark:border-darksurface-400 dark:bg-darksurface-100">
+        <header className="flex justify-start py-3 px-4 border-b dark:border-darksurface-400 dark:bg-darksurface-100">
             <Container>
-                <div className="relative px-4 sm:px-6 lg:px-8 flex h-8 justify-between items-center w-full">
-                    <div className="flex justify-start items-center gap-4">
+                <div className="flex h-8 justify-between items-center w-full">
+                    <div className="flex justify-start items-center gap-3">
                         <Sheet>
                             <SheetTrigger>
                                 <Menu className="h-6 w-6"/>
@@ -87,7 +87,7 @@ const Header = () => {
                         </Link>
                     </div>
                     
-                    <div className="mx-6 flex flex-row items-center space-x-4 lg:space-x-6">
+                    <div className="flex flex-row items-center gap-6">
                         <NotificationButton />
                         <ThemeButton />   
                         <ProfileButton/>

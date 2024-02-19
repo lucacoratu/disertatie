@@ -61,8 +61,12 @@ export default async function LogDetails({ params }: { params: { logid: string }
     return (
         <>
             <HTTPHighlighter log={fullLog}/>
-            <div className="flex flex-wrap flex-row gap-3">
+            <div className="flex flex-wrap flex-col gap-0 grow min-h-[200px] justify-center p-4 dark:bg-darksurface-100 dark:border-darksurface-400 border-2 dark:bg-darksurface-100 b-2 rounded-xl">
+                <h2 className="text-xl">Findings</h2>
                 <FindingCard findings={fullLog.findings} findingsClassificationString={findingsClassficationString}/>
+            </div>
+            <div className="flex flex-wrap flex-col gap-0 grow min-h-[200px] justify-center p-4 dark:bg-darksurface-100 dark:border-darksurface-400 border-2 dark:bg-darksurface-100 b-2 rounded-xl">
+                <h2 className="text-xl">Rule Findings</h2>
                 <RuleFindingCard findings={fullLog.ruleFindings}/>
             </div>
             <ExploitCard exploit={logExploit}/>

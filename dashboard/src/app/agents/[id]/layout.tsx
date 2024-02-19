@@ -13,10 +13,10 @@ export default function Layout({
   }) {
     return (
         <main className="h-full w-full flex flex-col py-2 gap-2 px-2 dark:bg-darksurface-200">
+          {children}
           {modal}            
           {metrics}
           {tablelogs}
-          {children}
         </main>
     )
 }

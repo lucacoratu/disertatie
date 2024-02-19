@@ -24,9 +24,9 @@ const FindingCard: FC<FindingCardProps> = ({findings, findingsClassificationStri
     return (
         <div className="flex flex-wrap flex-row gap-3 grow min-h-[200px] justify-center">
             {/* Request findings div*/}
-            <div className="flex flex-col gap-1 min-w-[450px] grow w-1/3 p-4 rounded dark:bg-darksurface-100 dark:border-darksurface-400 border-2 dark:bg-darksurface-100 b-2 rounded-xl">
+            <div className="flex flex-col gap-1 min-w-[450px] grow w-1/3">
                 <div>
-                    <h2 className="text-xl">Request findings</h2>
+                    <h2 className="text-lg text-gray-400">Request</h2>
                 </div>
                 <div>
                     {requestFindings.map((finding) => {
@@ -34,12 +34,18 @@ const FindingCard: FC<FindingCardProps> = ({findings, findingsClassificationStri
                             <Finding key={finding?.id} finding={finding} findingsClassificationString={findingsClassificationString} matchedString={finding?.matchedString}/>
                         );
                     })}
+
+                    {requestFindings.length == 0 && 
+                        <div className="flex items-center text-center text-gray-600">
+                            No request findings
+                        </div>
+                    }
                 </div>
             </div>
             {/* Response findings div */}
-            <div className="flex flex-col gap-1 min-w-[450px] grow w-1/3 p-4 rounded dark:bg-darksurface-100 dark:border-darksurface-400 border-2 dark:bg-darksurface-100 b-2 rounded-xl">
+            <div className="flex flex-col gap-1 min-w-[450px] grow w-1/3">
                 <div>
-                    <h2 className="text-xl">Response findings</h2>
+                    <h2 className="text-lg text-gray-400">Response</h2>
                 </div>
                 <div>
                     {responseFindings.map((finding) => {
@@ -47,6 +53,12 @@ const FindingCard: FC<FindingCardProps> = ({findings, findingsClassificationStri
                             <Finding key={finding?.id} finding={finding} findingsClassificationString={findingsClassificationString} matchedString={finding?.matchedString}/>
                         );
                     })}
+
+                    {responseFindings.length == 0 && 
+                        <div className="flex items-center text-center text-gray-600">
+                            No response findings
+                        </div>
+                    }
                 </div>
             </div>
         </div>
