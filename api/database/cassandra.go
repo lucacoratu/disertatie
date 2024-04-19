@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	"strings"
+	"time"
 
 	b64 "encoding/base64"
 
@@ -49,7 +50,7 @@ func (cassandra *CassandraConnection) createTables() error {
 	}
 
 	//Create the table that will hold the logs of an agent
-	err = cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".logs (id TEXT, agent_id TEXT, request_preview TEXT, response_preview TEXT, remote_ip TEXT, timestamp INT, raw_request TEXT, raw_response TEXT, PRIMARY KEY (id, agent_id, timestamp))").Exec()
+	err = cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".logs (id TEXT, agent_id TEXT, request_method TEXT, request_preview TEXT, response_preview TEXT, response_code TEXT, remote_ip TEXT, timest timestamp, raw_request TEXT, raw_response TEXT, PRIMARY KEY ((id), agent_id, timest)) WITH CLUSTERING ORDER BY (agent_id ASC, timest DESC)").Exec()
 	//Check if an error occured when creating the table logs
 	if err != nil {
 		return errors.New("cannot create logs table, " + err.Error())
@@ -76,11 +77,33 @@ func (cassandra *CassandraConnection) createTables() error {
 		return errors.New("cannot create rules findings table, " + err.Error())
 	}
 
-	//Create the index for the agent id in the logs table
-	err = cassandra.session.Query("CREATE INDEX IF NOT EXISTS logs_agent_index ON " + cassandra.configuration.CassandraKeyspace + ".logs(agent_id)").Exec()
+	// //Create the index for the agent id in the logs table
+	// err = cassandra.session.Query("CREATE INDEX IF NOT EXISTS logs_agent_index ON " + cassandra.configuration.CassandraKeyspace + ".logs(agent_id)").Exec()
+	// if err != nil {
+	// 	return errors.New("cannot create agent_id index in logs table, " + err.Error())
+	// }
+
+	//Create the index for the method in the logs table
+	err = cassandra.session.Query("CREATE CUSTOM INDEX IF NOT EXISTS logs_methods_index_sasi ON " + cassandra.configuration.CassandraKeyspace + ".logs(request_preview) USING 'org.apache.cassandra.index.sasi.SASIIndex' WITH OPTIONS = {'mode': 'CONTAINS'}").Exec()
 	if err != nil {
-		return errors.New("cannot create agent_id index in logs table, " + err.Error())
+		return errors.New("cannot create request preview index in logs table, " + err.Error())
 	}
+
+	// err = cassandra.session.Query("CREATE CUSTOM INDEX IF NOT EXISTS ON  " + cassandra.configuration.CassandraKeyspace + ".logs(agent_id) USING 'org.apache.cassandra.index.sasi.SASIIndex';").Exec()
+	// if err != nil {
+	// 	return errors.New("cannot create agent_id index in logs table, " + err.Error())
+	// }
+
+	// err = cassandra.session.Query("CREATE OR REPLACE FUNCTION state_group_and_count( state map<date, int>, type date ) CALLED ON NULL INPUT RETURNS map<date, int> LANGUAGE java AS ' Integer count = (Integer) state.get(type);  if (count == null) count = 1; else count++; state.put(type, count); return state; ' ;").Exec()
+	// if err != nil {
+	// 	return errors.New("cannot create state group function in logs table, " + err.Error())
+	// }
+
+	// err = cassandra.session.Query("CREATE OR REPLACE AGGREGATE group_and_count(date) SFUNC state_group_and_count STYPE map<date, int> INITCOND {};").Exec()
+	// if err != nil {
+	// 	return errors.New("cannot create aggregate in logs table, " + err.Error())
+	// }
+
 	return nil
 }
 
@@ -90,7 +113,7 @@ func (cassandra *CassandraConnection) Init() error {
 	cluster := gocql.NewCluster(cassandra.configuration.CassandraNodes...)
 
 	//Set the database name (keyspace)
-	cluster.Keyspace = "api"
+	cluster.Keyspace = cassandra.configuration.CassandraKeyspace
 
 	//Try to connect to the cluster and keyspace
 	session, err := cluster.CreateSession()
@@ -234,37 +257,48 @@ func (cassandra *CassandraConnection) InsertRuleFindings(log_id string, ruleFind
 }
 
 // Insert a log from an agent
-func (cassandra *CassandraConnection) InsertLog(logData data.LogData) (bool, error) {
+func (cassandra *CassandraConnection) InsertLog(logData data.LogData) (string, bool, error) {
 	//Generate a new UUID
 	id := uuid.New().String()
 	if id == "" {
-		return false, errors.New("could not create a new uuid for the log")
+		return "", false, errors.New("could not create a new uuid for the log")
 	}
 
 	//Convert request from base64 to string
 	rawRequest, err := b64.StdEncoding.DecodeString(logData.Request)
 	//Check if an error occured when decoding the request from base64
 	if err != nil {
-		return false, errors.New("could not decode the request from base64, " + err.Error())
+		return "", false, errors.New("could not decode the request from base64, " + err.Error())
 	}
 
 	//Create the request preview (the first line of the request)
 	request_preview := strings.Split(string(rawRequest), "\n")[0]
 
+	//Get the request method
+	request_method := strings.Split(request_preview, " ")[0]
+
 	//Convert response from base64 to string
 	rawResponse, err := b64.StdEncoding.DecodeString(logData.Response)
 	//Check if an error occured when decoding the response from base64
 	if err != nil {
-		return false, errors.New("could not decode the response from base64, " + err.Error())
+		return "", false, errors.New("could not decode the response from base64, " + err.Error())
 	}
 
 	//Create the response preview (the first line of the response)
 	response_preview := strings.Split(string(rawResponse), "\n")[0]
 
+	//Get the response status code
+	response_code := strings.Split(response_preview, " ")[1]
+
+	//Convert unix timestamp to cassandra timestamp
+	cassandraTimestamp := time.Unix(logData.Timestamp, 0)
+	//cassandra.logger.Debug(cassandraTimestamp)
+
 	//Insert log data into the database
-	err = cassandra.session.Query("INSERT INTO "+cassandra.configuration.CassandraKeyspace+".logs (id, agent_id, request_preview, response_preview, remote_ip, timestamp, raw_request, raw_response) VALUES (?,?,?,?,?,?,?,?)", id, logData.AgentId, request_preview, response_preview, logData.RemoteIP, logData.Timestamp, rawRequest, rawResponse).Exec()
+	err = cassandra.session.Query("INSERT INTO "+cassandra.configuration.CassandraKeyspace+".logs (id, agent_id, request_preview, response_preview, remote_ip, timest, raw_request, raw_response, request_method, response_code) VALUES (?,?,?,?,?,?,?,?,?,?)", id, logData.AgentId, request_preview, response_preview, logData.RemoteIP, cassandraTimestamp, rawRequest, rawResponse, request_method, response_code).Exec()
 	if err != nil {
-		return false, errors.New("could not insert the log in the database, " + err.Error())
+		cassandra.logger.Error("could not insert the log in the database, "+err.Error(), request_preview, response_preview, rawRequest, rawResponse)
+		return "", false, errors.New("could not insert the log in the database, " + err.Error())
 	}
 
 	//cassandra.logger.Debug(logData.Findings)
@@ -275,7 +309,7 @@ func (cassandra *CassandraConnection) InsertLog(logData data.LogData) (bool, err
 	//Insert all rule findings from the agent in the findings table
 	cassandra.InsertRuleFindings(id, logData.RuleFindings)
 
-	return true, nil
+	return id, true, nil
 }
 
 // Get all the agents from the database
@@ -341,6 +375,26 @@ func (cassandra *CassandraConnection) GetMachines() ([]data.MachineDatabase, err
 	}
 
 	return machines, nil
+}
+
+// Get the number of machines and the total number of network interfaces
+func (cassandra *CassandraConnection) GetNumberMachinesAndNumberNetworkInterfaces() (int64, int64, error) {
+	//Prepare the query to get the total number of machines
+	query := cassandra.session.Query("SELECT COUNT(*) FROM " + cassandra.configuration.CassandraKeyspace + ".machines")
+	var numberMachines int64
+	err := query.Scan(&numberMachines)
+	if err != nil {
+		return -1, -1, errors.New("could not get the number of registered machines, " + err.Error())
+	}
+	//Prepare the query to extract the interfaces of the machines
+	query = cassandra.session.Query("SELECT ip_addresses FROM " + cassandra.configuration.CassandraKeyspace + ".machines")
+	var ip_addresses string
+	iter := query.Iter()
+	var totalNumberInterfaces int64 = 0
+	for iter.Scan(&ip_addresses) {
+		totalNumberInterfaces += int64(len(strings.Split(ip_addresses, " ")))
+	}
+	return numberMachines, totalNumberInterfaces, nil
 }
 
 // Get a specific machine based on the id
@@ -505,11 +559,14 @@ func (cassandra *CassandraConnection) GetLogRuleFindings(log_id string) ([]data.
 // Get all the logs of an agent in a short format
 func (cassandra *CassandraConnection) GetAgentLogsShort(agent_id string) ([]data.LogDataShort, error) {
 	//Prepare the query to select all the logs that are generated by the specified agent
-	query := cassandra.session.Query("SELECT id, agent_id, request_preview, response_preview, remote_ip, timestamp FROM "+cassandra.configuration.CassandraKeyspace+".logs WHERE agent_id = ?", agent_id)
+	query := cassandra.session.Query("SELECT id, agent_id, request_preview, response_preview, remote_ip, timest FROM "+cassandra.configuration.CassandraKeyspace+".logs WHERE agent_id = ? LIMIT 200 ALLOW FILTERING", agent_id)
 	logs := make([]data.LogDataShort, 0)
 	log := data.LogDataShort{}
 	iter := query.Iter()
-	for iter.Scan(&log.Id, &log.AgentId, &log.RequestPreview, &log.ResponsePreview, &log.RemoteIP, &log.Timestamp) {
+	var ts time.Time
+	for iter.Scan(&log.Id, &log.AgentId, &log.RequestPreview, &log.ResponsePreview, &log.RemoteIP, &ts) {
+		//Convert time.Time to unix timestamp
+		log.Timestamp = ts.Unix()
 		//Get the all the findings for the log
 		findings, err := cassandra.GetLogFindings(log.Id)
 		//cassandra.logger.Debug(findings)
@@ -539,13 +596,73 @@ func (cassandra *CassandraConnection) GetAgentLogsShort(agent_id string) ([]data
 	return logs, nil
 }
 
+func (cassandra *CassandraConnection) GetAgentLogsShortPaginated(agent_id string, current_page string) (string, []data.LogDataShort, error) {
+	//If the page is not empty
+	var curr_page []byte = make([]byte, 0)
+	//Decode from base64
+	curr_page, err := b64.StdEncoding.DecodeString(current_page)
+	if err != nil {
+		//Start from the first page
+		curr_page = nil
+		cassandra.logger.Debug("Cannot decode the current page from base64")
+	}
+
+	// var order_direction string = "ASC"
+	// if direction == "0" {
+	// 	order_direction = "DESC"
+	// }
+
+	iter := cassandra.session.Query("SELECT id, agent_id, request_preview, response_preview, remote_ip, timest FROM "+cassandra.configuration.CassandraKeyspace+".logs WHERE agent_id = ? ALLOW FILTERING", agent_id).PageSize(10).PageState(curr_page).Iter()
+	defer iter.Close()
+
+	page := iter.PageState()
+	b64page := b64.StdEncoding.EncodeToString(page)
+	cassandra.logger.Debug("page_info", page)
+	log := data.LogDataShort{}
+	logs := make([]data.LogDataShort, 0)
+	var ts time.Time
+	for iter.Scan(&log.Id, &log.AgentId, &log.RequestPreview, &log.ResponsePreview, &log.RemoteIP, &ts) {
+		//Convert time.Time to unix timestamp
+		log.Timestamp = ts.Unix()
+		//Get the all the findings for the log
+		findings, err := cassandra.GetLogFindings(log.Id)
+		//cassandra.logger.Debug(findings)
+		//Check if an error occured when getting the findings for the log
+		if err != nil {
+			cassandra.logger.Warning("Could not get the findings for the log", log.Id)
+			continue
+		}
+		//Get all the rule findings for the log
+		ruleFindings, err := cassandra.GetLogRuleFindings(log.Id)
+		//Check if an error occured when getting the rule findings for the log
+		if err != nil {
+			cassandra.logger.Warning("Could not get the rule findings for the log", log.Id)
+			continue
+		}
+		//Add the findings to the logs findings array
+		if len(findings) > 0 {
+			log.Findings = findings
+		}
+		if len(ruleFindings) > 0 {
+			log.RuleFindings = ruleFindings
+		}
+		//Append the selected log to the list of logs
+		logs = append(logs, log)
+	}
+
+	//Return the next page, the logs and nil for error
+	return b64page, logs, nil
+}
+
 // Get all logs of an agent
 func (cassandra *CassandraConnection) GetAgentLogs(uuid string) ([]data.LogData, error) {
-	query := cassandra.session.Query("SELECT id, raw_request, raw_response, remote_ip, timestamp FROM "+cassandra.configuration.CassandraKeyspace+".logs WHERE agent_id = ?", uuid)
+	query := cassandra.session.Query("SELECT id, raw_request, raw_response, remote_ip, timest FROM "+cassandra.configuration.CassandraKeyspace+".logs WHERE agent_id = ? LIMIT 200 ALLOW FILTERING", uuid)
 	logs := make([]data.LogData, 0)
 	log := data.LogData{}
 	iter := query.Iter()
-	for iter.Scan(&log.Id, &log.Request, &log.Response, &log.RemoteIP, &log.Timestamp) {
+	var ts time.Time
+	for iter.Scan(&log.Id, &log.Request, &log.Response, &log.RemoteIP, &ts) {
+		log.Timestamp = ts.Unix()
 		log.AgentId = uuid
 		log.Request = b64.StdEncoding.EncodeToString([]byte(log.Request))
 		log.Response = b64.StdEncoding.EncodeToString([]byte(log.Response))
@@ -554,12 +671,89 @@ func (cassandra *CassandraConnection) GetAgentLogs(uuid string) ([]data.LogData,
 	return logs, nil
 }
 
+// Get all methods available and their count in the logs
+func (cassandra *CassandraConnection) GetLogsMethodCount(uuid string, method string) (int64, error) {
+	//Prepare the query to get the method count
+	//query := cassandra.session.Query("SELECT COUNT(*) FROM "+cassandra.configuration.CassandraKeyspace+".logs WHERE request_preview LIKE '"+method+"%' AND agent_id = ? ALLOW FILTERING", uuid)
+	query := cassandra.session.Query("SELECT COUNT(*) FROM "+cassandra.configuration.CassandraKeyspace+".logs WHERE request_method = ? AND agent_id = ? ALLOW FILTERING", method, uuid)
+	var count int64 = 0
+	res := query.Iter().Scan(&count)
+	if !res {
+		return 0, errors.New("cannot get the count for method " + method + " from cassandra")
+	}
+	return count, nil
+}
+
+// Get number of requests per day over all period of time
+func (cassandra *CassandraConnection) GetRequestsPerDay(uuid string) (map[string]int64, error) {
+	//Prepare the query
+	query := cassandra.session.Query("SELECT timest FROM "+cassandra.configuration.CassandraKeyspace+".logs WHERE agent_id = ? ALLOW FILTERING", uuid)
+	//Get the iterator
+	iter := query.Iter()
+	var day time.Time
+	//Create the map of occurences
+	var occurencesMap map[string]int64 = make(map[string]int64, 0)
+	for iter.Scan(&day) {
+		//Convert the timestamp to date containing year, month and day
+		dateString := day.Format(time.DateOnly)
+		_, ok := occurencesMap[dateString]
+		if !ok {
+			occurencesMap[dateString] = 0
+		}
+		occurencesMap[dateString] += 1
+	}
+
+	return occurencesMap, nil
+}
+
+// Get status code counts
+func (cassandra *CassandraConnection) GetStatusCodeCounts(uuid string) (map[string]int64, error) {
+	//Prepare the query
+	query := cassandra.session.Query("SELECT response_code FROM "+cassandra.configuration.CassandraKeyspace+".logs WHERE agent_id = ? ALLOW FILTERING", uuid)
+	//Get the iterator
+	iter := query.Iter()
+	var status_code string
+	var occurencesMap map[string]int64 = make(map[string]int64, 0)
+	for iter.Scan(&status_code) {
+		_, ok := occurencesMap[status_code]
+		if !ok {
+			occurencesMap[status_code] = 0
+		}
+		occurencesMap[status_code] += 1
+	}
+
+	return occurencesMap, nil
+}
+
+// Get IP addresses metrics
+func (cassandra *CassandraConnection) GetIPAddressesCounts(uuid string) (map[string]int64, error) {
+	//Prepare the query
+	query := cassandra.session.Query("SELECT remote_ip FROM "+cassandra.configuration.CassandraKeyspace+".logs WHERE agent_id = ? ALLOW FILTERING", uuid)
+	//Get the iterator
+	iter := query.Iter()
+	var ip_address string
+	var occurencesMap map[string]int64 = make(map[string]int64, 0)
+	for iter.Scan(&ip_address) {
+		//Parse the IP address --------- TO DO: Consider IPv6 as well
+		ip_address = strings.Split(ip_address, ":")[0]
+		_, ok := occurencesMap[ip_address]
+		if !ok {
+			occurencesMap[ip_address] = 0
+		}
+		occurencesMap[ip_address] += 1
+	}
+
+	return occurencesMap, nil
+}
+
 // Get a specific log
 func (cassandra *CassandraConnection) GetLog(uuid string) (data.LogDataDatabase, error) {
-	query := cassandra.session.Query("SELECT id, raw_request, raw_response, remote_ip, timestamp, request_preview, response_preview FROM "+cassandra.configuration.CassandraKeyspace+".logs WHERE id = ?", uuid)
+	query := cassandra.session.Query("SELECT id, raw_request, raw_response, remote_ip, timest, request_preview, response_preview FROM "+cassandra.configuration.CassandraKeyspace+".logs WHERE id = ?", uuid)
 	log := data.LogDataDatabase{}
 	iter := query.Iter()
-	for iter.Scan(&log.Id, &log.Request, &log.Response, &log.RemoteIP, &log.Timestamp, &log.RequestPreview, &log.ResponsePreview) {
+	var ts time.Time
+	for iter.Scan(&log.Id, &log.Request, &log.Response, &log.RemoteIP, &ts, &log.RequestPreview, &log.ResponsePreview) {
+		log.Timestamp = ts.Unix()
 		log.AgentId = uuid
 		log.Request = b64.StdEncoding.EncodeToString([]byte(log.Request))
 		log.Response = b64.StdEncoding.EncodeToString([]byte(log.Response))

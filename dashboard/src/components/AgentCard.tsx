@@ -49,9 +49,9 @@ const AgentCard: FC<AgentProps> = ({agent}): JSX.Element => {
 
     return (
         <ContextMenu>
-            <ContextMenuTrigger className="min-w-96 w-1/4 rounded-lg hover:shadow-lg hover:dark:bg-darksurface-100/[.8] dark:bg-darksurface-100 dark:border-darksurface-400">
+            <ContextMenuTrigger className="min-w-96 w-1/4 rounded-lg hover:shadow-lg hover:dark:bg-darksurface-100/[.8]">
                 <Card>
-                    <Link href={`/agents/${encodeURIComponent(agent.id)}`}>
+                    <Link href={`/dashboard/agents/${encodeURIComponent(agent.id)}`}>
                         <CardHeader>
                             <CardTitle>{agent?.name ? agent?.name : "No name"}</CardTitle>
                             <CardDescription className="flex flex-row items-center justify-between">
@@ -82,12 +82,12 @@ const AgentCard: FC<AgentProps> = ({agent}): JSX.Element => {
             </ContextMenuTrigger>
             <ContextMenuContent>
                 <ContextMenuItem className="dark:hover:bg-darksurface-400">
-                    <Link className="flex flex-row items-center gap-4" href={`/agents/${encodeURIComponent(agent.id)}`}>
+                    <Link className="flex flex-row items-center gap-4" href={`/dashboard/agents/${encodeURIComponent(agent.id)}`}>
                         <GanttChartSquare className="w-4 h-4"/>Details
                     </Link>
                 </ContextMenuItem>
                 <ContextMenuItem className="dark:hover:bg-darksurface-400 flex flex-row items-center gap-4">
-                    <Link className="flex flex-row items-center gap-4" href={`/agents/${encodeURIComponent(agent.id)}/edit`}>
+                    <Link className="flex flex-row items-center gap-4" href={`/dashboard/agents/${encodeURIComponent(agent.id)}/edit`}>
                         <Pencil className="w-4 h-4"/>Edit
                     </Link>
                 </ContextMenuItem>

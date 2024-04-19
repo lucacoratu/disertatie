@@ -29,3 +29,18 @@ func (mrr *MachinesRegisterResponse) ToJSON(w io.Writer) error {
 	e := json.NewEncoder(w)
 	return e.Encode(mrr)
 }
+
+type MachinesStatisticsResponse struct {
+	TotalMachines   int64 `json:"totalMachines"`
+	TotalInterfaces int64 `json:"totalInterfaces"`
+}
+
+func (msr *MachinesStatisticsResponse) FromJSON(r io.Reader) error {
+	e := json.NewDecoder(r)
+	return e.Decode(msr)
+}
+
+func (msr *MachinesStatisticsResponse) ToJSON(w io.Writer) error {
+	d := json.NewEncoder(w)
+	return d.Encode(msr)
+}

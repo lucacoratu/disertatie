@@ -1,0 +1,11 @@
+id: Test Critical
+
+info:
+  name: Test critical
+  description: This rule is a test rule for critical alerts
+  severity: critical
+  classification: dm
+
+request:
+  method: 
+    match: "TRACE" 

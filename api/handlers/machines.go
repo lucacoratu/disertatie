@@ -41,6 +41,24 @@ func (mh *MachinesHandler) GetMachines(rw http.ResponseWriter, r *http.Request) 
 	responseData.ToJSON(rw)
 }
 
+// Handler to get the machines statistics
+func (mh *MachinesHandler) GetMachinesStatistics(rw http.ResponseWriter, r *http.Request) {
+	//Get the total number of machines and the total number of network interfaces
+	numberMachines, totalInterfaces, err := mh.dbConnection.GetNumberMachinesAndNumberNetworkInterfaces()
+	//Check if an error occured
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		retErr := data.APIError{Code: data.DATABASE_ERROR, Message: err.Error()}
+		retErr.ToJSON(rw)
+		return
+	}
+	//Create the response object
+	response := response.MachinesStatisticsResponse{TotalMachines: numberMachines, TotalInterfaces: totalInterfaces}
+	//Send the response back to the client
+	rw.WriteHeader(http.StatusOK)
+	response.ToJSON(rw)
+}
+
 // Handler to register a new machine
 func (mh *MachinesHandler) RegisterMachine(rw http.ResponseWriter, r *http.Request) {
 	//Get the data from the request

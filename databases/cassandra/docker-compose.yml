@@ -1,0 +1,20 @@
+version: '3.3'
+
+services:
+  cassandra:
+    image: cassandra
+    ports:
+      - 9042:9042
+    volumes:
+      - ./data/cassandra:/var/lib/cassandra
+      - ./config/:/etc/cassandra
+    environment:
+      - CASSANDRA_CLUSTER_NAME=honeypot
+  init-cassandra:
+    image: cassandra
+    depends_on:
+      - cassandra # IMPORTANT: this init container can only start up after the original container is started
+    restart: "no" # IMPORTANT: the restart should be set to "no" so that the init container is used only once after the original container is started
+    entrypoint: [ "/init.sh" ] # executing the init script
+    volumes:
+      - ./scripts/cassandra/init.sh:/init.sh # the init script is added via volumes

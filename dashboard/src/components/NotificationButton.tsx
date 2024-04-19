@@ -26,7 +26,7 @@ const NotificationButton = () => {
                 // copy the current notifications state
                 ...notifications,
                 // now you can add a new object to add to the array
-                <div>{notif.message}</div>
+                <div key={notifications.length + 1}>{notif.message}</div>
             ];
             setNotifications(updateNotifications);
             setNumberNotifications(updateNotifications.length);
@@ -55,7 +55,7 @@ const NotificationButton = () => {
                 // copy the current notifications state
                 ...notifications,
                 // now you can add a new object to add to the array
-                <div className="flex flex-col bg-red-900 rounded b-1 p-2">
+                <div key={notifications.length + 1} className="flex flex-col bg-red-900 rounded b-1 p-2">
                     <div className="flex flex-col items-start">
                         <p className="text-base mb-2">Rule detection alert - {alert.severity.toUpperCase()}</p>
                         <div className="text-sm">Agent: {alert.agentId}</div>

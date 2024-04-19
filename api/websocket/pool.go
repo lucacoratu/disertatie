@@ -74,7 +74,7 @@ func (pool *Pool) AgentRegistered(c *AgentClient) {
 	//Send a notification to all the dashboard client to announce that the agent connected to the API
 	message := Notification{AgentId: c.Id, Message: "Agent connected"}
 	wsMessage := WebSocketMessage{Type: WsAgentConnectedNotification, Data: message}
-	for client := range pool.DashboardClients {
+	for client := range pool.AgentClients {
 		err := client.Conn.WriteJSON(wsMessage)
 		//Check if an error occured when sending the notification to the dashboard client
 		if err != nil {
@@ -89,7 +89,7 @@ func (pool *Pool) AgentUnregistered(c *AgentClient) {
 	//Send a disconnect message to all the dashboard clients
 	message := Notification{AgentId: c.Id, Message: "Agent disconnected"}
 	wsMessage := WebSocketMessage{Type: WsAgentDisconnectedNotification, Data: message}
-	for client := range pool.DashboardClients {
+	for client := range pool.AgentClients {
 		err := client.Conn.WriteJSON(wsMessage)
 		//Check if an error occured when sending the notification to the dashboard client
 		if err != nil {

@@ -66,3 +66,27 @@ func (lds *LogDataShort) ToJSON(w io.Writer) error {
 	e := json.NewEncoder(w)
 	return e.Encode(lds)
 }
+
+// This structure holds the log data that is sent to the api
+type LogDataElastic struct {
+	Id              string        `json:"id"`               //The UUID of the log from the database
+	AgentId         string        `json:"agentId"`          //The UUID of the agent that collected the log data
+	RemoteIP        string        `json:"remoteIp"`         //The IP address of the sender of the request
+	Timestamp       int64         `json:"timestamp"`        //Timestamp when the request was received
+	RequestPreview  string        `json:"request_preview"`  //The preview of the request
+	ResponsePreview string        `json:"response_preview"` //The preview of the response
+	Findings        []Finding     `json:"findings"`         //A list of findings
+	RuleFindings    []RuleFinding `json:"ruleFindings"`     //The list of rule findings
+}
+
+// Convert json data to LogData structure
+func (ld *LogDataElastic) FromJSON(r io.Reader) error {
+	d := json.NewDecoder(r)
+	return d.Decode(ld)
+}
+
+// Convert LogData structure to json string
+func (ld *LogDataElastic) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(ld)
+}

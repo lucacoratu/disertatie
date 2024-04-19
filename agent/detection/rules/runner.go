@@ -59,10 +59,10 @@ func (rl *RuleRunner) search(value string, mode *RuleSearchMode) []string {
 		}
 		//Find all the matches for the regex
 		matches := r.FindAllString(value, -1)
-		rl.logger.Debug("Value:", value, "Regex:", mode.Regex, "Matches:", matches)
+		//rl.logger.Debug("Value:", value, "Regex:", mode.Regex, "Matches:", matches)
 		//Check if there were any matches
 		if len(matches) > 0 {
-			rl.logger.Debug("Regex,", mode.Regex, "matched on", value)
+			//rl.logger.Debug("Regex,", mode.Regex, "matched on", value)
 			//Add the matches to the list of matches
 			allMatches = append(allMatches, matches...)
 		}
@@ -340,7 +340,7 @@ func (rl *RuleRunner) RunRulesOnRequest(r *http.Request) ([]*data.RuleFindingDat
 			}
 			finding.Line = lineNumber
 			finding.LineIndex = lineOffset
-			rl.logger.Debug(*finding)
+			//rl.logger.Debug(*finding)
 		}
 	}
 
@@ -417,7 +417,7 @@ func (rl *RuleRunner) RunRulesOnResponse(r *http.Response) ([]*data.RuleFindingD
 			}
 			finding.Line = lineNumber
 			finding.LineIndex = lineOffset
-			rl.logger.Debug(*finding)
+			//rl.logger.Debug(*finding)
 		}
 	}
 

@@ -145,7 +145,13 @@ type LogShort = {
 }
 
 type LogShortResponse = {
-    logs: LogShort[]
+    logs: LogShort[],
+	nextPage: string
+}
+
+
+type LogsShortElasticResponse = {
+	logs: LogShort[]
 }
 
 type LogShortProps = {
@@ -182,4 +188,8 @@ type LogFull = {
 
 type LogFullResponse = {
 	log: LogFull
+}
+
+type LogCountResponse = {
+	count: number
 }

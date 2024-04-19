@@ -173,6 +173,10 @@ func DumpHTTPRequest(req *http.Request) ([]byte, error) {
 
 // Dumps the http response as a string
 func DumpHTTPResponse(res *http.Response) ([]byte, error) {
+	if res == nil {
+		return nil, errors.New("response is nil")
+	}
+
 	//Create the first line of the response which contains the version, status code and the status message
 	rawResponse := make([]byte, 0)
 	//Add the response protocol version

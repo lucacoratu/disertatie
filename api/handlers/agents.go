@@ -14,14 +14,15 @@ import (
 )
 
 type AgentsHandler struct {
-	logger        logging.ILogger
-	configuration config.Configuration
-	dbConnection  database.IConnection
+	logger            logging.ILogger
+	configuration     config.Configuration
+	dbConnection      database.IConnection
+	elasticConnection database.IElasticConnection
 }
 
 // Creates a new handler that will hold the functions necessary for registering proxies
-func NewAgentsHandler(logger logging.ILogger, configuration config.Configuration, dbConnection database.IConnection) *AgentsHandler {
-	return &AgentsHandler{logger: logger, configuration: configuration, dbConnection: dbConnection}
+func NewAgentsHandler(logger logging.ILogger, configuration config.Configuration, dbConnection database.IConnection, elasticConnection database.IElasticConnection) *AgentsHandler {
+	return &AgentsHandler{logger: logger, configuration: configuration, dbConnection: dbConnection, elasticConnection: elasticConnection}
 }
 
 // Handler for registerning a new agent
@@ -107,10 +108,22 @@ func (ah *AgentsHandler) AddLog(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//Insert the log in the database
-	_, err = ah.dbConnection.InsertLog(logData)
+	id, _, err := ah.dbConnection.InsertLog(logData)
 	//Check if an error occured when inserting the log in the database
 	if err != nil {
 		//Create the custom error message and return to client
+		rw.WriteHeader(http.StatusInternalServerError)
+		retErr := data.APIError{Code: data.DATABASE_ERROR, Message: err.Error()}
+		retErr.ToJSON(rw)
+		return
+	}
+
+	//Add the id generated for cassandra into the log data
+	logData.Id = id
+
+	//Insert the log in elasticsearch
+	err = ah.elasticConnection.InsertLog(logData)
+	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		retErr := data.APIError{Code: data.DATABASE_ERROR, Message: err.Error()}
 		retErr.ToJSON(rw)

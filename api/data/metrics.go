@@ -80,3 +80,21 @@ func (ipm *IPMetrics) ToJSON(w io.Writer) error {
 	e := json.NewEncoder(w)
 	return e.Encode(ipm)
 }
+
+// Structure that holds metrics about the findings (the classification string and the number of appearences)
+type FindingsMetrics struct {
+	Classification string `json:"classification"` //The classification string
+	Count          int64  `json:"count"`          //The count of occurences
+}
+
+// Convert json data to StatusCodesMetrics structure
+func (fm *FindingsMetrics) FromJSON(r io.Reader) error {
+	d := json.NewDecoder(r)
+	return d.Decode(fm)
+}
+
+// Convert StatusCodesMetrics structure to json string
+func (fm *FindingsMetrics) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(fm)
+}

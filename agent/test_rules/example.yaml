@@ -1,0 +1,35 @@
+id: Example rule
+
+info:
+  name: Some rule name
+  description: This rule matches some string in the request
+  severity: low
+  classification: lfi
+
+request:
+  url: 
+    match:
+    regex: 
+  headers:
+    - name: User-Agent
+      match: WindowsPowershell
+  params:
+    - name: q
+      match: 123
+  body:
+    - match:
+      regex:
+      sha256sum: 5eac52ec8457e6c7d41d1a716d5350f0bab78314f233788f2cac6a930dbad671 
+    - sha256sum: 3e80b3778b3b03766e7be993131c0af2ad05630c5d96fb7fa132d05b77336e04 
+
+response:
+  code: 
+    match: 
+  headers:
+    - name: User-Agent 
+      regex:
+    - name: User-Agent 
+      regex:
+  body:
+    - match:
+      regex: 

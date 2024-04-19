@@ -16,6 +16,8 @@ type Configuration struct {
 	ListeningPort       string   `json:"port" validate:"required,number,gt=0,lt=65536"` //Port to listen on
 	CassandraNodes      []string `json:"cassandraNodes" validate:"required"`            //Cassandra nodes
 	CassandraKeyspace   string   `json:"cassandraKeyspace" validate:"required"`         //Cassandra database (keyspace)
+	ElasticURL          string   `json:"elasticUrl" validate:"required"`                //Elasticsearch URL (http://<ip>:9200)
+	ElasticIndex        string   `json:"elasticIndex" validate:"required"`              //Elastic search index to insert documents into
 	ExploitTemplatePath string   `json:"exploitTemplatePath" validate:"required"`       //The template used for generating the exploit
 }
 

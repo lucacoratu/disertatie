@@ -17,11 +17,12 @@ import (
 )
 
 type APIServer struct {
-	srv           *http.Server
-	logger        logging.ILogger
-	configuration config.Configuration
-	dbConnection  database.IConnection
-	configFile    string
+	srv               *http.Server
+	logger            logging.ILogger
+	configuration     config.Configuration
+	dbConnection      database.IConnection
+	elasticConnection database.IElasticConnection
+	configFile        string
 }
 
 func (api *APIServer) LoggingMiddleware(next http.Handler) http.Handler {
@@ -62,6 +63,15 @@ func (api *APIServer) Init() error {
 	}
 	api.logger.Debug("Connection to the database has been initialized")
 
+	//Initialize the connection to elasticsearch
+	api.elasticConnection = database.NewElasticConnection(api.logger, api.configuration)
+	err = api.elasticConnection.Init()
+	if err != nil {
+		api.logger.Error("Error occured when initializing the elasticsearch connection", err.Error())
+		return err
+	}
+	api.logger.Debug("Connection to elasticsearch has been initialized")
+
 	//Create the pool
 	pool := websocket.NewPool(api.logger, api.dbConnection, api.configuration)
 	//Start the pool in a goroutine
@@ -75,8 +85,8 @@ func (api *APIServer) Init() error {
 	//Create the handlers
 	healthCheckHandler := handlers.NewHealthCheckHandler(api.logger, api.configuration)
 	//registerHandler := handlers.NewRegisterHandler(api.logger, api.configuration, api.dbConnection)
-	agentsHandler := handlers.NewAgentsHandler(api.logger, api.configuration, api.dbConnection)
-	logsHandler := handlers.NewLogsHandler(api.logger, api.configuration, api.dbConnection)
+	agentsHandler := handlers.NewAgentsHandler(api.logger, api.configuration, api.dbConnection, api.elasticConnection)
+	logsHandler := handlers.NewLogsHandler(api.logger, api.configuration, api.dbConnection, api.elasticConnection)
 	machinesHandler := handlers.NewMachinesHandler(api.logger, api.configuration, api.dbConnection)
 	wsHandler := handlers.NewWebsocketHandler(api.logger, api.configuration, api.dbConnection)
 
@@ -93,6 +103,8 @@ func (api *APIServer) Init() error {
 	apiGetSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}", agentsHandler.GetAgent)
 	//Create the route that will send the logs of an agent
 	apiGetSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/logs", logsHandler.GetLogsShort)
+	//Create the route that will send the logs of an agent from elasticsearch
+	apiGetSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/logs-elastic", logsHandler.GetLogsShortElastic)
 	//Create the route that will send the logs methods metrics
 	apiGetSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/logs-methods-metrics", logsHandler.GetLogsMethodMetrics)
 	//Create the route that will send the logs each day metrics
@@ -105,10 +117,23 @@ func (api *APIServer) Init() error {
 	apiGetSubrouter.HandleFunc("/logs/{loguuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}", logsHandler.GetLog)
 	//Create the route that will send the exploit code of a log
 	apiGetSubrouter.HandleFunc("/logs/{loguuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/exploit", logsHandler.GetLogExploitPythonCode)
+	//Create the route that will send recent logs (10) to the client
+	apiGetSubrouter.HandleFunc("/logs/recent", logsHandler.GetRecentLogsElastic)
+	//Create the route that will send total count of logs
+	apiGetSubrouter.HandleFunc("/logs/count", logsHandler.GetTotalLogsCount)
+
+	//Create the route that will send the findings count
+
 	//Create the route that will send the string format of all findings
 	apiGetSubrouter.HandleFunc("/findings/string", logsHandler.GetFindingsClassificationString)
+	//Create the route that will send the rule findings metrics
+	apiGetSubrouter.HandleFunc("/findings/rule/metrics", logsHandler.GetLogsRuleFindingsMetrics)
+	//Create the route that will send the rule id metrics
+	apiGetSubrouter.HandleFunc("/findings/rule/id-metrics", logsHandler.GetLogsRuleIdMetrics)
 	//Create the route that will send all the registered machines
 	apiGetSubrouter.HandleFunc("/machines", machinesHandler.GetMachines)
+	//Create the route that will send the machines statistics
+	apiGetSubrouter.HandleFunc("/machines/metrics", machinesHandler.GetMachinesStatistics)
 
 	//Create the route which will handle websocket dashboard connections
 	apiGetSubrouter.HandleFunc("/ws", func(rw http.ResponseWriter, r *http.Request) {

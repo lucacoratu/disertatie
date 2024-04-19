@@ -1,11 +1,8 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 	"sort"
-	"strings"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/lucacoratu/disertatie/api/config"
@@ -20,14 +17,32 @@ import (
 )
 
 type LogsHandler struct {
-	logger        logging.ILogger
-	configuration config.Configuration
-	dbConnection  database.IConnection
+	logger            logging.ILogger
+	configuration     config.Configuration
+	dbConnection      database.IConnection
+	elasticConnection database.IElasticConnection
 }
 
 // Creates a new handler that will hold the functions necessary for registering proxies
-func NewLogsHandler(logger logging.ILogger, configuration config.Configuration, dbConnection database.IConnection) *LogsHandler {
-	return &LogsHandler{logger: logger, configuration: configuration, dbConnection: dbConnection}
+func NewLogsHandler(logger logging.ILogger, configuration config.Configuration, dbConnection database.IConnection, elasticConnection database.IElasticConnection) *LogsHandler {
+	return &LogsHandler{logger: logger, configuration: configuration, dbConnection: dbConnection, elasticConnection: elasticConnection}
+}
+
+func (lh *LogsHandler) GetTotalLogsCount(rw http.ResponseWriter, r *http.Request) {
+	//Get the data from the elasticsearch database
+	count, err := lh.elasticConnection.GetTotalCountLogs()
+	//Check if an error occured when getting the total logs count
+	if err != nil {
+		//Send an error message
+		rw.WriteHeader(http.StatusBadRequest)
+		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "could not get total logs count"}
+		apiErr.ToJSON(rw)
+		return
+	}
+	//Create the response structure
+	resp := response.TotalLogCountResponse{Count: count}
+	rw.WriteHeader(http.StatusOK)
+	resp.ToJSON(rw)
 }
 
 // Handler to get all the logs from the database for a specific agent
@@ -43,8 +58,14 @@ func (lh *LogsHandler) GetLogsShort(rw http.ResponseWriter, r *http.Request) {
 		apiErr.ToJSON(rw)
 		return
 	}
-	//Get the logs of an agent
-	logs, err := lh.dbConnection.GetAgentLogsShort(uuid)
+
+	//Get the page from the request GET params
+	page := r.URL.Query().Get("page")
+
+	next_page, logs, err := lh.dbConnection.GetAgentLogsShortPaginated(uuid, page)
+
+	// //Get the logs of an agent
+	// logs, err := lh.dbConnection.GetAgentLogsShort(uuid)
 	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: err.Error()}
@@ -52,15 +73,78 @@ func (lh *LogsHandler) GetLogsShort(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//Sort the logs by timestamp descending (the most recent ones should be first)
-	sort.Slice(logs[:], func(i, j int) bool {
-		return logs[i].Timestamp > logs[j].Timestamp
-	})
+	// //Sort the logs by timestamp descending (the most recent ones should be first)
+	// sort.Slice(logs[:], func(i, j int) bool {
+	// 	return logs[i].Timestamp > logs[j].Timestamp
+	// })
 
-	//lh.logger.Debug(logs)
+	// //lh.logger.Debug(logs)
 
 	//Send the logs back to the client
-	respData := response.LogsGetResponse{Logs: logs}
+	respData := response.LogsGetResponse{Logs: logs, NextPage: next_page}
+	rw.WriteHeader(http.StatusOK)
+	respData.ToJSON(rw)
+}
+
+// Handler to get recent logs (10) from elasticsearch
+func (lh *LogsHandler) GetRecentLogsElastic(rw http.ResponseWriter, r *http.Request) {
+	//Get the recent logs from the elasticseach database
+	recentLogs := lh.elasticConnection.GetRecentLogs()
+
+	//Check if the logs could be pulled from the elasticsearch database
+	if recentLogs == nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "Failed to get recent logs"}
+		apiErr.ToJSON(rw)
+		return
+	}
+
+	//Send the logs back to the client
+	respData := response.LogsGetResponseElastic{Logs: recentLogs}
+	rw.WriteHeader(http.StatusOK)
+	respData.ToJSON(rw)
+}
+
+// Handler to get all the logs from elasticsearch for a specific agent
+func (lh *LogsHandler) GetLogsShortElastic(rw http.ResponseWriter, r *http.Request) {
+	//Get the agent uuid from the URL
+	vars := mux.Vars(r)
+	uuid := vars["uuid"]
+	//Check if the uuid is available
+	if uuid == "" {
+		//Send an error message
+		rw.WriteHeader(http.StatusBadRequest)
+		apiErr := data.APIError{Code: data.REQUEST_ERROR, Message: "uuid missing"}
+		apiErr.ToJSON(rw)
+		return
+	}
+
+	// //Get the page from the request GET params
+	// page := r.URL.Query().Get("page")
+
+	// next_page, logs, err := lh.dbConnection.GetAgentLogsShortPaginated(uuid, page)
+
+	logs := lh.elasticConnection.GetLogsPaginated(uuid)
+	var err error = nil
+
+	// //Get the logs of an agent
+	// logs, err := lh.dbConnection.GetAgentLogsShort(uuid)
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: err.Error()}
+		apiErr.ToJSON(rw)
+		return
+	}
+
+	// //Sort the logs by timestamp descending (the most recent ones should be first)
+	// sort.Slice(logs[:], func(i, j int) bool {
+	// 	return logs[i].Timestamp > logs[j].Timestamp
+	// })
+
+	// //lh.logger.Debug(logs)
+
+	//Send the logs back to the client
+	respData := response.LogsGetResponseElastic{Logs: logs}
 	rw.WriteHeader(http.StatusOK)
 	respData.ToJSON(rw)
 }
@@ -78,30 +162,21 @@ func (lh *LogsHandler) GetLogsMethodMetrics(rw http.ResponseWriter, r *http.Requ
 		apiErr.ToJSON(rw)
 		return
 	}
-	//Get the logs of an agent
-	logs, err := lh.dbConnection.GetAgentLogsShort(uuid)
-	if err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
-		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: err.Error()}
-		apiErr.ToJSON(rw)
-		return
-	}
 
+	//Define the list of possible methods in the HTTP request (https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods)
+	methods := []string{"GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH"}
 	//Create a map which will hold all the request methods and the number of occurences
 	var methodsOccurencesMap map[string]int64 = make(map[string]int64)
 
-	//Parse the logs and find how many times each request method appears
-	for _, log := range logs {
-		method := strings.Split(log.RequestPreview, " ")[0]
-		_, ok := methodsOccurencesMap[method]
-		if !ok {
-			methodsOccurencesMap[method] = 0
+	for _, method := range methods {
+		//Get the count for the method from database
+		count, err := lh.dbConnection.GetLogsMethodCount(uuid, method)
+		if err != nil {
+			lh.logger.Error("Error occured when getting count for method", method, err.Error())
+			//Send an error message back to the client
 		}
-		methodsOccurencesMap[method] += 1
+		methodsOccurencesMap[method] = count
 	}
-
-	//Log the occurences of each method for easy debugging
-	//lh.logger.Debug(methodsOccurencesMap)
 
 	responseData := make([]data.MethodsMetrics, 0)
 	//Prepare the response for the client
@@ -109,10 +184,13 @@ func (lh *LogsHandler) GetLogsMethodMetrics(rw http.ResponseWriter, r *http.Requ
 	var counter int64 = 0
 	//Loop through all the keys and values in the occurences dictionary
 	for key, value := range methodsOccurencesMap {
-		//Create the structure which will be returned to the client
-		responseData = append(responseData, data.MethodsMetrics{Id: counter, Method: key, Count: value})
-		//Increment the counter
-		counter += 1
+		//Add only the methods which have a count > 0
+		if value > 0 {
+			//Create the structure which will be returned to the client
+			responseData = append(responseData, data.MethodsMetrics{Id: counter, Method: key, Count: value})
+			//Increment the counter
+			counter += 1
+		}
 	}
 	//Sort the response data based on count descending
 	sort.Slice(responseData[:], func(i, j int) bool {
@@ -140,42 +218,8 @@ func (lh *LogsHandler) GetLogsCountPerDay(rw http.ResponseWriter, r *http.Reques
 		apiErr.ToJSON(rw)
 		return
 	}
-	//Get the logs of an agent
-	logs, err := lh.dbConnection.GetAgentLogsShort(uuid)
-	if err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
-		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: err.Error()}
-		apiErr.ToJSON(rw)
-		return
-	}
 
-	//Sort the logs by timestamp ascending (the most recent ones should be last)
-	sort.Slice(logs[:], func(i, j int) bool {
-		return logs[i].Timestamp < logs[j].Timestamp
-	})
-
-	//Create a map which will have the occurences per day
-	var mapOccurencesPerDay map[string]int64 = make(map[string]int64)
-
-	//Count the number of logs each day
-	for _, log := range logs {
-		//Convert the unix timestamp to time structure
-		logTime := time.Unix(log.Timestamp, 0)
-		//Get the year, month and day of the request
-		year, month, day := logTime.Date()
-		//Create the map key
-		mapKey := fmt.Sprintf("%d %s %d", day, month.String(), year)
-		//Check if the map key exists
-		_, ok := mapOccurencesPerDay[mapKey]
-		//If the map key does not exist then initialize it with 0
-		if !ok {
-			mapOccurencesPerDay[mapKey] = 0
-		}
-		//Increment the number of requests that day
-		mapOccurencesPerDay[mapKey] += 1
-		//lh.logger.Debug(mapKey)
-	}
-	//lh.logger.Debug(mapOccurencesPerDay)
+	mapOccurencesPerDay, _ := lh.dbConnection.GetRequestsPerDay(uuid)
 
 	//Create the data structure which will be returned to the client
 	responseData := make([]data.DayMetrics, 0)
@@ -209,28 +253,8 @@ func (lh *LogsHandler) GetResponseStatusCodesMetrics(rw http.ResponseWriter, r *
 		apiErr.ToJSON(rw)
 		return
 	}
-	//Get the logs of an agent
-	logs, err := lh.dbConnection.GetAgentLogsShort(uuid)
-	if err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
-		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: err.Error()}
-		apiErr.ToJSON(rw)
-		return
-	}
-	//Create a map which will hold all the response status codes and the number of occurences
-	var statusCodesOccurencesMap map[string]int64 = make(map[string]int64)
 
-	//Parse the logs and find how many times each response status code appears
-	for _, log := range logs {
-		statusCode := strings.Split(log.ResponsePreview, " ")[1]
-		_, ok := statusCodesOccurencesMap[statusCode]
-		if !ok {
-			statusCodesOccurencesMap[statusCode] = 0
-		}
-		statusCodesOccurencesMap[statusCode] += 1
-	}
-	//Log the occurences of each method for easy debugging
-	//lh.logger.Debug(statusCodesOccurencesMap)
+	statusCodesOccurencesMap, _ := lh.dbConnection.GetStatusCodeCounts(uuid)
 
 	responseData := make([]data.StatusCodesMetrics, 0)
 	//Prepare the response for the client
@@ -270,28 +294,8 @@ func (lh *LogsHandler) GetIPAddressesMetrics(rw http.ResponseWriter, r *http.Req
 		apiErr.ToJSON(rw)
 		return
 	}
-	//Get the logs of an agent
-	logs, err := lh.dbConnection.GetAgentLogsShort(uuid)
-	if err != nil {
-		rw.WriteHeader(http.StatusInternalServerError)
-		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: err.Error()}
-		apiErr.ToJSON(rw)
-		return
-	}
-	//Create a map which will hold all the response status codes and the number of occurences
-	var ipAddressesOccurencesMap map[string]int64 = make(map[string]int64)
 
-	//Parse the logs and find how many times each response status code appears
-	for _, log := range logs {
-		ipAddress := strings.Split(log.RemoteIP, ":")[0]
-		_, ok := ipAddressesOccurencesMap[ipAddress]
-		if !ok {
-			ipAddressesOccurencesMap[ipAddress] = 0
-		}
-		ipAddressesOccurencesMap[ipAddress] += 1
-	}
-	//Log the occurences of each method for easy debugging
-	//lh.logger.Debug(ipAddressesOccurencesMap)
+	ipAddressesOccurencesMap, _ := lh.dbConnection.GetIPAddressesCounts(uuid)
 
 	responseData := make([]data.IPMetrics, 0)
 	//Prepare the response for the client
@@ -452,4 +456,40 @@ func (lh *LogsHandler) GetFindingsClassificationString(rw http.ResponseWriter, r
 	respData := response.FindingClassificationStringResponse{FindingsString: findingsString}
 	rw.WriteHeader(http.StatusOK)
 	respData.ToJSON(rw)
+}
+
+func (lh *LogsHandler) GetLogsRuleFindingsMetrics(rw http.ResponseWriter, r *http.Request) {
+	//Get the metrics from elasticsearch
+	metrics, err := lh.elasticConnection.GetRuleFindingsStats()
+	if err != nil {
+		//Send an error message
+		rw.WriteHeader(http.StatusBadRequest)
+		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "could not retrieve the metrics for rule findings"}
+		apiErr.ToJSON(rw)
+		return
+	}
+	//Send the metrics back to the client
+	resp := response.FindingsMetricsResponse{Metrics: metrics}
+	rw.WriteHeader(http.StatusOK)
+	resp.ToJSON(rw)
+}
+
+func (lh *LogsHandler) GetLogsRuleIdMetrics(rw http.ResponseWriter, r *http.Request) {
+	//Get the metrics from elasticsearch
+	metrics, err := lh.elasticConnection.GetRuleIdStats()
+	if err != nil {
+		//Send an error message
+		rw.WriteHeader(http.StatusBadRequest)
+		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "could not retrieve the metrics for rule ids"}
+		apiErr.ToJSON(rw)
+		return
+	}
+	//Send the metrics back to the client
+	resp := response.FindingsMetricsResponse{Metrics: metrics}
+	rw.WriteHeader(http.StatusOK)
+	resp.ToJSON(rw)
+}
+
+func (lh *LogsHandler) GetFindingsCount(rw http.ResponseWriter, r *http.Request) {
+
 }

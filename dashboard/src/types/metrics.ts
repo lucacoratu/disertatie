@@ -45,6 +45,11 @@ type IPMetrics = {
     count: number,
 }
 
+type FindingsMetrics = {
+    classification: string,
+    count: number
+}
+
 type MethodMetricsResponse = {
     metrics: MethodsMetrics[]
 }
@@ -59,4 +64,8 @@ type StatusCodeMetricsResponse = {
 
 type IPAddressesMetricsResponse = {
     metrics: IPMetrics[],
+}
+
+type FindingsMetricsResponse = {
+    metrics: FindingsMetrics[],
 }

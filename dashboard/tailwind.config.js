@@ -23,7 +23,7 @@ module.exports = {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         'darksurface':{ 
-          100: "#202225",
+          100: "#1b1b1b",
           200: "#292b2f",
           300: "#2f3136",
           400: "#40444b",

@@ -49,6 +49,7 @@ func (api *APIHandler) RegisterAgent(apiBaseUrl string, agentInfo data.AgentInfo
 
 // Sends logs to the API
 func (api *APIHandler) SendLog(apiBaseUrl string, logData data.LogData) (bool, error) {
+	api.logger.Info("Sending log to the API")
 	//Parse the data into a JSON
 	bodyData, err := json.Marshal(logData)
 	//Check if an error occured when transforming machine info into JSON

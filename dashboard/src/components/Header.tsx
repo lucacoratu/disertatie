@@ -44,7 +44,7 @@ const Header = () => {
     ];
 
     return (
-        <header className="flex justify-start py-3 px-4 border-b dark:border-darksurface-400 dark:bg-darksurface-100">
+        <header className="sticky top-0 z-30 flex justify-start py-3 px-4 border-b dark:border-darksurface-400 dark:bg-darksurface-100">
             <Container>
                 <div className="flex h-8 justify-between items-center w-full">
                     <div className="flex justify-start items-center gap-3">

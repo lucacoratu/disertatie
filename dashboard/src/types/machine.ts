@@ -29,3 +29,13 @@ interface OSProps {
 type MachineRegisterResponse = {
     uuid: string
 }
+
+// type MachinesStatisticsResponse struct {
+// 	TotalMachines   int64 `json:"totalMachines"`
+// 	TotalInterfaces int64 `json:"totalInterfaces"`
+// }
+
+type MachinesStatisticsResponse = {
+    totalMachines: number,
+    totalInterfaces: number
+}

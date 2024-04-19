@@ -17,7 +17,7 @@ const CustomPieChart: FC<CustomPieChartProps> = ({labels, values, title}): JSX.E
     const {theme, setTheme} = useTheme();
 
     return (
-        <div className="py-6 flex flex-col gap-0 items-center dark:border-darksurface-400 border-2 dark:bg-darksurface-100 b-2 rounded-xl">
+        <div className="py-6 flex flex-col gap-0 items-center border-2 b-2 rounded-xl bg-card">
             <h3 className="font-bold text-sm">
                 {title}
             </h3>

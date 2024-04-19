@@ -62,3 +62,17 @@ func (ipm *IPAddressMetricsResponse) FromJSON(r io.Reader) error {
 	d := json.NewDecoder(r)
 	return d.Decode(ipm)
 }
+
+type FindingsMetricsResponse struct {
+	Metrics []data.FindingsMetrics `json:"metrics"`
+}
+
+func (fmr *FindingsMetricsResponse) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(fmr)
+}
+
+func (fmr *FindingsMetricsResponse) FromJSON(r io.Reader) error {
+	d := json.NewDecoder(r)
+	return d.Decode(fmr)
+}
