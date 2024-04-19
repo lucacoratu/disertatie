@@ -10,6 +10,8 @@ const (
 	PARSE_ERROR    int64 = 2
 	REQUEST_ERROR  int64 = 3
 	WS_ERROR       int64 = 4
+	JWT_ERROR      int64 = 5
+	AUTH_ERROR     int64 = 6
 )
 
 type APIError struct {

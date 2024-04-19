@@ -72,6 +72,23 @@ func (api *APIServer) Init() error {
 	}
 	api.logger.Debug("Connection to elasticsearch has been initialized")
 
+	//Create the admin account if it doesn't already exist
+	res, err := api.dbConnection.CheckUserExists(api.configuration.AdminUsername)
+	if err != nil {
+		api.logger.Error("Error occured when checking if the admin user exists in the database", err.Error())
+		return err
+	}
+
+	if !res {
+		//Insert the user in the database
+		_, err := api.dbConnection.InsertUser(api.configuration.AdminUsername, api.configuration.AdminPassword)
+		if err != nil {
+			api.logger.Error("Error occured when inserting the admin user in the database", err.Error())
+			return err
+		}
+		api.logger.Info("Created admin user")
+	}
+
 	//Create the pool
 	pool := websocket.NewPool(api.logger, api.dbConnection, api.configuration)
 	//Start the pool in a goroutine
@@ -84,11 +101,15 @@ func (api *APIServer) Init() error {
 
 	//Create the handlers
 	healthCheckHandler := handlers.NewHealthCheckHandler(api.logger, api.configuration)
+	authHandler := handlers.NewAuthHandler(api.logger, api.configuration, api.dbConnection, api.elasticConnection)
 	//registerHandler := handlers.NewRegisterHandler(api.logger, api.configuration, api.dbConnection)
 	agentsHandler := handlers.NewAgentsHandler(api.logger, api.configuration, api.dbConnection, api.elasticConnection)
 	logsHandler := handlers.NewLogsHandler(api.logger, api.configuration, api.dbConnection, api.elasticConnection)
 	machinesHandler := handlers.NewMachinesHandler(api.logger, api.configuration, api.dbConnection)
 	wsHandler := handlers.NewWebsocketHandler(api.logger, api.configuration, api.dbConnection)
+
+	//Create the standalone login route
+	r.HandleFunc("/api/v1/auth/login", authHandler.Login)
 
 	//Add the routes
 	//Create the subrouter for the API path
@@ -99,6 +120,8 @@ func (api *APIServer) Init() error {
 
 	//Create the route that will send all the registered agents
 	apiGetSubrouter.HandleFunc("/agents", agentsHandler.GetAgents)
+	//Create the route that will send the number of registered agents
+	apiGetSubrouter.HandleFunc("/agents/count", agentsHandler.GetAgentsCount)
 	//Create the route that will send a single agent details
 	apiGetSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}", agentsHandler.GetAgent)
 	//Create the route that will send the logs of an agent

@@ -9,7 +9,10 @@ require (
 	github.com/gorilla/mux v1.8.0
 )
 
-require github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+require (
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
+)
 
 require (
 	github.com/elastic/elastic-transport-go/v8 v8.5.0 // indirect

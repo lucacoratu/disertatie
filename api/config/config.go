@@ -19,6 +19,8 @@ type Configuration struct {
 	ElasticURL          string   `json:"elasticUrl" validate:"required"`                //Elasticsearch URL (http://<ip>:9200)
 	ElasticIndex        string   `json:"elasticIndex" validate:"required"`              //Elastic search index to insert documents into
 	ExploitTemplatePath string   `json:"exploitTemplatePath" validate:"required"`       //The template used for generating the exploit
+	AdminUsername       string   `json:"adminUsername" validate:"required"`             //The username of the admin account
+	AdminPassword       string   `json:"adminPassword" validate:"required"`             //The password of the admin account
 }
 
 // Load the configuration from a file

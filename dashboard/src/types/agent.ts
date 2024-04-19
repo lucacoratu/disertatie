@@ -46,3 +46,8 @@ type UpdateAgent = {
 	forwardServerPort:     number,
 	machineId: 			   string,
 }
+
+
+type AgentCountResponse = {
+	count: number,
+}

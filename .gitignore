@@ -1,6 +1,3 @@
-<<<<<<< HEAD
 ./data/
 ./scripts/python/
-=======
-data/
->>>>>>> parent of d4fad9c (Fixed issue where a file would not be tracked due to bad .gitignore file)
+./config/

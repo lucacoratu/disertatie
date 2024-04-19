@@ -71,6 +71,7 @@ import {
 
 import {constants} from "@/app/constants";
 
+
 async function GetRecentLogs() {
   	//Create the URL where the logs will be fetched from
     const URL = `${constants.apiBaseURL}/logs/recent`;
@@ -141,6 +142,17 @@ async function GetRuleIdsMetrics() {
   return findingsMetrics.metrics;
 }
 
+async function GetCountAgents() {
+  //Create the URL the logs will be fetched from
+  const URL = `${constants.apiBaseURL}/agents/count`;
+  const res = await fetch(URL, {next: {revalidate: 600}});
+  if (!res.ok) {
+    throw new Error("could not load agents count");
+  }
+  const countResponse: AgentCountResponse = await res.json();
+  return countResponse.count;
+}
+
 export default async function DashboardHome() {
   //Get the logs from the api
   const logs: LogsShortElasticResponse = await GetRecentLogs();
@@ -148,6 +160,7 @@ export default async function DashboardHome() {
   const totalCountLogs: number = await GetTotalLogsCount();
   const ruleFindingsMetrics: FindingsMetrics[] = await GetRuleFindingsMetrics();
   const ruleIdsMetrics: FindingsMetrics[] = await GetRuleIdsMetrics();
+  const countAgents: number = await GetCountAgents();
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
@@ -176,7 +189,7 @@ export default async function DashboardHome() {
               <Ghost className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">50</div>
+              <div className="text-2xl font-bold">{countAgents}</div>
               <p className="text-xs text-muted-foreground">
                 1000 total commands ran
               </p>

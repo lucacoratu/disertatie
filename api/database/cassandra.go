@@ -1,11 +1,13 @@
 package database
 
 import (
+	"crypto/sha256"
 	"errors"
 	"strings"
 	"time"
 
 	b64 "encoding/base64"
+	"encoding/hex"
 
 	"github.com/gocql/gocql"
 	"github.com/google/uuid"
@@ -28,6 +30,7 @@ func NewCassandraConnection(logger logging.ILogger, configuration config.Configu
 
 // Creates the tables needed in the cassandra database (keyspace)
 func (cassandra *CassandraConnection) createTables() error {
+	// _ = cassandra.session.Query("DROP TABLE api.users").Exec()
 	// _ = cassandra.session.Query("DROP TABLE api.machines").Exec()
 	// _ = cassandra.session.Query("DROP TABLE api.agents").Exec()
 	// _ = cassandra.session.Query("DROP TABLE api.logs").Exec()
@@ -35,8 +38,14 @@ func (cassandra *CassandraConnection) createTables() error {
 	// _ = cassandra.session.Query("DROP TABLE api.rulefindings").Exec()
 	// _ = cassandra.session.Query("DROP TABLE api.exploitcodes").Exec()
 
+	//Create the users table
+	err := cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".users (id TEXT, username TEXT, password TEXT, PRIMARY KEY (id, username))").Exec()
+	if err != nil {
+		return errors.New("cannot create users table, " + err.Error())
+	}
+
 	//Create the machines table
-	err := cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".machines (id TEXT PRIMARY KEY, os TEXT, hostname TEXT, ip_addresses TEXT)").Exec()
+	err = cassandra.session.Query("CREATE TABLE IF NOT EXISTS " + cassandra.configuration.CassandraKeyspace + ".machines (id TEXT PRIMARY KEY, os TEXT, hostname TEXT, ip_addresses TEXT)").Exec()
 	//Check if an error occured when creating the machines table
 	if err != nil {
 		return errors.New("cannot create machines table, " + err.Error())
@@ -130,6 +139,54 @@ func (cassandra *CassandraConnection) Init() error {
 		return err
 	}
 	return nil
+}
+
+// Check if user exists
+func (cassandra *CassandraConnection) CheckUserExists(username string) (bool, error) {
+	query := cassandra.session.Query("SELECT id FROM "+cassandra.configuration.CassandraKeyspace+".users WHERE username = ? ALLOW FILTERING", username)
+	var id string
+	iter := query.Iter()
+	exists := iter.Scan(&id)
+	if !exists {
+		return false, nil
+	}
+	return true, nil
+}
+
+// Add a new user in the database
+func (cassandra *CassandraConnection) InsertUser(username string, password string) (string, error) {
+	id := uuid.New().String()
+	if id == "" {
+		return "", errors.New("could not create a new uuid for the proxy")
+	}
+	//Hash the password using sha256
+	h := sha256.New()
+	h.Write([]byte(password))
+	hashedPassword := hex.EncodeToString(h.Sum(nil))
+
+	err := cassandra.session.Query("INSERT INTO "+cassandra.configuration.CassandraKeyspace+".users (id, username, password) VALUES (?,?,?)", id, username, hashedPassword).Exec()
+	if err != nil {
+		return "", errors.New("could not insert user in the database (keyspace), " + err.Error())
+	}
+	//Get the uuid
+	return id, nil
+}
+
+// Check user credentials
+func (cassandra *CassandraConnection) CheckUserCredentials(username string, password string) (bool, string, error) {
+	//Hash the password using sha256
+	h := sha256.New()
+	h.Write([]byte(password))
+	hashedPassword := hex.EncodeToString(h.Sum(nil))
+
+	query := cassandra.session.Query("SELECT id FROM "+cassandra.configuration.CassandraKeyspace+".users WHERE username = ? AND password = ? ALLOW FILTERING", username, hashedPassword)
+	var id string
+	iter := query.Iter()
+	exists := iter.Scan(&id)
+	if !exists {
+		return false, "", nil
+	}
+	return true, id, nil
 }
 
 // Check if the machine already exists
@@ -310,6 +367,17 @@ func (cassandra *CassandraConnection) InsertLog(logData data.LogData) (string, b
 	cassandra.InsertRuleFindings(id, logData.RuleFindings)
 
 	return id, true, nil
+}
+
+// Get number of agents from the database
+func (cassandra *CassandraConnection) GetCountAgents() (int64, error) {
+	query := cassandra.session.Query("SELECT COUNT(*) FROM agents")
+	var numberAgents int64 = 0
+	result := query.Iter().Scan(&numberAgents)
+	if !result {
+		return 0, errors.New("could not get the number of agents from the database")
+	}
+	return numberAgents, nil
 }
 
 // Get all the agents from the database

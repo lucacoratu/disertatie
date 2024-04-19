@@ -137,6 +137,22 @@ func (ah *AgentsHandler) AddLog(rw http.ResponseWriter, r *http.Request) {
 	message.ToJSON(rw)
 }
 
+// Function that handles GET request on /api/v1/agents/count (returns the number of agents)
+func (ah *AgentsHandler) GetAgentsCount(rw http.ResponseWriter, r *http.Request) {
+	//Get the number of agents from the database
+	count, err := ah.dbConnection.GetCountAgents()
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		retErr := data.APIError{Code: data.DATABASE_ERROR, Message: err.Error()}
+		retErr.ToJSON(rw)
+		return
+	}
+	//Send the response back to the client
+	resp := response.AgentsCountResponse{Count: count}
+	rw.WriteHeader(http.StatusOK)
+	resp.ToJSON(rw)
+}
+
 // Function that handles GET request on /api/v1/agents (returns all the agents)
 func (ah *AgentsHandler) GetAgents(rw http.ResponseWriter, r *http.Request) {
 	//Get the agents from the database
