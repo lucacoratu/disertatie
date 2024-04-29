@@ -1,34 +1,32 @@
 "use client";
 
-import Link from "next/link"
+import Link from "next/link";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card";
+
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { useState } from "react"
 import { z } from "zod"
-import { constants } from "@/app/constants";
 import { toast } from "sonner";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react";
+
 
 const loginFormSchema = z.object({
   username: z.string().min(1, {
@@ -40,6 +38,7 @@ const loginFormSchema = z.object({
 })
 
 export default function LoginForm() {
+
   const form = useForm<z.infer<typeof loginFormSchema>>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
@@ -71,6 +70,12 @@ export default function LoginForm() {
       setFailed(true);
       setFailMessage(resp.message);
       setLoading(false);
+
+      //Hide the error after 2 seconds
+      setTimeout(() => {
+        setFailed(false);
+      }, 3000);
+      
       return
     }
 
@@ -85,6 +90,8 @@ export default function LoginForm() {
       const token: string = resp.token;
       //Save the token in local storage
       localStorage.setItem("token", token);
+      
+      document.location = "/dashboard";
     }
 
     setFailed(false);
@@ -130,7 +137,7 @@ export default function LoginForm() {
                   <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                          <Input type="password" className="dark:border-darksurface-400" placeholder="password" {...field} />
+                          <Input type="password" className="dark:border-darksurface-400" placeholder="Password" {...field} />
                       </FormControl>
                       <FormMessage />
                   </FormItem>
@@ -144,29 +151,6 @@ export default function LoginForm() {
             }
           </form>
         </Form>
-        {/* <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              type="text"
-              placeholder="michael"
-              required
-            />
-          </div>
-          <div className="grid gap-2">
-            <div className="flex items-center">
-              <Label htmlFor="password">Password</Label>
-              <Link href="#" className="ml-auto inline-block text-sm underline">
-                Forgot your password?
-              </Link>
-            </div>
-            <Input id="password" type="password" placeholder="***********" required />
-          </div>
-          <Button type="submit" className="mt-4 w-full">
-            Login
-          </Button>
-        </div> */}
         <div className="mt-4 text-center text-sm">
           Don&apos;t have an account?{" "}
           <Link href="#" className="underline">

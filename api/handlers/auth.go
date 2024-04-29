@@ -76,6 +76,9 @@ func (ah *AuthHandler) Login(rw http.ResponseWriter, r *http.Request) {
 
 	//Return the jwt token to the client
 	response := response.LoginResponse{Token: jwtToken}
+	rw.Header().Add("Set-Cookie", "session="+jwtToken)
 	rw.WriteHeader(http.StatusOK)
+	//Add the cookie for the session so that the browser can set it
+
 	response.ToJSON(rw)
 }

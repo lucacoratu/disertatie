@@ -26,6 +26,8 @@ services:
     environment: ['CLI_JAVA_OPTS=-Xms2g -Xmx2g','bootstrap.memory_lock=true','discovery.type=single-node','xpack.security.enabled=false', 'xpack.security.enrollment.enabled=false']
     ports:
       - 9200:9200
+    volumes:
+      - ./data/elastic:/usr/share/elasticsearch/data
     networks:
       - elastic
     ulimits:

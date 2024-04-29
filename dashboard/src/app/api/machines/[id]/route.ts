@@ -1,5 +1,4 @@
 import { constants } from "@/app/constants";
-import { NextApiRequest } from "next";
 
 export async function DELETE(request: Request, context: any) {
 	//Send the delete request to the API

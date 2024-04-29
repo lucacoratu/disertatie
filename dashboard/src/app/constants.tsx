@@ -17,3 +17,7 @@ export const constants: Constants = {
     severityTextColors: ['text-[#fdc500]', 'text-[#fd8c00]', 'text-[#dc0000]', 'text-[#780000]'],
     severityNames: ['Low', 'Medium', 'High', 'Critical'],
 } 
+
+export const protectedRoutes = ["/dashboard"];
+export const authRoutes = ["/", "/login"];
+export const publicRoutes = [];

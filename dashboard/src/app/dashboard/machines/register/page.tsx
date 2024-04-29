@@ -24,7 +24,6 @@ import {
     HoverCardContent,
     HoverCardTrigger,
   } from "@/components/ui/hover-card"
-import { constants } from "@/app/constants"
   
 
 const osRegex = new RegExp('^(linux|windows)$');
