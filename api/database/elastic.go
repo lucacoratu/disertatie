@@ -155,11 +155,109 @@ func (elastic *ElasticConnection) GetRecentLogs() []data.LogDataElastic {
 	return returnData
 }
 
+func (elastic *ElasticConnection) GetRecentRuleClassifiedLogs() []data.LogDataElastic {
+	//Create the query to extract all the logs of the agent
+	query := `
+		{
+			"size": 10,
+			"query": { 
+				"regexp": {
+					"ruleFindings.request.classification.keyword": ".+" 
+				} 
+			},
+			"sort": [
+				{ "timestamp": "desc" }
+			]
+		}
+	`
+
+	//Search the logs in the elasticsearch database
+	res, _ := elastic.connection.Search(
+		elastic.connection.Search.WithIndex(elastic.configuration.ElasticIndex),
+		elastic.connection.Search.WithBody(strings.NewReader(query)),
+	)
+
+	//Create the response object
+	response := elasticAgentLogs{}
+	//Parse the response from json into a struct
+	err := response.FromJSON(res.Body)
+
+	//Check if an error occured when parsing the response from json string to struct
+	if err != nil {
+		return nil
+	}
+
+	//Create the return data slice
+	returnData := make([]data.LogDataElastic, 0)
+
+	for _, hit := range response.Hits.Hits {
+		//Create the request preview
+		request_preview := strings.Split(hit.Source.Request, "\n")[0]
+		//Create the response preview
+		response_preview := strings.Split(hit.Source.Response, "\n")[0]
+		//Create the rule findings structure
+		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Timestamp: hit.Source.Timestamp, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
+	}
+
+	elastic.logger.Debug(len(response.Hits.Hits))
+
+	return returnData
+}
+
 func (elastic *ElasticConnection) GetLogsPaginated(agentId string) []data.LogDataElastic {
 	//Create the query to extract all the logs of the agent
 	query := fmt.Sprintf(`
 	{
 		"size": 10000,
+		"query": { 
+			"match": {
+				"agentId": "%s" 
+			} 
+		},
+		"sort": [
+			{ "timestamp": "desc" }
+		]
+	}
+	`, agentId)
+
+	//Search the logs in the elasticsearch database
+	res, _ := elastic.connection.Search(
+		elastic.connection.Search.WithIndex(elastic.configuration.ElasticIndex),
+		elastic.connection.Search.WithBody(strings.NewReader(query)),
+	)
+
+	//Create the response object
+	response := elasticAgentLogs{}
+	//Parse the response from json into a struct
+	err := response.FromJSON(res.Body)
+
+	//Check if an error occured when parsing the response from json string to struct
+	if err != nil {
+		return nil
+	}
+
+	//Create the return data slice
+	returnData := make([]data.LogDataElastic, 0)
+
+	for _, hit := range response.Hits.Hits {
+		//Create the request preview
+		request_preview := strings.Split(hit.Source.Request, "\n")[0]
+		//Create the response preview
+		response_preview := strings.Split(hit.Source.Response, "\n")[0]
+		//Create the rule findings structure
+		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Timestamp: hit.Source.Timestamp, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
+	}
+
+	elastic.logger.Debug(len(response.Hits.Hits))
+
+	return returnData
+}
+
+func (elastic *ElasticConnection) GetAllAgentLogs(agentId string) []data.LogDataElastic {
+	//Create the query to extract all the logs of the agent
+	query := fmt.Sprintf(`
+	{
+		"size": -1,
 		"query": { 
 			"match": {
 				"agentId": "%s" 

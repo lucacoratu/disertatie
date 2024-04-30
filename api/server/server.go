@@ -128,6 +128,8 @@ func (api *APIServer) Init() error {
 	apiGetSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/logs", logsHandler.GetLogsShort)
 	//Create the route that will send the logs of an agent from elasticsearch
 	apiGetSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/logs-elastic", logsHandler.GetLogsShortElastic)
+	//Create the route for exporting logs of an agent
+	apiGetSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/export-logs", logsHandler.GetLogsShortElastic)
 	//Create the route that will send the logs methods metrics
 	apiGetSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/logs-methods-metrics", logsHandler.GetLogsMethodMetrics)
 	//Create the route that will send the logs each day metrics
@@ -142,6 +144,8 @@ func (api *APIServer) Init() error {
 	apiGetSubrouter.HandleFunc("/logs/{loguuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/exploit", logsHandler.GetLogExploitPythonCode)
 	//Create the route that will send recent logs (10) to the client
 	apiGetSubrouter.HandleFunc("/logs/recent", logsHandler.GetRecentLogsElastic)
+	//Create the route that will send recent classified logs (10) to the client
+	apiGetSubrouter.HandleFunc("/logs/recent-classified", logsHandler.GetRecentClassifiedLogsElastic)
 	//Create the route that will send total count of logs
 	apiGetSubrouter.HandleFunc("/logs/count", logsHandler.GetTotalLogsCount)
 

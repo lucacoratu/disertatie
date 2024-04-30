@@ -44,6 +44,20 @@ async function GetRecentLogs() {
     return logsResponse;
 }
 
+async function GetRecentClassifiedLogs() {
+  //Create the URL where the logs will be fetched from
+  const URL = `${constants.apiBaseURL}/logs/recent-classified`;
+  //Fetch the data (revalidate after 10 minutes)
+  const res = await fetch(URL, {next: {revalidate: 600}});
+  //Check if an error occured
+  if(!res.ok) {
+    throw new Error("could not load logs");
+  }
+  //Parse the json data
+  const logsResponse: LogsShortElasticResponse = await res.json();
+  return logsResponse;
+}
+
 async function GetMachinesStatistics() {
     //Create the URL where the logs will be fetched from
     const URL = `${constants.apiBaseURL}/machines/metrics`;
@@ -114,6 +128,7 @@ async function GetCountAgents() {
 export default async function DashboardHome() {
   //Get the logs from the api
   const logs: LogsShortElasticResponse = await GetRecentLogs();
+  const classifiedLogs: LogsShortElasticResponse = await GetRecentClassifiedLogs();
   const machineStatistics: MachinesStatisticsResponse = await GetMachinesStatistics();
   const totalCountLogs: number = await GetTotalLogsCount();
   const ruleFindingsMetrics: FindingsMetrics[] = await GetRuleFindingsMetrics();
@@ -310,6 +325,77 @@ export default async function DashboardHome() {
             </Card>
           </div>
         </div>
+        <div className="grid gap-4 md:gap-8 lg:grid-cols-1 xl:grid-cols-1">
+            <Card className="xl:col-span-2">
+              <CardHeader className="flex flex-row items-center">
+                <div className="grid gap-2">
+                  <CardTitle>Recent Classified Logs</CardTitle>
+                  <CardDescription>
+                    Recent logs collected by agents which were classified.
+                  </CardDescription>
+                </div>
+                <Button asChild size="sm" className="ml-auto gap-1">
+                  <Link href="/logs">
+                    View All
+                    <ArrowUpRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <Table className="text-sm">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-left max-w-40">
+                        Agent
+                      </TableHead>
+                      <TableHead className="text-center">
+                        Date
+                      </TableHead>
+                      <TableHead className="text-center">
+                        Method
+                      </TableHead>
+                      <TableHead className="text-center">
+                        URL
+                      </TableHead>
+                      <TableHead className="text-right max-w-16">
+                        Status Code
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {classifiedLogs.logs.map((log) => {
+                      //Convert the date from unix timestamp to locale date
+                      const logDate: Date = new Date(log.timestamp * 1000);
+                      const requestPreviewParts: string[] = log.request_preview.split(' '); 
+                      const responsePreviewParts: string[] = log.response_preview.split(' '); 
+                      return (
+                        <TableRow key={log.id}>
+                          <TableCell className="text-left max-w-40">
+                            <div className="font-medium">Agent name</div>
+                            <div className="text-sm truncate text-ellipsis overflow-hidden text-muted-foreground md:inline">
+                              {log.agentId}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center max-w-18">
+                            {logDate.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-center max-w-10">
+                            {requestPreviewParts[0]}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {requestPreviewParts[1]}
+                          </TableCell>
+                          <TableCell className="text-right max-w-16">
+                            {responsePreviewParts[1]}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
       </main>
   )
 }

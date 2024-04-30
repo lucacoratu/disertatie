@@ -287,6 +287,18 @@ func (rl *RuleRunner) RunRulesOnRequest(r *http.Request) ([]*data.RuleFindingDat
 
 		//Append matches to the list of findings
 		for _, match := range allMatches {
+			findingFound := false
+			//Check if the finding is not the classification is already made for this request
+			for _, finding := range findings {
+				if finding.RuleId == rule.Id {
+					findingFound = true
+					break
+				}
+			}
+			if findingFound {
+				continue
+			}
+
 			findings = append(findings, &data.RuleFindingData{RuleId: rule.Id, RuleName: rule.Info.Name, RuleDescription: rule.Info.Description, Classification: rule.Info.Classification, Severity: ConvertSeverityStringToInteger(rule.Info.Severity), MatchedString: match, Length: int64(len(match))})
 		}
 		//Check the body of the request

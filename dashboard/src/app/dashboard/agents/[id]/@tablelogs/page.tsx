@@ -20,7 +20,7 @@ async function getLogsElastic(agentId: string): Promise<LogsShortElasticResponse
 	//Create the URL where the logs will be fetched from
 	const URL = `${constants.apiBaseURL}/agents/${agentId}/logs-elastic`;
 	//Fetch the data (revalidate after 10 minutes)
-	const res = await fetch(URL, {next: {revalidate: 600}});
+	const res = await fetch(URL, {next: {revalidate: 0}});
 	//Check if an error occured
 	if(!res.ok) {
 		throw new Error("could not load logs");

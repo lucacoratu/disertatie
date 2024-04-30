@@ -13,7 +13,6 @@ export async function POST(request: Request) {
 		},
 	});
 	const setcookies: string[] = res.headers.getSetCookie();
-	console.log(setcookies);
 	cookies().set('token', setcookies[0]);
 
 	return res;

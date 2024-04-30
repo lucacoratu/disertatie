@@ -48,6 +48,8 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
@@ -63,6 +65,8 @@ import {
 
 import { Input } from "@/components/ui/input"
 import { constants } from "@/app/constants";
+import { DropdownMenuGroup, DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
+import next from "next";
  
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -87,6 +91,11 @@ async function getLogs(agentId: string, nextPage: string | null ): Promise<LogSh
 	//Parse the json data
 	const logsResponse: LogShortResponse = await res.json();
 	return logsResponse;
+}
+
+async function ExportLogs(agentId: string, format: string) {
+  const URL = `${constants.apiBaseURL}/agents/${agentId}/export-logs?format=${format}`;
+  const res = await fetch(URL, {next: {revalidate: 0}});
 }
 
 const tableColumns = [
@@ -197,9 +206,24 @@ export function DataTable<TData, TValue>({
           }
           className="max-w-sm"
         />
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button className="ml-auto h-8">
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center">
+            <DropdownMenuLabel className="text-center h-8">Format</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-foreground/[0.3]"/>
+            <DropdownMenuItem className="capitalize text-center hover:bg-accent h-8" onClick={async () => await ExportLogs(agentId, "json")}>JSON</DropdownMenuItem>
+            <DropdownMenuItem className="capitalize text-center hover:bg-accent h-8" onClick={async () => await ExportLogs(agentId, "csv")}>CSV</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" >
               Columns
             </Button>
           </DropdownMenuTrigger>

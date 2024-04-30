@@ -105,6 +105,25 @@ func (lh *LogsHandler) GetRecentLogsElastic(rw http.ResponseWriter, r *http.Requ
 	respData.ToJSON(rw)
 }
 
+// Handler to get recent classified logs (10) from elasticsearch
+func (lh *LogsHandler) GetRecentClassifiedLogsElastic(rw http.ResponseWriter, r *http.Request) {
+	//Get the recent logs from the elasticseach database
+	recentLogs := lh.elasticConnection.GetRecentRuleClassifiedLogs()
+
+	//Check if the logs could be pulled from the elasticsearch database
+	if recentLogs == nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "Failed to get recent logs"}
+		apiErr.ToJSON(rw)
+		return
+	}
+
+	//Send the logs back to the client
+	respData := response.LogsGetResponseElastic{Logs: recentLogs}
+	rw.WriteHeader(http.StatusOK)
+	respData.ToJSON(rw)
+}
+
 // Handler to get all the logs from elasticsearch for a specific agent
 func (lh *LogsHandler) GetLogsShortElastic(rw http.ResponseWriter, r *http.Request) {
 	//Get the agent uuid from the URL
@@ -492,4 +511,41 @@ func (lh *LogsHandler) GetLogsRuleIdMetrics(rw http.ResponseWriter, r *http.Requ
 
 func (lh *LogsHandler) GetFindingsCount(rw http.ResponseWriter, r *http.Request) {
 
+}
+
+func (lh *LogsHandler) ExportAgentLogs(rw http.ResponseWriter, r *http.Request) {
+	//Get the format to be exported into
+	format := r.URL.Query().Get("format")
+	if format == "" {
+		//Default format is json
+		format = "json"
+	}
+
+	//Check if the format specified is correct
+	if format != "json" || format != "csv" {
+		//Send an error message
+		rw.WriteHeader(http.StatusBadRequest)
+		apiErr := data.APIError{Code: data.PARSE_ERROR, Message: "format should be json or csv"}
+		apiErr.ToJSON(rw)
+		return
+	}
+
+	//Get the agent id from the mux vars
+	vars := mux.Vars(r)
+	agentId := vars["uuid"]
+
+	if agentId == "" {
+		//Send an error message
+		rw.WriteHeader(http.StatusBadRequest)
+		apiErr := data.APIError{Code: data.PARSE_ERROR, Message: "agentId is required"}
+		apiErr.ToJSON(rw)
+		return
+	}
+
+	//Get the logs from the database
+	agentLogs := lh.elasticConnection.GetAllAgentLogs(agentId)
+	logs := response.LogsGetResponseElastic{Logs: agentLogs}
+
+	rw.WriteHeader(http.StatusOK)
+	logs.ToJSON(rw)
 }
