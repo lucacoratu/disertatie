@@ -5,6 +5,7 @@ import {
   Server,
   ArrowUpRight,
   ScrollText,
+  Radar,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,8 @@ import {
 } from "@/components/ui/table"
 
 import {constants} from "@/app/constants";
+import RuleFindingPreview from "@/components/ui/rulefinding-preview";
+import FindingsRadarChart from "@/components/FindingsRadarChart";
 
 
 async function GetRecentLogs() {
@@ -125,15 +128,32 @@ async function GetCountAgents() {
   return countResponse.count;
 }
 
+async function GetFindingsCountMetrics() {
+  //Create the URL the metrics will be pulled from
+  const URL = `${constants.apiBaseURL}/findings/count-metrics`;
+  const res = await fetch(URL, {next: {revalidate: 0}});
+  if(!res.ok) {
+    throw new Error("could not load findings count metrics");
+  }
+  const findingsCountMetricsResponse: FindingsCountMetricsResponse = await res.json();
+  return findingsCountMetricsResponse.metrics;
+}
+
 export default async function DashboardHome() {
   //Get the logs from the api
   const logs: LogsShortElasticResponse = await GetRecentLogs();
   const classifiedLogs: LogsShortElasticResponse = await GetRecentClassifiedLogs();
+  // console.log(classifiedLogs.logs[0].ruleFindings);
   const machineStatistics: MachinesStatisticsResponse = await GetMachinesStatistics();
   const totalCountLogs: number = await GetTotalLogsCount();
   const ruleFindingsMetrics: FindingsMetrics[] = await GetRuleFindingsMetrics();
   const ruleIdsMetrics: FindingsMetrics[] = await GetRuleIdsMetrics();
   const countAgents: number = await GetCountAgents();
+  const findingsCountMetrics: FindingsCountMetrics = await GetFindingsCountMetrics();
+
+  //Get the labels and the data from ruleFindingsMetrics
+  const ruleFindingsMetricsLabels: string[] = ruleFindingsMetrics.map((metric) => metric.classification);
+  const ruleFindingsMetricsCounts: number[] = ruleFindingsMetrics.map((metric) => metric.count);
 
   return (
     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-6">
@@ -183,17 +203,17 @@ export default async function DashboardHome() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Findings</CardTitle>
-              <ScrollText className="h-4 w-4 text-muted-foreground" />
+              <Radar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="flex justify-between">
               <div>
-                <div className="text-2xl font-bold text-left">total</div>
+                <div className="text-2xl font-bold text-left">{findingsCountMetrics.ruleFindingsCount}</div>
                 <p className="text-xs text-muted-foreground">
                   total rule findings
                 </p>
               </div>
               <div>
-                <div className="text-2xl font-bold text-right">total</div>
+                <div className="text-2xl font-bold text-right">{findingsCountMetrics.findingsCount}</div>
                 <p className="text-xs text-muted-foreground">
                   total findings
                 </p>
@@ -258,7 +278,7 @@ export default async function DashboardHome() {
                         <TableCell className="text-center max-w-10">
                           {requestPreviewParts[0]}
                         </TableCell>
-                        <TableCell className="text-center">
+                        <TableCell className="text-left">
                           {requestPreviewParts[1]}
                         </TableCell>
                         <TableCell className="text-right max-w-16">
@@ -271,8 +291,9 @@ export default async function DashboardHome() {
               </Table>
             </CardContent>
           </Card>
-          <div className="flex flex-col gap-8">
-            <Card className="max-h-fit h-fit">
+
+          <div className="grid grid-cols-1 gap-5 justify-stretch">
+            <Card>
               <CardHeader>
                 <CardTitle>Findings Statistics</CardTitle>
                 <CardDescription className="flex flex-row justify-between">
@@ -280,7 +301,10 @@ export default async function DashboardHome() {
                     <span> Findings</span>
                   </CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-row gap-4 max-h-fit">
+              <CardContent className="flex flex-row gap-4">
+                {/* <div className="w-64 h-64">
+                  <FindingsRadarChart labels={ruleFindingsMetricsLabels} values={ruleFindingsMetricsCounts} title="# of rule findings" />
+                </div> */}
                 <div className="flex flex-col gap-3 w-1/3">
                   {ruleFindingsMetrics.map((metric, index) => {
                     return (
@@ -293,12 +317,13 @@ export default async function DashboardHome() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="max-h-fit h-fit">
+
+            <Card>
               <CardHeader>
                 <CardTitle>Rule Statistics</CardTitle>
                 <CardDescription>Number of matches for each rule</CardDescription>
               </CardHeader>
-              <CardContent className="max-h-fit">
+              <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -325,13 +350,14 @@ export default async function DashboardHome() {
             </Card>
           </div>
         </div>
+
         <div className="grid gap-4 md:gap-8 lg:grid-cols-1 xl:grid-cols-1">
             <Card className="xl:col-span-2">
               <CardHeader className="flex flex-row items-center">
                 <div className="grid gap-2">
                   <CardTitle>Recent Classified Logs</CardTitle>
                   <CardDescription>
-                    Recent logs collected by agents which were classified.
+                    Recent logs collected by agents which were classified using the rules.
                   </CardDescription>
                 </div>
                 <Button asChild size="sm" className="ml-auto gap-1">
@@ -351,14 +377,17 @@ export default async function DashboardHome() {
                       <TableHead className="text-center">
                         Date
                       </TableHead>
-                      <TableHead className="text-center">
+                      <TableHead className="text-center max-w-10">
                         Method
                       </TableHead>
-                      <TableHead className="text-center">
+                      <TableHead className="text-center max-w-64">
                         URL
                       </TableHead>
-                      <TableHead className="text-right max-w-16">
+                      <TableHead className="text-center max-w-10">
                         Status Code
+                      </TableHead>
+                      <TableHead className="text-right max-w-32">
+                        Classifications
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -367,26 +396,32 @@ export default async function DashboardHome() {
                       //Convert the date from unix timestamp to locale date
                       const logDate: Date = new Date(log.timestamp * 1000);
                       const requestPreviewParts: string[] = log.request_preview.split(' '); 
-                      const responsePreviewParts: string[] = log.response_preview.split(' '); 
+                      const responsePreviewParts: string[] = log.response_preview.split(' ');
+                      const findings: RuleFinding[] = log.ruleFindings;
                       return (
                         <TableRow key={log.id}>
-                          <TableCell className="text-left max-w-40">
+                          <TableCell className="text-left">
                             <div className="font-medium">Agent name</div>
                             <div className="text-sm truncate text-ellipsis overflow-hidden text-muted-foreground md:inline">
                               {log.agentId}
                             </div>
                           </TableCell>
-                          <TableCell className="text-center max-w-18">
+                          <TableCell className="text-center">
                             {logDate.toLocaleString()}
                           </TableCell>
                           <TableCell className="text-center max-w-10">
                             {requestPreviewParts[0]}
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-left truncate">
                             {requestPreviewParts[1]}
                           </TableCell>
-                          <TableCell className="text-right max-w-16">
+                          <TableCell className="text-center">
                             {responsePreviewParts[1]}
+                          </TableCell>
+                          <TableCell className="text-right flex flex-row gap-5 items-center">
+                            {findings.map((finding) => {
+                              return <RuleFindingPreview key={finding.request?.id} ruleFinding={finding}/>
+                            })}
                           </TableCell>
                         </TableRow>
                       );

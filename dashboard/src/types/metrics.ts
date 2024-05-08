@@ -45,6 +45,18 @@ type IPMetrics = {
     count: number,
 }
 
+/*
+type FindingsCountMetrics struct {
+	FindingsCount     int64 `json:"findingsCount"`
+	RuleFindingsCount int64 `json:"ruleFindingsCount"`
+}
+*/
+
+type FindingsCountMetrics = {
+    findingsCount: number,
+    ruleFindingsCount: number
+}
+
 type FindingsMetrics = {
     classification: string,
     count: number
@@ -68,4 +80,8 @@ type IPAddressesMetricsResponse = {
 
 type FindingsMetricsResponse = {
     metrics: FindingsMetrics[],
+}
+
+type FindingsCountMetricsResponse = {
+    metrics: FindingsCountMetrics
 }

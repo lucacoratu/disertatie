@@ -76,3 +76,17 @@ func (fmr *FindingsMetricsResponse) FromJSON(r io.Reader) error {
 	d := json.NewDecoder(r)
 	return d.Decode(fmr)
 }
+
+type FindingsCountMetricsResponse struct {
+	Metrics data.FindingsCountMetrics `json:"metrics"`
+}
+
+func (fmr *FindingsCountMetricsResponse) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(fmr)
+}
+
+func (fmr *FindingsCountMetricsResponse) FromJSON(r io.Reader) error {
+	d := json.NewDecoder(r)
+	return d.Decode(fmr)
+}

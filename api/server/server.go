@@ -148,9 +148,11 @@ func (api *APIServer) Init() error {
 	apiGetSubrouter.HandleFunc("/logs/recent-classified", logsHandler.GetRecentClassifiedLogsElastic)
 	//Create the route that will send total count of logs
 	apiGetSubrouter.HandleFunc("/logs/count", logsHandler.GetTotalLogsCount)
+	//Create the route that will send all the logs
+	apiGetSubrouter.HandleFunc("/logs", logsHandler.GetAllLogs)
 
-	//Create the route that will send the findings count
-
+	//Create the route that will send the findings count metrics
+	apiGetSubrouter.HandleFunc("/findings/count-metrics", logsHandler.GetFindingsCount)
 	//Create the route that will send the string format of all findings
 	apiGetSubrouter.HandleFunc("/findings/string", logsHandler.GetFindingsClassificationString)
 	//Create the route that will send the rule findings metrics

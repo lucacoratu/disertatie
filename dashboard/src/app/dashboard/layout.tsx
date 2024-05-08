@@ -24,8 +24,8 @@ export default function Layout({
           <Sidebar />
           <div className="flex min-h-screen w-full flex-col bg-muted">
               <div className="flex flex-col sm:gap-4 sm:pl-14">
-                  <Navbar />
-                  {children}
+                <Navbar />
+                {children}
               </div>
           </div>
         </ThemeProvider>

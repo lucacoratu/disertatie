@@ -157,13 +157,68 @@ func (elastic *ElasticConnection) GetRecentLogs() []data.LogDataElastic {
 
 func (elastic *ElasticConnection) GetRecentRuleClassifiedLogs() []data.LogDataElastic {
 	//Create the query to extract all the logs of the agent
+	//TO DO...CHECK IF THE RESPONSE CLASSIFICATION EXISTS
 	query := `
 		{
 			"size": 10,
 			"query": { 
-				"regexp": {
-					"ruleFindings.request.classification.keyword": ".+" 
-				} 
+				"bool" : {
+					"should": [
+						{"regexp": {
+							"ruleFindings.request.classification.keyword": ".+" 
+						}},
+						{"regexp": {
+							"ruleFindings.response.classification.keyword": ".+" 
+						}}
+					]  
+				}
+			},
+			"sort": [
+				{ "timestamp": "desc" }
+			]
+		}
+	`
+
+	//Search the logs in the elasticsearch database
+	res, _ := elastic.connection.Search(
+		elastic.connection.Search.WithIndex(elastic.configuration.ElasticIndex),
+		elastic.connection.Search.WithBody(strings.NewReader(query)),
+	)
+
+	//Create the response object
+	response := elasticAgentLogs{}
+	//Parse the response from json into a struct
+	err := response.FromJSON(res.Body)
+
+	//Check if an error occured when parsing the response from json string to struct
+	if err != nil {
+		return nil
+	}
+
+	//Create the return data slice
+	returnData := make([]data.LogDataElastic, 0)
+
+	for _, hit := range response.Hits.Hits {
+		//Create the request preview
+		request_preview := strings.Split(hit.Source.Request, "\n")[0]
+		//Create the response preview
+		response_preview := strings.Split(hit.Source.Response, "\n")[0]
+		//Create the rule findings structure
+		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Timestamp: hit.Source.Timestamp, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
+	}
+
+	elastic.logger.Debug(len(response.Hits.Hits))
+
+	return returnData
+}
+
+func (elastic *ElasticConnection) GetAllLogs() []data.LogDataElastic {
+	//Create the query to extract all the logs of the agent
+	query := `
+		{
+			"size": 10000,
+			"query": { 
+				"match_all": {} 
 			},
 			"sort": [
 				{ "timestamp": "desc" }
@@ -346,6 +401,30 @@ func (rfar *RuleFindingsAggregationResponse) FromJSON(r io.Reader) error {
 	return e.Decode(rfar)
 }
 
+type StringStats struct {
+	Count     int64   `json:"count"`
+	MinLength int64   `json:"min_length"`
+	MaxLength int64   `json:"max_length"`
+	AvgLength float64 `json:"avg_length"`
+	Entropy   float64 `json:"entropy"`
+}
+
+type RuleStatisticsAggregation struct {
+	RuleFindingsResponseStats StringStats `json:"ruleFindingsResponseStats"`
+	RuleFindingsRequestStats  StringStats `json:"ruleFindingsRequestStats"`
+	FindingsResponseStats     StringStats `json:"findingsResponseStats"`
+	FindingsRequestStats      StringStats `json:"findingsRequestStats"`
+}
+
+type RuleStatisticsResponse struct {
+	Aggregations RuleStatisticsAggregation `json:"aggregations"`
+}
+
+func (rsr *RuleStatisticsResponse) FromJSON(r io.Reader) error {
+	e := json.NewDecoder(r)
+	return e.Decode(rsr)
+}
+
 func (elastic *ElasticConnection) GetRuleFindingsStats() ([]data.FindingsMetrics, error) {
 	query := `
 	{
@@ -354,7 +433,8 @@ func (elastic *ElasticConnection) GetRuleFindingsStats() ([]data.FindingsMetrics
 			"langs" : {
 				"terms" : { "field" : "ruleFindings.request.classification.keyword"}
 			}
-		}}
+		}
+	}
 	`
 	//Search the logs in the elasticsearch database
 	res, _ := elastic.connection.Search(
@@ -408,48 +488,47 @@ func (elastic *ElasticConnection) GetRuleIdStats() ([]data.FindingsMetrics, erro
 	return metrics, nil
 }
 
-// func (elastic *ElasticConnection) GetFindingsStats() ([]data.FindingsMetrics, error) {
-// 	query := `
-// 	{
-// 		"size": 0,
-// 		"aggs" : {
-// 			"langs" : {
-// 				"terms" : { "field" : "ruleFindings.request.ruleId.keyword"}
-// 			}
-// 		}
-// 	}
-// 	`
+func (elastic *ElasticConnection) GetFindingsStats() (data.FindingsCountMetrics, error) {
+	query := `
+	{
+		"size": 0,
+		"aggs": {
+		  "ruleFindingsRequestStats": { 
+			"string_stats": { "field": "ruleFindings.request.classification.keyword" }
+		  },
+		  "ruleFindingsResponseStats": { 
+			"string_stats": { "field": "ruleFindings.response.classification.keyword" } 
+		  },
+		  "findingsRequestStats": { 
+			"string_stats": { "field": "findings.request.classification.keyword" } 
+		  },
+		  "findingsResponseStats": { 
+			"string_stats": { "field": "findings.response.classification.keyword" } 
+		  }
+		}
+	  }
+	`
 
-// 	//Search the logs in the elasticsearch database
-// 	res, _ := elastic.connection.Search(
-// 		elastic.connection.Search.WithIndex(elastic.configuration.ElasticIndex),
-// 		elastic.connection.Search.WithBody(strings.NewReader(query)),
-// 	)
+	//Search the logs in the elasticsearch database
+	res, _ := elastic.connection.Search(
+		elastic.connection.Search.WithIndex(elastic.configuration.ElasticIndex),
+		elastic.connection.Search.WithBody(strings.NewReader(query)),
+	)
 
-// 	response := RuleFindingsAggregationResponse{}
-// 	err := response.FromJSON(res.Body)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	response := RuleStatisticsResponse{}
+	err := response.FromJSON(res.Body)
+	if err != nil {
+		return data.FindingsCountMetrics{FindingsCount: 0, RuleFindingsCount: 0}, err
+	}
 
-// 	metrics := make([]data.FindingsMetrics, 0)
-// 	for _, metric := range response.Aggregation.Langs.Buckets {
-// 		metrics = append(metrics, data.FindingsMetrics{Classification: metric.Key, Count: metric.Count})
-// 	}
+	metrics := data.FindingsCountMetrics{FindingsCount: response.Aggregations.FindingsResponseStats.Count + response.Aggregations.FindingsRequestStats.Count, RuleFindingsCount: response.Aggregations.RuleFindingsResponseStats.Count + response.Aggregations.RuleFindingsRequestStats.Count}
 
-// 	return metrics, nil
-// }
+	return metrics, nil
+}
 
 func (elastic *ElasticConnection) GetRuleFindingsCount() (int64, error) {
 	client := http.Client{}
 	//Create the URL
-	// query := `
-	// {
-	// 	"query": {
-	// 		"term": {"}
-	// 	}
-	// }
-	// `
 	url := fmt.Sprintf("%s/%s/_count", elastic.configuration.ElasticURL, elastic.configuration.ElasticIndex)
 	response, err := client.Get(url)
 	if err != nil {

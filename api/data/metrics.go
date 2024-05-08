@@ -98,3 +98,19 @@ func (fm *FindingsMetrics) ToJSON(w io.Writer) error {
 	e := json.NewEncoder(w)
 	return e.Encode(fm)
 }
+
+// Structure that holds the metrics about counts of findings
+type FindingsCountMetrics struct {
+	FindingsCount     int64 `json:"findingsCount"`
+	RuleFindingsCount int64 `json:"ruleFindingsCount"`
+}
+
+func (fcm *FindingsCountMetrics) FromJSON(r io.Reader) error {
+	d := json.NewDecoder(r)
+	return d.Decode(fcm)
+}
+
+func (fcm *FindingsCountMetrics) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(fcm)
+}

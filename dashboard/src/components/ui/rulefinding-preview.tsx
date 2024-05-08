@@ -1,4 +1,3 @@
-import { useTheme } from "next-themes";
 import { FC } from "react";
 
 import {
@@ -19,13 +18,13 @@ const RuleFindingPreview: FC<FindingPreviewProps> = ({ruleFinding}): JSX.Element
     const severityNames = ['Low', 'Medium', 'High', 'Critical'];
 
     return (
-        <div className="overflow-hidden">
+        <div className="overflow-hidden" key={ruleFinding.request?.id || ruleFinding.response?.id}>
             {
                 ruleFinding.request && ruleFinding.request?.id != '' && 
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger>
-                            <div className={"min-w-10 truncate ... overflow-hidden p-1 rounded text-center " + severityColors[ruleFinding.request?.severity || 0]}>
+                            <div className={"w-fit min-w-fit truncate ... overflow-hidden p-1 rounded font-bold text-center " + severityColors[ruleFinding.request?.severity || 0]}>
                                 {ruleFinding.request?.classification.toUpperCase()}
                             </div>
                         </TooltipTrigger>
@@ -44,7 +43,7 @@ const RuleFindingPreview: FC<FindingPreviewProps> = ({ruleFinding}): JSX.Element
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger>
-                            <div className={"truncate ... overflow-hidden p-1 rounded w-fit text-center " + severityColors[ruleFinding.response?.severity || 0]}>
+                            <div className={"truncate ... overflow-hidden p-1 rounded w-fit min-w-fit font-bold text-center " + severityColors[ruleFinding.response?.severity || 0]}>
                                 {ruleFinding.response?.classification.toUpperCase()}
                             </div>
                         </TooltipTrigger>

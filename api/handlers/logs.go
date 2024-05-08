@@ -124,6 +124,24 @@ func (lh *LogsHandler) GetRecentClassifiedLogsElastic(rw http.ResponseWriter, r 
 	respData.ToJSON(rw)
 }
 
+// Handler to get all the logs from elasticsearch
+func (lh *LogsHandler) GetAllLogs(rw http.ResponseWriter, r *http.Request) {
+	allLogs := lh.elasticConnection.GetAllLogs()
+
+	//Check if the logs could be pulled from elasticsearch
+	if allLogs == nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "Failed to get recent logs"}
+		apiErr.ToJSON(rw)
+		return
+	}
+
+	//Send the logs back to the client
+	respData := response.LogsGetResponseElastic{Logs: allLogs}
+	rw.WriteHeader(http.StatusOK)
+	respData.ToJSON(rw)
+}
+
 // Handler to get all the logs from elasticsearch for a specific agent
 func (lh *LogsHandler) GetLogsShortElastic(rw http.ResponseWriter, r *http.Request) {
 	//Get the agent uuid from the URL
@@ -510,7 +528,19 @@ func (lh *LogsHandler) GetLogsRuleIdMetrics(rw http.ResponseWriter, r *http.Requ
 }
 
 func (lh *LogsHandler) GetFindingsCount(rw http.ResponseWriter, r *http.Request) {
-
+	//Get the metrics from elasticsearch
+	metrics, err := lh.elasticConnection.GetFindingsStats()
+	if err != nil {
+		//Send an error message
+		rw.WriteHeader(http.StatusBadRequest)
+		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "could not retrieve the findings count metrics"}
+		apiErr.ToJSON(rw)
+		return
+	}
+	//Send the metrics back to the client
+	resp := response.FindingsCountMetricsResponse{Metrics: metrics}
+	rw.WriteHeader(http.StatusOK)
+	resp.ToJSON(rw)
 }
 
 func (lh *LogsHandler) ExportAgentLogs(rw http.ResponseWriter, r *http.Request) {
