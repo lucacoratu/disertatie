@@ -85,3 +85,22 @@ type FindingsMetricsResponse = {
 type FindingsCountMetricsResponse = {
     metrics: FindingsCountMetrics
 }
+
+type AgentMetrics = {
+    agentId: string,
+    agentName: string,
+    count: number
+}
+
+type AgentMetricsResponse = {
+    metrics: AgentMetrics[]
+}
+
+type ClassificationMetrics = {
+    classifiedCount: number,
+    unclassifiedCount: number
+}
+
+type ClassificationMetricsResponse = {
+    metrics: ClassificationMetrics
+}

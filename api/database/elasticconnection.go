@@ -7,6 +7,7 @@ type IElasticConnection interface {
 	InsertLog(log data.LogData) error
 	GetLogsPaginated(agentId string) []data.LogDataElastic
 	GetAllLogs() []data.LogDataElastic
+	GetAllClassifiedLogs() []data.LogDataElastic
 	GetAllAgentLogs(agentId string) []data.LogDataElastic
 	GetRecentLogs() []data.LogDataElastic
 	GetRecentRuleClassifiedLogs() []data.LogDataElastic
@@ -14,4 +15,5 @@ type IElasticConnection interface {
 	GetRuleFindingsStats() ([]data.FindingsMetrics, error)
 	GetRuleIdStats() ([]data.FindingsMetrics, error)
 	GetFindingsStats() (data.FindingsCountMetrics, error)
+	GetAgentsStatistics() ([]data.AgentsMetrics, error)
 }

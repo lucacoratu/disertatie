@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-export default async function Logs({ params }: { params: { id: string } }) {
+export default async function Logs() {
     return (
         <>
             <Button className="self-end h-8">

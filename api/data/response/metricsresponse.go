@@ -90,3 +90,31 @@ func (fmr *FindingsCountMetricsResponse) FromJSON(r io.Reader) error {
 	d := json.NewDecoder(r)
 	return d.Decode(fmr)
 }
+
+type AgentsMetricsResponse struct {
+	Metrics []data.AgentsMetrics `json:"metrics"`
+}
+
+func (amr *AgentsMetricsResponse) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(amr)
+}
+
+func (amr *AgentsMetricsResponse) FromJSON(r io.Reader) error {
+	d := json.NewDecoder(r)
+	return d.Decode(amr)
+}
+
+type ClassificationMetricsResponse struct {
+	Metrics data.ClassificationMetrics `json:"metrics"`
+}
+
+func (amr *ClassificationMetricsResponse) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(amr)
+}
+
+func (amr *ClassificationMetricsResponse) FromJSON(r io.Reader) error {
+	d := json.NewDecoder(r)
+	return d.Decode(amr)
+}

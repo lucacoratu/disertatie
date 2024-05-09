@@ -114,3 +114,35 @@ func (fcm *FindingsCountMetrics) ToJSON(w io.Writer) error {
 	e := json.NewEncoder(w)
 	return e.Encode(fcm)
 }
+
+// Structure that holds the metrics about number of logs collected from each agent
+type AgentsMetrics struct {
+	AgentId   string `json:"agentId"`
+	AgentName string `json:"agentName"`
+	Count     int64  `json:"count"`
+}
+
+func (am *AgentsMetrics) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(am)
+}
+
+func (am *AgentsMetrics) FromJSON(r io.Reader) error {
+	d := json.NewDecoder(r)
+	return d.Decode(am)
+}
+
+type ClassificationMetrics struct {
+	ClassifiedCount   int64 `json:"classifiedCount"`
+	UnclassifiedCount int64 `json:"unclassifiedCount"`
+}
+
+func (cm *ClassificationMetrics) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(cm)
+}
+
+func (cm *ClassificationMetrics) FromJSON(r io.Reader) error {
+	d := json.NewDecoder(r)
+	return d.Decode(cm)
+}

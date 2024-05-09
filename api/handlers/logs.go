@@ -142,6 +142,24 @@ func (lh *LogsHandler) GetAllLogs(rw http.ResponseWriter, r *http.Request) {
 	respData.ToJSON(rw)
 }
 
+// Handler to get all the classified logs from elasticsearch
+func (lh *LogsHandler) GetAllClassifiedLogs(rw http.ResponseWriter, r *http.Request) {
+	allLogs := lh.elasticConnection.GetAllClassifiedLogs()
+
+	//Check if the logs could be pulled from elasticsearch
+	if allLogs == nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "Failed to get recent logs"}
+		apiErr.ToJSON(rw)
+		return
+	}
+
+	//Send the logs back to the client
+	respData := response.LogsGetResponseElastic{Logs: allLogs}
+	rw.WriteHeader(http.StatusOK)
+	respData.ToJSON(rw)
+}
+
 // Handler to get all the logs from elasticsearch for a specific agent
 func (lh *LogsHandler) GetLogsShortElastic(rw http.ResponseWriter, r *http.Request) {
 	//Get the agent uuid from the URL
@@ -541,6 +559,64 @@ func (lh *LogsHandler) GetFindingsCount(rw http.ResponseWriter, r *http.Request)
 	resp := response.FindingsCountMetricsResponse{Metrics: metrics}
 	rw.WriteHeader(http.StatusOK)
 	resp.ToJSON(rw)
+}
+
+// Handler for getting classification metrics
+func (lh *LogsHandler) GetClassificationMetrics(rw http.ResponseWriter, r *http.Request) {
+	//Get the findings count from the database
+	findingsMetrics, err := lh.elasticConnection.GetFindingsStats()
+	if err != nil {
+		//Send an error message
+		rw.WriteHeader(http.StatusBadRequest)
+		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "could not retrieve the findings count metrics"}
+		apiErr.ToJSON(rw)
+		return
+	}
+	var classifiedCount int64 = findingsMetrics.FindingsCount + findingsMetrics.RuleFindingsCount
+	totalLogs, err := lh.elasticConnection.GetTotalCountLogs()
+	if err != nil {
+		//Send an error message
+		rw.WriteHeader(http.StatusBadRequest)
+		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "could not retrieve the total logs count"}
+		apiErr.ToJSON(rw)
+		return
+	}
+
+	totalLogs = totalLogs - classifiedCount
+	metrics := data.ClassificationMetrics{ClassifiedCount: classifiedCount, UnclassifiedCount: totalLogs}
+	response := response.ClassificationMetricsResponse{Metrics: metrics}
+	rw.WriteHeader(http.StatusOK)
+	response.ToJSON(rw)
+}
+
+// Handler for getting agent log counts metrics
+func (lh *LogsHandler) GetAgentsMetrics(rw http.ResponseWriter, r *http.Request) {
+	//Get the agent metrics from elasticsearch
+	metrics, err := lh.elasticConnection.GetAgentsStatistics()
+	if err != nil {
+		//Send an error message
+		rw.WriteHeader(http.StatusBadRequest)
+		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "could not retrieve the agents logs count metrics"}
+		apiErr.ToJSON(rw)
+		return
+	}
+
+	for _, metric := range metrics {
+		//Add the agent name to the structure from cassandra
+		agent, err := lh.dbConnection.GetAgent(metric.AgentId)
+		if err != nil {
+			//Log an error message
+			lh.logger.Error("Could not get the agent name from cassandra for agent", metric.AgentId)
+			continue
+		}
+		//Add the name to the metric structure
+		metric.AgentName = agent.Name
+	}
+
+	//Send the response to the client
+	response := response.AgentsMetricsResponse{Metrics: metrics}
+	rw.WriteHeader(http.StatusOK)
+	response.ToJSON(rw)
 }
 
 func (lh *LogsHandler) ExportAgentLogs(rw http.ResponseWriter, r *http.Request) {

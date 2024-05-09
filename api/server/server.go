@@ -150,6 +150,12 @@ func (api *APIServer) Init() error {
 	apiGetSubrouter.HandleFunc("/logs/count", logsHandler.GetTotalLogsCount)
 	//Create the route that will send all the logs
 	apiGetSubrouter.HandleFunc("/logs", logsHandler.GetAllLogs)
+	//Create the route that will send agent logs metrics
+	apiGetSubrouter.HandleFunc("/logs/agent-metrics", logsHandler.GetAgentsMetrics)
+	//Create the route that will send logs classification metrics
+	apiGetSubrouter.HandleFunc("/logs/classification-metrics", logsHandler.GetClassificationMetrics)
+	//Create the route that will send all the classified logs
+	apiGetSubrouter.HandleFunc("/logs/classified", logsHandler.GetAllClassifiedLogs)
 
 	//Create the route that will send the findings count metrics
 	apiGetSubrouter.HandleFunc("/findings/count-metrics", logsHandler.GetFindingsCount)
