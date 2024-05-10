@@ -3,12 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
 import {constants} from "@/app/constants";
 import Link from "next/link";
+import { cookies } from "next/headers";
 
 async function getAgents() : Promise<Agent[]> {
+    const cookie = cookies().get('session');
     //Create the URL where the data will be fetched from
     const url = constants.apiBaseURL + "/agents";
     //Revalidate the data once every 10 mins
-    const res = await fetch(url, { next: { revalidate: 600 } });
+    const res = await fetch(url, { next: { revalidate: 600 }, headers: {Cookie: `${cookie?.name}=${cookie?.value}`} });
     //Check if there was an error
     if(!res.ok) {
         throw new Error("could not get machines data");

@@ -1,25 +1,14 @@
 "use client"
 
-import Image from "next/image"
 import Link from "next/link"
 import {
-  CreditCard,
   Home,
-  LineChart,
-  Ghost,
   PanelLeft,
   Search,
-  Settings,
   Server,
-  Users2,
-  Users,
-  DollarSign,
-  Activity,
-  ArrowUpRight,
   VenetianMask
 } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 
 import {
   Breadcrumb,
@@ -30,49 +19,17 @@ import {
 } from "@/components/ui/breadcrumb"
 
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+
 import { Input } from "@/components/ui/input"
 
-import {
-    Avatar,
-    AvatarFallback,
-    AvatarImage,
-  } from "@/components/ui/avatar"
 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip"
 import ThemeButton from "./ThemeButton"
 import { constants } from "@/app/constants"
 import NotificationButton from "./NotificationButton"
 import ProfileButton from "./ProfileButton"
+
 
 export default function Navbar() {
     const routes = [
@@ -142,12 +99,12 @@ export default function Navbar() {
             </BreadcrumbList>
             </Breadcrumb>
             <div className="relative ml-auto flex-1 md:grow-0">
-            <Search className="absolute left-2.5 top-[12px] h-4 w-4 text-muted-foreground" />
-            <Input
-                type="search"
-                placeholder="Search..."
-                className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
-            />
+                <Search className="absolute left-2.5 top-[12px] h-4 w-4 text-muted-foreground" />
+                <Input
+                    type="search"
+                    placeholder="Search..."
+                    className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[336px]"
+                />
             </div>
             
             <NotificationButton />

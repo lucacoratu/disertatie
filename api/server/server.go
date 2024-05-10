@@ -12,6 +12,7 @@ import (
 	"github.com/lucacoratu/disertatie/api/config"
 	"github.com/lucacoratu/disertatie/api/database"
 	"github.com/lucacoratu/disertatie/api/handlers"
+	"github.com/lucacoratu/disertatie/api/jwt"
 	"github.com/lucacoratu/disertatie/api/logging"
 	"github.com/lucacoratu/disertatie/api/websocket"
 )
@@ -31,6 +32,31 @@ func (api *APIServer) LoggingMiddleware(next http.Handler) http.Handler {
 
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		// compare the return-value to the authMW
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (api *APIServer) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//Check the JWT in to cookies
+		sessionCookie, err := r.Cookie("session")
+		if err != nil {
+			api.logger.Error("Error occured when getting the session cookie in the middleware", err.Error())
+			//Return unauthenticated
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		token := sessionCookie.Value
+		_, err = jwt.ValidateJWT(token)
+		if err != nil {
+			api.logger.Error("Error occured when validating JWT token in the middleware", err.Error())
+			//Return unauthenticated
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		//Authenticated
 		next.ServeHTTP(w, r)
 	})
 }
@@ -118,6 +144,11 @@ func (api *APIServer) Init() error {
 	apiDeleteSubrouter := r.PathPrefix("/api/v1/").Methods("DELETE").Subrouter()
 	apiPutSubrouter := r.PathPrefix("/api/v1/").Methods("PUT").Subrouter()
 
+	//Add the auth middleware
+	apiGetSubrouter.Use(api.AuthMiddleware)
+	apiPutSubrouter.Use(api.AuthMiddleware)
+	apiDeleteSubrouter.Use(api.AuthMiddleware)
+
 	//Create the route that will send all the registered agents
 	apiGetSubrouter.HandleFunc("/agents", agentsHandler.GetAgents)
 	//Create the route that will send the number of registered agents
@@ -154,6 +185,8 @@ func (api *APIServer) Init() error {
 	apiGetSubrouter.HandleFunc("/logs/agent-metrics", logsHandler.GetAgentsMetrics)
 	//Create the route that will send logs classification metrics
 	apiGetSubrouter.HandleFunc("/logs/classification-metrics", logsHandler.GetClassificationMetrics)
+	//Create the route that will send logs IP addresses metrics
+	apiGetSubrouter.HandleFunc("/logs/ip-address-metrics", logsHandler.GetAllIPAddressesMetrics)
 	//Create the route that will send all the classified logs
 	apiGetSubrouter.HandleFunc("/logs/classified", logsHandler.GetAllClassifiedLogs)
 
@@ -194,7 +227,7 @@ func (api *APIServer) Init() error {
 	apiPutSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}", agentsHandler.ModifyAgent)
 
 	//Create the healthcheck route
-	apiGetSubrouter.HandleFunc("/healthcheck", healthCheckHandler.HealthCheck)
+	r.HandleFunc("/api/v1/healthcheck", healthCheckHandler.HealthCheck)
 
 	api.srv = &http.Server{
 		Addr: api.configuration.ListeningAddress + ":" + api.configuration.ListeningPort,

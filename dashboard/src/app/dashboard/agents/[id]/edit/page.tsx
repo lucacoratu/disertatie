@@ -5,11 +5,13 @@ import {
     HoverCardContent,
     HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { cookies } from "next/headers";
 
 //Function to get the details of an agent
 async function GetAgent(id: string): Promise<Agent|undefined> {
+    const cookie = cookies().get('session');
     const URL = constants.apiBaseURL + "/agents/" + id;
-    const res = await fetch(URL);
+    const res = await fetch(URL, {headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
     if (!res) {
         throw new Error("cannot get agent details");
     }

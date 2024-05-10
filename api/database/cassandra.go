@@ -814,6 +814,27 @@ func (cassandra *CassandraConnection) GetIPAddressesCounts(uuid string) (map[str
 	return occurencesMap, nil
 }
 
+// Get IP addresses metrics
+func (cassandra *CassandraConnection) GetAllIPAddressesCounts() (map[string]int64, error) {
+	//Prepare the query
+	query := cassandra.session.Query("SELECT remote_ip FROM " + cassandra.configuration.CassandraKeyspace + ".logs ALLOW FILTERING")
+	//Get the iterator
+	iter := query.Iter()
+	var ip_address string
+	var occurencesMap map[string]int64 = make(map[string]int64, 0)
+	for iter.Scan(&ip_address) {
+		//Parse the IP address --------- TO DO: Consider IPv6 as well
+		ip_address = strings.Split(ip_address, ":")[0]
+		_, ok := occurencesMap[ip_address]
+		if !ok {
+			occurencesMap[ip_address] = 0
+		}
+		occurencesMap[ip_address] += 1
+	}
+
+	return occurencesMap, nil
+}
+
 // Get a specific log
 func (cassandra *CassandraConnection) GetLog(uuid string) (data.LogDataDatabase, error) {
 	query := cassandra.session.Query("SELECT id, raw_request, raw_response, remote_ip, timest, request_preview, response_preview FROM "+cassandra.configuration.CassandraKeyspace+".logs WHERE id = ?", uuid)

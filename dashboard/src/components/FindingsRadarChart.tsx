@@ -66,7 +66,11 @@ const FindingsRadarChart: FC<FindingsRadarChartProps> = ({labels, values, title}
         ChartJS.defaults.borderColor = "rgba(0,0,0,0.3)";
     }
 
-    return <RadarChart data={testdata} options={options}/>
+    return (
+        <div className="max-h-[343px] py-6 flex flex-col gap-3 items-center border-2 b-2 rounded-xl bg-card">
+            <RadarChart data={testdata} options={options}/>
+        </div>
+    );
 }
 
 export default FindingsRadarChart;

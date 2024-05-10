@@ -377,6 +377,35 @@ func (lh *LogsHandler) GetIPAddressesMetrics(rw http.ResponseWriter, r *http.Req
 	resp.ToJSON(rw)
 }
 
+// Handler for getting IP addresses metrics
+func (lh *LogsHandler) GetAllIPAddressesMetrics(rw http.ResponseWriter, r *http.Request) {
+	ipAddressesOccurencesMap, _ := lh.dbConnection.GetAllIPAddressesCounts()
+
+	responseData := make([]data.IPMetrics, 0)
+	//Prepare the response for the client
+	//Counter will be used as an ID
+	var counter int64 = 0
+	//Loop through all the keys and values in the occurences dictionary
+	for key, value := range ipAddressesOccurencesMap {
+		//Create the structure which will be returned to the client
+		responseData = append(responseData, data.IPMetrics{Id: counter, IPAddress: key, Count: value})
+		//Increment the counter
+		counter += 1
+	}
+
+	//Sort the response data based on count descending
+	sort.Slice(responseData[:], func(i, j int) bool {
+		return responseData[i].Count > responseData[j].Count
+	})
+
+	//Create the response structure
+	resp := response.IPAddressMetricsResponse{Metrics: responseData}
+
+	//Send the response to the client
+	rw.WriteHeader(http.StatusOK)
+	resp.ToJSON(rw)
+}
+
 // Handler for getting full date from a log
 func (lh *LogsHandler) GetLog(rw http.ResponseWriter, r *http.Request) {
 	//Get the agent id and the log id from the vars
@@ -601,7 +630,7 @@ func (lh *LogsHandler) GetAgentsMetrics(rw http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	for _, metric := range metrics {
+	for index, metric := range metrics {
 		//Add the agent name to the structure from cassandra
 		agent, err := lh.dbConnection.GetAgent(metric.AgentId)
 		if err != nil {
@@ -611,7 +640,9 @@ func (lh *LogsHandler) GetAgentsMetrics(rw http.ResponseWriter, r *http.Request)
 		}
 		//Add the name to the metric structure
 		metric.AgentName = agent.Name
+		metrics[index] = metric
 	}
+	lh.logger.Debug(metrics)
 
 	//Send the response to the client
 	response := response.AgentsMetricsResponse{Metrics: metrics}

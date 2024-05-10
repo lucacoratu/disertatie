@@ -23,7 +23,8 @@ import {
     HoverCard,
     HoverCardContent,
     HoverCardTrigger,
-  } from "@/components/ui/hover-card"
+  } from "@/components/ui/hover-card";
+import { cookies } from "next/headers";
   
 
 const osRegex = new RegExp('^(linux|windows)$');
@@ -68,6 +69,7 @@ export default function MachinesRegisterPage() {
 
     // 2. Define a submit handler.
     async function onSubmit(values: z.infer<typeof formSchema>) {
+        const cookie = cookies().get('session');
         setLoading(true);
         //Send the values to the server
         const requestBody = JSON.stringify(values);
@@ -75,7 +77,8 @@ export default function MachinesRegisterPage() {
             method: "POST",
             body: requestBody,
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                Cookie: `${cookie?.name}=${cookie?.value}`
             },
         });
 

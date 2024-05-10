@@ -1,12 +1,14 @@
 import { constants } from "@/app/constants";
 import { DataTable } from "./data-table";
 import { columns, LogColumn } from './columns';
+import { cookies } from "next/headers";
 
 async function getClassifiedLogs(): Promise<LogShortResponse> {
+	const cookie = cookies().get('session');
 	//Create the URL where the logs will be fetched from
 	const URL = `${constants.apiBaseURL}/logs/classified`;
 	//Fetch the data (revalidate after 10 minutes)
-	const res = await fetch(URL, {next: {revalidate: 0}});
+	const res = await fetch(URL, {next: {revalidate: 0}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
 	//Check if an error occured
 	if(!res.ok) {
 		throw new Error("could not load logs");
@@ -17,10 +19,11 @@ async function getClassifiedLogs(): Promise<LogShortResponse> {
 }
 
 async function getFindingsStringFormat(): Promise<FindingClassificationString[]> {
+	const cookie = cookies().get('session');
 	//Create the URL where the findings classfication in string format will be fetched from
 	const URL = `${constants.apiBaseURL}/findings/string`;
 	//Fetch the data (revalidate after 10 minutes)
-	const res = await fetch(URL, {next: {revalidate: 600}});
+	const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
 	//Check if an error occured
 	if(!res.ok) {
 		throw new Error("could not load logs");

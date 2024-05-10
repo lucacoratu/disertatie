@@ -3,12 +3,14 @@ import FindingCard from "@/components/FindingsCard";
 import RuleFindingCard from "@/components/RuleFindingCard";
 import HTTPHighlighter from "@/components/HTTPHighlighter";
 import ExploitCard from "@/components/ExploitCard";
+import { cookies } from "next/headers";
 
 async function GetLogFull(logid: string) : Promise<LogFull> {
+    const cookie = cookies().get('session');
     //Create the URL where the log will be fetched from
 	const URL = `${constants.apiBaseURL}/logs/${logid}`;
     //Revalidate the data once every 10 mins
-    const res = await fetch(URL, { cache: "no-store" });
+    const res = await fetch(URL, { cache: "no-store", headers: {Cookie: `${cookie?.name}=${cookie?.value}`} }, );
     //Check if there was an error
     if(!res.ok) {
         console.log(res.ok);
@@ -20,10 +22,11 @@ async function GetLogFull(logid: string) : Promise<LogFull> {
 }
 
 async function getFindingsStringFormat(): Promise<FindingClassificationString[]> {
+    const cookie = cookies().get('session');
 	//Create the URL where the findings classfication in string format will be fetched from
 	const URL = `${constants.apiBaseURL}/findings/string`;
 	//Fetch the data (revalidate after 10 minutes)
-	const res = await fetch(URL, {next: {revalidate: 600}});
+	const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
 	//Check if an error occured
 	if(!res.ok) {
 		throw new Error("could not load logs");
@@ -34,10 +37,11 @@ async function getFindingsStringFormat(): Promise<FindingClassificationString[]>
 }
 
 async function getLogExploit(log_id: string): Promise<Exploit> {
+    const cookie = cookies().get('session');
     //Create the URL where the findings classfication in string format will be fetched from
 	const URL = `${constants.apiBaseURL}/logs/${log_id}/exploit`;
 	//Fetch the data (revalidate after 10 minutes)
-	const res = await fetch(URL, {next: {revalidate: 600}});
+	const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
     //Check if an error occured
 	if(!res.ok) {
 		throw new Error("could not load log exploit");

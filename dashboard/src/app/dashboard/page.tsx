@@ -30,14 +30,15 @@ import {
 
 import {constants} from "@/app/constants";
 import RuleFindingPreview from "@/components/ui/rulefinding-preview";
-import FindingsRadarChart from "@/components/FindingsRadarChart";
+import { cookies } from "next/headers";
 
 
 async function GetRecentLogs() {
+    const cookie = cookies().get('session');
   	//Create the URL where the logs will be fetched from
     const URL = `${constants.apiBaseURL}/logs/recent`;
     //Fetch the data (revalidate after 10 minutes)
-    const res = await fetch(URL, {next: {revalidate: 600}});
+    const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
     //Check if an error occured
     if(!res.ok) {
       throw new Error("could not load logs");
@@ -48,10 +49,11 @@ async function GetRecentLogs() {
 }
 
 async function GetRecentClassifiedLogs() {
+  const cookie = cookies().get('session');
   //Create the URL where the logs will be fetched from
   const URL = `${constants.apiBaseURL}/logs/recent-classified`;
   //Fetch the data (revalidate after 10 minutes)
-  const res = await fetch(URL, {next: {revalidate: 600}});
+  const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
   //Check if an error occured
   if(!res.ok) {
     throw new Error("could not load logs");
@@ -62,10 +64,11 @@ async function GetRecentClassifiedLogs() {
 }
 
 async function GetMachinesStatistics() {
+  const cookie = cookies().get('session');
     //Create the URL where the logs will be fetched from
     const URL = `${constants.apiBaseURL}/machines/metrics`;
     //Fetch the data (revalidate after 10 minutes)
-    const res = await fetch(URL, {next: {revalidate: 600}});
+    const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
     //Check if an error occured
     if(!res.ok) {
       throw new Error("could not load machines metrics");
@@ -76,10 +79,11 @@ async function GetMachinesStatistics() {
 }
 
 async function GetTotalLogsCount() {
+  const cookie = cookies().get('session');
     //Create the URL where the logs will be fetched from
     const URL = `${constants.apiBaseURL}/logs/count`;
     //Fetch the data (revalidate after 10 minutes)
-    const res = await fetch(URL, {next: {revalidate: 600}});
+    const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
     //Check if an error occured
     if(!res.ok) {
       throw new Error("could not load machines metrics");
@@ -90,10 +94,11 @@ async function GetTotalLogsCount() {
 }
 
 async function GetRuleFindingsMetrics() {
+  const cookie = cookies().get('session');
     //Create the URL where the logs will be fetched from
     const URL = `${constants.apiBaseURL}/findings/rule/metrics`;
     //Fetch the data (revalidate after 10 minutes)
-    const res = await fetch(URL, {next: {revalidate: 600}});
+    const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
     //Check if an error occured
     if(!res.ok) {
       throw new Error("could not load rule findings metrics");
@@ -104,10 +109,11 @@ async function GetRuleFindingsMetrics() {
 }
 
 async function GetRuleIdsMetrics() {
+  const cookie = cookies().get('session');
   //Create the URL where the logs will be fetched from
   const URL = `${constants.apiBaseURL}/findings/rule/id-metrics`;
   //Fetch the data (revalidate after 10 minutes)
-  const res = await fetch(URL, {next: {revalidate: 600}});
+  const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
   //Check if an error occured
   if(!res.ok) {
     throw new Error("could not load rule ids metrics");
@@ -118,9 +124,10 @@ async function GetRuleIdsMetrics() {
 }
 
 async function GetCountAgents() {
+  const cookie = cookies().get('session');
   //Create the URL the logs will be fetched from
   const URL = `${constants.apiBaseURL}/agents/count`;
-  const res = await fetch(URL, {next: {revalidate: 600}});
+  const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
   if (!res.ok) {
     throw new Error("could not load agents count");
   }
@@ -129,9 +136,10 @@ async function GetCountAgents() {
 }
 
 async function GetFindingsCountMetrics() {
+  const cookie = cookies().get('session');
   //Create the URL the metrics will be pulled from
   const URL = `${constants.apiBaseURL}/findings/count-metrics`;
-  const res = await fetch(URL, {next: {revalidate: 0}});
+  const res = await fetch(URL, {next: {revalidate: 0}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
   if(!res.ok) {
     throw new Error("could not load findings count metrics");
   }
@@ -231,7 +239,7 @@ export default async function DashboardHome() {
                 </CardDescription>
               </div>
               <Button asChild size="sm" className="ml-auto gap-1">
-                <Link href="/logs">
+                <Link href="/dashboard/logs">
                   View All
                   <ArrowUpRight className="h-4 w-4" />
                 </Link>
@@ -361,7 +369,7 @@ export default async function DashboardHome() {
                   </CardDescription>
                 </div>
                 <Button asChild size="sm" className="ml-auto gap-1">
-                  <Link href="/logs">
+                  <Link href="/dashboard/logs/classified">
                     View All
                     <ArrowUpRight className="h-4 w-4" />
                   </Link>

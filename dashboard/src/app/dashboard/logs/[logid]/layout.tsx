@@ -4,7 +4,7 @@ export default function Layout({
     children: React.ReactNode,
   }) {
     return (
-        <main className="h-full w-full flex flex-col gap-4 p-4 md:px-8">            
+        <main className="h-full w-full flex flex-col gap-4">
             {children}
         </main>
     )

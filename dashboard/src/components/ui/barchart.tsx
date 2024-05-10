@@ -1,6 +1,7 @@
 "use client"
 
 import { BarChart } from "@mui/x-charts";
+import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { useTheme } from "next-themes";
 import { FC } from "react";
 
@@ -57,36 +58,32 @@ const CustomPieChart: FC<CustomBarChartProps> = ({labels, values, title}): JSX.E
                 width={350}
                 height={270}
                 tooltip={{trigger: "item"}}
-                sx={{
-                    "& .MuiChartsAxis-tickContainer .MuiChartsAxis-tickLabel":{
-                        fill: theme === "light"? "black": "whitesmoke",
-                    },
-                    "& .MuiChartsAxis-left .MuiChartsAxis-line":{
-                        stroke:theme === "light"? "black": "whitesmoke",
-                        strokeWidth:0.4,
-                        fill: theme === "light"? "black": "whitesmoke",
-                    },
-                    // bottomAxis Line Styles
-                    "& .MuiChartsAxis-bottom .MuiChartsAxis-line":{
-                        stroke:theme === "light"? "black": "whitesmoke",
-                        strokeWidth:0.4
-                    },
-                }}
-            
-                // bottomAxis={{
-                //     labelStyle: {
-                //       fontSize: 14,
-                //       transform: `translateY(${
-                //             // Hack that should be added in the lib latter.
-                //             5 * Math.abs(Math.sin((Math.PI * 45) / 180))
-                //           }px)`
+                // sx={{
+                //     "& .MuiChartsAxis-tickContainer .MuiChartsAxis-tickLabel":{
+                //         fill: theme === "light" ? "black": "whitesmoke",
                 //     },
-                //     tickLabelStyle: {
-                //       angle: 45,
-                //       textAnchor: 'start',
-                //       fontSize: 12,
+                //     "& .MuiChartsAxis-directionY" : {
+                //         stroke: theme === "light" ? "black": "whitesmoke",
+                //         strokeWidth: 0.4,
+                //         fill: theme === "light" ? "black": "whitesmoke",
                 //     },
-                //   }}
+                //     "& .MuiChartsAxis-directionX" : {
+                //         stroke: theme === "light" ? "black": "whitesmoke",
+                //         strokeWidth: 0.4,
+                //         fill: theme === "light" ? "black": "whitesmoke",
+                //     },
+                // }}
+                sx={() => ({
+                    [`.${axisClasses.root}`]: {
+                      [`.${axisClasses.tick}, .${axisClasses.line}`]: {
+                        stroke: theme === "light" ? "black": "whitesmoke",
+                        strokeWidth: 1,
+                      },
+                      [`.${axisClasses.tickLabel}`]: {
+                        fill: theme === "light" ? "black": "whitesmoke",
+                      },
+                    },
+                })}
             />
             }
         </div>

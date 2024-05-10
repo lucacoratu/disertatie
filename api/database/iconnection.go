@@ -25,6 +25,7 @@ type IConnection interface {
 	GetRequestsPerDay(uuid string) (map[string]int64, error)
 	GetStatusCodeCounts(uuid string) (map[string]int64, error)
 	GetIPAddressesCounts(uuid string) (map[string]int64, error)
+	GetAllIPAddressesCounts() (map[string]int64, error)
 	InsertLog(logData data.LogData) (string, bool, error)
 	GetLog(uuid string) (data.LogDataDatabase, error)
 	GetLogRequest(uuid string) (string, error)
