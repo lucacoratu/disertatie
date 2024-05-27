@@ -136,6 +136,7 @@ type RuleFinding = {
 type LogShort = {
     id: string,
     agentId: string,
+	agentName: string,
     remoteIp: string,
     timestamp: number,
     request_preview: string,

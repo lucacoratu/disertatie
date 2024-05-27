@@ -99,6 +99,18 @@ func (lh *LogsHandler) GetRecentLogsElastic(rw http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	//Add the agent name to the log struct
+	for i, recentLog := range recentLogs {
+		agent, err := lh.dbConnection.GetAgent(recentLog.AgentId)
+		//Check if an error occured
+		if err != nil {
+			lh.logger.Error("Error occured when getting agent details from database", err.Error())
+			continue
+		}
+		recentLog.AgentName = agent.Name
+		recentLogs[i] = recentLog
+	}
+
 	//Send the logs back to the client
 	respData := response.LogsGetResponseElastic{Logs: recentLogs}
 	rw.WriteHeader(http.StatusOK)
@@ -116,6 +128,18 @@ func (lh *LogsHandler) GetRecentClassifiedLogsElastic(rw http.ResponseWriter, r 
 		apiErr := data.APIError{Code: data.DATABASE_ERROR, Message: "Failed to get recent logs"}
 		apiErr.ToJSON(rw)
 		return
+	}
+
+	//Add the agent name to the log struct
+	for i, recentLog := range recentLogs {
+		agent, err := lh.dbConnection.GetAgent(recentLog.AgentId)
+		//Check if an error occured
+		if err != nil {
+			lh.logger.Error("Error occured when getting agent details from database", err.Error())
+			continue
+		}
+		recentLog.AgentName = agent.Name
+		recentLogs[i] = recentLog
 	}
 
 	//Send the logs back to the client

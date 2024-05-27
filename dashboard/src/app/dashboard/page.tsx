@@ -275,7 +275,7 @@ export default async function DashboardHome() {
                     return (
                       <TableRow key={log.id}>
                         <TableCell className="text-left max-w-40">
-                          <div className="font-medium">Agent name</div>
+                          <div className="font-medium">{log.agentName}</div>
                           <div className="text-sm truncate text-ellipsis overflow-hidden text-muted-foreground md:inline">
                             {log.agentId}
                           </div>
@@ -409,7 +409,7 @@ export default async function DashboardHome() {
                       return (
                         <TableRow key={log.id}>
                           <TableCell className="text-left">
-                            <div className="font-medium">Agent name</div>
+                            <div className="font-medium">{log.agentName}</div>
                             <div className="text-sm truncate text-ellipsis overflow-hidden text-muted-foreground md:inline">
                               {log.agentId}
                             </div>

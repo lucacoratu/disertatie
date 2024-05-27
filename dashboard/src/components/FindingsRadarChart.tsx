@@ -24,19 +24,19 @@ ChartJS.register(
     Legend
 );
 
-ChartJS.defaults.borderColor = "rgba(255,255,255,0.3)";
+ChartJS.defaults.borderColor = "rgba(245,245,245,0.9)";
   
 let testdata = {
     labels: ['Thing 1', 'Thing 2', 'Thing 3'],
     datasets: [
-    {
-        label: '# of rule findings',
-        data: [2, 9, 3],
-        backgroundColor: 'rgba(109, 40, 217, 1)',
-        borderColor: 'rgba(109, 40, 217, 0.9)',
-        borderWidth: 1,
-        showLabelBackdrop: false,
-    },
+        {
+            label: '# of rule findings',
+            data: [2, 9, 3],
+            backgroundColor: 'rgba(109, 40, 217, 1)',
+            borderColor: 'rgba(109, 40, 217, 0.9)',
+            borderWidth: 1,
+            showLabelBackdrop: false,
+        },
     ],
 };
 
@@ -45,6 +45,15 @@ const options = {
         r: {
            ticks: {
                display: false // Hides the labels in the middel (numbers)
+           },
+           pointLabels: {
+            fontColor: '#443F5B',
+            font: {
+              size: 12
+            }
+          },
+           grid: {
+            color: ['whitesmoke']
            }
        }
     }

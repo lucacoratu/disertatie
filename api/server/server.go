@@ -204,12 +204,12 @@ func (api *APIServer) Init() error {
 	apiGetSubrouter.HandleFunc("/machines/metrics", machinesHandler.GetMachinesStatistics)
 
 	//Create the route which will handle websocket dashboard connections
-	apiGetSubrouter.HandleFunc("/ws", func(rw http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/ws", func(rw http.ResponseWriter, r *http.Request) {
 		wsHandler.ServeDashboardWs(pool, rw, r)
 	})
 
 	//Create the route which will handle websocket agent connections
-	apiGetSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/ws", func(rw http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}/ws", func(rw http.ResponseWriter, r *http.Request) {
 		wsHandler.ServeAgentWs(pool, rw, r)
 	})
 
