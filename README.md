@@ -7,6 +7,7 @@ The honeypot system consists of 4 main components:
 - an API which will handle all the data processing and database interaction
 - a dashboard which will display the data in a human friendly manner 
 - an Apache Cassandra cluster which will store all the data provided by the agents. 
+- an ElasticSearch cluster which will store the logs from the agents for easier indexing.
 
 # Dependencies
 The honeypot system is built using Golang and NextJS
@@ -105,4 +106,35 @@ Example Agent configuration:
 
 
 # Starting IDE
-You can start the Visual Studio Code IDE using one of the scripts `start_ide.ps1` or `start_ide.sh` depending on the operating system you have installed on your machine (.ps1 for Windows, .sh for Linux) 
+You can start the Visual Studio Code IDE using one of the scripts `start_ide.ps1` or `start_ide.sh` depending on the operating system you have installed on your machine (.ps1 for Windows, .sh for Linux)
+
+# How to setup elasticsearch with volume
+In order to setup the volume for the elasticsearch cluster you need to change the permission of the folder to be owned by the user with uid 1000.
+```bash
+sudo chown 1000:1000 ./data/elastic
+```
+
+# How to deploy the agent as a systemd service
+To add the agent as a systemd service you have to create a file in /etc/systemd/system folder (ex: /etc/systemd/system/agent.service).
+
+Add the following options in the file
+
+```bash
+[Unit]
+Description=Disertatie Agent
+ConditionPathExists=<PATH_TO_AGENT_CODE>
+After=network.target
+[Service]
+Type=simple
+User=<USER>
+Group=<GROUP>
+WorkingDirectory=<PATH_TO_AGENT_CODE>
+ExecStart=/usr/local/go/bin/go run main.go -config ./agent.conf
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=agent
+[Install]
+WantedBy=multi-user.target
+```
