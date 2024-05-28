@@ -24,6 +24,7 @@ async function GetAgent(id: string): Promise<Agent|undefined> {
 }
 
 async function getMachines() : Promise<Machine[]> {
+    const cookie = cookies().get('session');
     //Create the URL for fetching the machines
     const url = constants.apiBaseURL + "/machines" 
     //Revalidate the data once every 10 mins
