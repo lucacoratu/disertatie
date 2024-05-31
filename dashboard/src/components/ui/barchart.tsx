@@ -25,7 +25,7 @@ const CustomPieChart: FC<CustomBarChartProps> = ({labels, values, title}): JSX.E
     });
 
     return (
-        <div className="py-6 flex flex-col gap-0 items-center border-2 rounded-xl bg-card">
+        <div className="py-6 px-3 flex flex-col gap-0 items-center border-2 rounded-xl bg-card">
             <h3 className="font-bold text-sm">
                 {title}
             </h3>
@@ -65,7 +65,7 @@ const CustomPieChart: FC<CustomBarChartProps> = ({labels, values, title}): JSX.E
                         fill: theme === "light" ? "black": "whitesmoke",
                     }
                 }]}
-                width={350}
+                //width={400}
                 height={270}
                 tooltip={{ trigger: 'axis' }}
 

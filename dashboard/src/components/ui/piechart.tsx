@@ -38,7 +38,7 @@ const CustomPieChart: FC<CustomPieChartProps> = ({labels, values, title}): JSX.E
                     faded: { innerRadius: 30, additionalRadius: -30, color: theme === "light" ? "#383838": "gray" },
                     },
                     ]}
-                    width={350}
+                    //width={400}
                     height={270}
                     colors={pieChartColors}
                     slotProps={{
