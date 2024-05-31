@@ -129,13 +129,15 @@ func (api *APIServer) Init() error {
 	healthCheckHandler := handlers.NewHealthCheckHandler(api.logger, api.configuration)
 	authHandler := handlers.NewAuthHandler(api.logger, api.configuration, api.dbConnection, api.elasticConnection)
 	//registerHandler := handlers.NewRegisterHandler(api.logger, api.configuration, api.dbConnection)
-	agentsHandler := handlers.NewAgentsHandler(api.logger, api.configuration, api.dbConnection, api.elasticConnection)
+	agentsHandler := handlers.NewAgentsHandler(api.logger, api.configuration, api.dbConnection, api.elasticConnection, pool)
 	logsHandler := handlers.NewLogsHandler(api.logger, api.configuration, api.dbConnection, api.elasticConnection)
 	machinesHandler := handlers.NewMachinesHandler(api.logger, api.configuration, api.dbConnection)
 	wsHandler := handlers.NewWebsocketHandler(api.logger, api.configuration, api.dbConnection)
 
 	//Create the standalone login route
 	r.HandleFunc("/api/v1/auth/login", authHandler.Login)
+	//Create the healthcheck route
+	r.HandleFunc("/api/v1/healthcheck", healthCheckHandler.HealthCheck)
 
 	//Add the routes
 	//Create the subrouter for the API path
@@ -149,8 +151,13 @@ func (api *APIServer) Init() error {
 	apiPutSubrouter.Use(api.AuthMiddleware)
 	apiDeleteSubrouter.Use(api.AuthMiddleware)
 
+	//Create the route for checking the token (this should use the middleware)
+	apiGetSubrouter.HandleFunc("/auth/check-token", authHandler.CheckToken)
+
 	//Create the route that will send all the registered agents
 	apiGetSubrouter.HandleFunc("/agents", agentsHandler.GetAgents)
+	//Create the route that will send all the connected agents
+	apiGetSubrouter.HandleFunc("/agents/connected", agentsHandler.GetConnectedAgents)
 	//Create the route that will send the number of registered agents
 	apiGetSubrouter.HandleFunc("/agents/count", agentsHandler.GetAgentsCount)
 	//Create the route that will send a single agent details
@@ -225,9 +232,6 @@ func (api *APIServer) Init() error {
 
 	//Create the route to update an agent
 	apiPutSubrouter.HandleFunc("/agents/{uuid:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}", agentsHandler.ModifyAgent)
-
-	//Create the healthcheck route
-	r.HandleFunc("/api/v1/healthcheck", healthCheckHandler.HealthCheck)
 
 	api.srv = &http.Server{
 		Addr: api.configuration.ListeningAddress + ":" + api.configuration.ListeningPort,

@@ -33,7 +33,8 @@ type AgentResponse = {
 }
 
 interface AgentProps {
-    agent: Agent
+    agent: Agent,
+	agentStatus: string
 }
 
 type UpdateAgent = {
@@ -47,7 +48,10 @@ type UpdateAgent = {
 	machineId: 			   string,
 }
 
-
 type AgentCountResponse = {
 	count: number,
+}
+
+type ConnectedAgentsResponse = {
+	agents: string[],
 }

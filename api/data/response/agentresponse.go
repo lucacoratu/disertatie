@@ -34,3 +34,17 @@ func (acr *AgentsCountResponse) FromJSON(r io.Reader) error {
 	d := json.NewDecoder(r)
 	return d.Decode(acr)
 }
+
+type ConnectedAgentsResponse struct {
+	Agents []string `json:"agents"`
+}
+
+func (car *ConnectedAgentsResponse) ToJSON(w io.Writer) error {
+	e := json.NewEncoder(w)
+	return e.Encode(car)
+}
+
+func (car *ConnectedAgentsResponse) FromJSON(r io.Reader) error {
+	d := json.NewDecoder(r)
+	return d.Decode(car)
+}

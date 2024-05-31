@@ -82,3 +82,9 @@ func (ah *AuthHandler) Login(rw http.ResponseWriter, r *http.Request) {
 
 	response.ToJSON(rw)
 }
+
+// Function to check if the token is still valid
+// If this function is called it means that the token is valid because it passed the auth middlware
+func (ah *AuthHandler) CheckToken(rw http.ResponseWriter, r *http.Request) {
+	rw.WriteHeader(http.StatusOK)
+}

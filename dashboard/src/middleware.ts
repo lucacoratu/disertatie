@@ -1,8 +1,16 @@
 import { authRoutes, protectedRoutes } from "@/app/constants";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { constants } from "@/app/constants";
 
-export function middleware(request: NextRequest) {
+async function checkToken(token: string): Promise<boolean> {
+  //Check the token using the API
+  const url = constants.apiBaseURL + "/auth/check-token";
+  const res = await fetch(url, { cache: 'no-store' });
+  return res.ok;
+}
+
+export async function middleware(request: NextRequest) {
     const token = request.cookies.get("session")?.value;
 
     if(request.nextUrl.pathname === "/" && !token) {
@@ -14,6 +22,15 @@ export function middleware(request: NextRequest) {
     }
 
     if (authRoutes.includes(request.nextUrl.pathname) && token) {
+      //Check if the token is still valid
+      const isTokenValid = await checkToken(token);
+      //If the token is not valid redirect the user back to login
+      if(!isTokenValid) {
+        //Clear the token from the cookies
+        request.cookies.clear();
+        return NextResponse.redirect(new URL("/login", request.url));
+      }
+      //If the token is valid redirect the user to the dashboard
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 }

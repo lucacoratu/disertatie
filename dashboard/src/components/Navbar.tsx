@@ -28,7 +28,9 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import ThemeButton from "./ThemeButton"
 import { constants } from "@/app/constants"
 import NotificationButton from "./NotificationButton"
-import ProfileButton from "./ProfileButton"
+import ProfileButton from "./ProfileButton";
+
+import { usePathname } from "next/navigation";
 
 
 export default function Navbar() {
@@ -49,6 +51,10 @@ export default function Navbar() {
             icon: <VenetianMask className="w-4 h-4"/>,
         }
     ];
+
+    //Get the current path from the URL
+    const pathname = usePathname();
+    const pathParts = pathname.split("/").slice(1);
 
     return (
         <header className="sticky top-0 z-30 flex h-14 sm:py-3 sm:border-b items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-background sm:px-6">
@@ -84,19 +90,23 @@ export default function Navbar() {
                 </h1>
             </Link>
             <Breadcrumb className="hidden md:flex">
-            <BreadcrumbList>
-                <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                    <Link href="#">Dashboard</Link>
-                </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                    <Link href="#">Machines</Link>
-                </BreadcrumbLink>
-                </BreadcrumbItem>
-            </BreadcrumbList>
+                <BreadcrumbList>
+                    {pathParts.map((part, i) => {
+                        //Get the parts until the current one
+                        const refToCurrent: string = "/" + pathParts.slice(0, i + 1).join("/");
+                        part = part.charAt(0).toUpperCase() + part.slice(1);
+                        return (
+                            <>
+                                <BreadcrumbItem >
+                                    <BreadcrumbLink asChild>
+                                        <Link href={refToCurrent}>{part}</Link>
+                                    </BreadcrumbLink>
+                                </BreadcrumbItem>
+                                { i !== pathParts.length - 1 ? <BreadcrumbSeparator/> : <></> }
+                            </>
+                        );
+                    })}
+                </BreadcrumbList>
             </Breadcrumb>
             <div className="relative ml-auto flex-1 md:grow-0">
                 <Search className="absolute left-2.5 top-[12px] h-4 w-4 text-muted-foreground" />

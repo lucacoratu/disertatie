@@ -13,16 +13,30 @@ async function getAgents() : Promise<Agent[]> {
     const res = await fetch(url, { next: { revalidate: 600 }, headers: {Cookie: `${cookie?.name}=${cookie?.value}`} });
     //Check if there was an error
     if(!res.ok) {
-        throw new Error("could not get machines data");
+        throw new Error("could not get agents data");
     }
     const agents: AgentResponse = await res.json();
     //Return the data
     return agents.agents;
 }
 
+async function GetConnectedAgents() : Promise<string[]> {
+    const cookie = cookies().get('session');
+    //Create the URL where the data will be fetched froms
+    const url = constants.apiBaseURL + "/agents/connected";
+    const res = await fetch(url, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+    if(!res.ok) {
+        throw new Error("could not get connected agents");
+    }
+    const connAgents: ConnectedAgentsResponse = await res.json();
+    return connAgents.agents;
+}
+
 export default async function AgentsPage() {
     //Load the data from the server
     const agents: Agent[] = await getAgents();
+    //Get the connected agents
+    const connAgents: string[] = await GetConnectedAgents();
 
     return (
         <>
@@ -32,9 +46,18 @@ export default async function AgentsPage() {
                 </Link>
             </Button>
             <div className="flex flex-row gap-2">
-                {agents && agents.map((agent) => (
-                    <AgentCard key={agent.id} agent={agent}/>
-                ))}
+                {
+                    agents && agents.map(
+                        (agent) => {
+                            //Get the agent status from the connAgents
+                            var isConn: boolean = connAgents?.indexOf(agent.id) === -1 ? false : true;
+                            if(connAgents === null)
+                                isConn = false;
+
+                            return <AgentCard key={agent.id} agent={agent} agentStatus={isConn === true ? "online" : "offline"}/>
+                        }
+                    )
+                }
             </div>
         </>
     )

@@ -13,8 +13,10 @@ class WebSocketConnection {
     public handleAgentStatusResponse: handleAgentStatusResponseCallback;
     public handleAgentRuleDetectionAlert: handleNotificationCallback;
 
-    public handleAgentDisconnectNotificationCallbacks: handleNotificationCallback[];
-    private handleAgentConnectNotificationCallbacks: handleNotificationCallback[];
+    public handleAgentDisconnectNotificationCallback: handleNotificationCallback;
+    public handleAgentConnectNotificationCallback: handleNotificationCallback;
+    public handleAgentConnectStatus: handleNotificationCallback;
+    public handleAgentDisconnectStatus: handleNotificationCallback;
 
     private constructor() { 
         //Initialize the websocket connection
@@ -27,8 +29,10 @@ class WebSocketConnection {
         this.handleAgentStatusResponse = (text: string) => {};
         this.handleAgentRuleDetectionAlert = (text: string) => {};
 
-        this.handleAgentDisconnectNotificationCallbacks = [];
-        this.handleAgentConnectNotificationCallbacks = [];
+        this.handleAgentDisconnectNotificationCallback = (text: string) => {};
+        this.handleAgentConnectNotificationCallback = (text: string) => {};
+        this.handleAgentConnectStatus = (text: string) => {};
+        this.handleAgentDisconnectStatus = (text: string) => {};
     }
 
     private handleMessage(event: MessageEvent) {
@@ -44,14 +48,12 @@ class WebSocketConnection {
                     this.handleAgentStatusResponse(content);
                     break;
                 case WsMessageTypes.WsAgentDisconnectedNotification:
-                    for(var i = 0; i < this.handleAgentDisconnectNotificationCallbacks.length; i++) {
-                        this.handleAgentDisconnectNotificationCallbacks[i](content);
-                    }
+                    this.handleAgentDisconnectNotificationCallback(content);
+                    this.handleAgentDisconnectStatus(content);
                     break;
                 case WsMessageTypes.WsAgentConnectedNotification:
-                    for(var i = 0; i < this.handleAgentConnectNotificationCallbacks.length; i++) {
-                        this.handleAgentConnectNotificationCallbacks[i](content);
-                    }
+                    this.handleAgentConnectNotificationCallback(content);
+                    this.handleAgentConnectStatus(content);
                     break;
                 case WsMessageTypes.WsAgentRuleDetectionAlert:
                     this.handleAgentRuleDetectionAlert(content);
@@ -68,31 +70,6 @@ class WebSocketConnection {
         }
 
         return WebSocketConnection.instance;
-    }
-
-    public addAgentConnectedCallback(callback: handleNotificationCallback) {
-        //Check if the function does not already exist in the list of callbacks
-        if (this.handleAgentConnectNotificationCallbacks.indexOf(callback) != -1)
-            return;
-
-        this.handleAgentConnectNotificationCallbacks.push(callback);
-    }
-
-    // public deleteAgentConnectedCallback(callback: handleNotificationCallback) {
-    //     for(let i = 0; i < this.handleAgentConnectNotificationCallbacks.length; i++) {
-    //         if (this.handleAgentConnectNotificationCallbacks[i] === callback) {
-    //             this.handleAgentConnectNotificationCallbacks = [...this.handleAgentConnectNotificationCallbacks.slice(0, i - 1), ...this.handleAgentConnectNotificationCallbacks.slice(i + 1, Infinity)];
-    //             return;
-    //         }
-    //     }
-    // }
-
-    public addAgentDisconnectedCallback(callback: handleNotificationCallback) {
-        //Check if the function does not already exist in the list of callbacks
-        if (this.handleAgentDisconnectNotificationCallbacks.indexOf(callback) != -1)
-            return;
-
-        this.handleAgentDisconnectNotificationCallbacks.push(callback);
     }
 
     public getAgentStatus(agent_id: string): void {

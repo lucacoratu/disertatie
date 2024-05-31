@@ -21,7 +21,7 @@ const NotificationButton = () => {
 
         wsConnection.handleNotification = (message: string) => {
             const notif: WSNotification = JSON.parse(message);
-            //console.log(notif);
+            console.log(notif);
             const updateNotifications = [
                 // copy the current notifications state
                 ...notifications,
@@ -32,19 +32,15 @@ const NotificationButton = () => {
             setNumberNotifications(updateNotifications.length);
         };
 
-        wsConnection.addAgentDisconnectedCallback(
-            (message: string) => {
-                const notif: WSNotification = JSON.parse(message);
-                DisplayAgentDisconnectedToast(notif.agentId);
-            }
-        );
+        wsConnection.handleAgentDisconnectNotificationCallback = (message: string) => {
+            const notif: WSNotification = JSON.parse(message);
+            DisplayAgentDisconnectedToast(notif.agentId);
+        };
 
-        wsConnection.addAgentConnectedCallback(
-            (message: string) => {
-                const notif: WSNotification = JSON.parse(message);
-                DisplayAgentConnectedToast(notif.agentId);
-            }
-        );
+        wsConnection.handleAgentConnectNotificationCallback = (message: string) => {
+            const notif: WSNotification = JSON.parse(message);
+            DisplayAgentConnectedToast(notif.agentId);
+        };
 
         wsConnection.handleAgentRuleDetectionAlert = (message: string) => {
             const alert: WsRuleDetectionAlert = JSON.parse(message);

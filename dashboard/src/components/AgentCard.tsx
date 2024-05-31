@@ -25,24 +25,24 @@ import WebSocketConnection from "@/types/websocket";
 import {WSNotification} from "@/types/websocket_types";
 import { useState } from "react";
 
-const AgentCard: FC<AgentProps> = ({agent}): JSX.Element => {
-    const [status, setStatus] = useState("offline");
+const AgentCard: FC<AgentProps> = ({agent, agentStatus}): JSX.Element => {
+    const [status, setStatus] = useState(agentStatus);
 
     useEffect(() => {
         //Connect to the websocket of the API
         const wsConnection: WebSocketConnection = WebSocketConnection.getInstance();
 
         //Add connect callback
-        wsConnection.addAgentConnectedCallback((message: string) => {
+        wsConnection.handleAgentConnectStatus = (message: string) => {
             //const notif: WSNotification = JSON.parse(message);
             setStatus("online");
-        });
+        };
         
         //Add disconnect callback
-        wsConnection.addAgentDisconnectedCallback((message: string) => {
+        wsConnection.handleAgentDisconnectStatus = (message: string) => {
             //const notif: WSNotification = JSON.parse(message);
             setStatus("offline");
-        });
+        };
     }, [])
 
 

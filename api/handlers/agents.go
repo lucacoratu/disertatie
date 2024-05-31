@@ -11,6 +11,7 @@ import (
 	response "github.com/lucacoratu/disertatie/api/data/response"
 	"github.com/lucacoratu/disertatie/api/database"
 	"github.com/lucacoratu/disertatie/api/logging"
+	"github.com/lucacoratu/disertatie/api/websocket"
 )
 
 type AgentsHandler struct {
@@ -18,11 +19,12 @@ type AgentsHandler struct {
 	configuration     config.Configuration
 	dbConnection      database.IConnection
 	elasticConnection database.IElasticConnection
+	wsPool            *websocket.Pool
 }
 
 // Creates a new handler that will hold the functions necessary for registering proxies
-func NewAgentsHandler(logger logging.ILogger, configuration config.Configuration, dbConnection database.IConnection, elasticConnection database.IElasticConnection) *AgentsHandler {
-	return &AgentsHandler{logger: logger, configuration: configuration, dbConnection: dbConnection, elasticConnection: elasticConnection}
+func NewAgentsHandler(logger logging.ILogger, configuration config.Configuration, dbConnection database.IConnection, elasticConnection database.IElasticConnection, wsPool *websocket.Pool) *AgentsHandler {
+	return &AgentsHandler{logger: logger, configuration: configuration, dbConnection: dbConnection, elasticConnection: elasticConnection, wsPool: wsPool}
 }
 
 // Handler for registerning a new agent
@@ -183,6 +185,22 @@ func (ah *AgentsHandler) GetAgents(rw http.ResponseWriter, r *http.Request) {
 	//Return the agents
 	rw.WriteHeader(http.StatusOK)
 	agResponse.ToJSON(rw)
+}
+
+// Function that handles GET request on /api/v1/agents/connected (returns all connected agents)
+func (ah *AgentsHandler) GetConnectedAgents(rw http.ResponseWriter, r *http.Request) {
+	//Get the connected agents from the websocket pool
+	connAgents, err := ah.wsPool.GetConnectedAgents()
+	//Check if an error occured when getting the connected agents from the pool
+	if err != nil {
+		rw.WriteHeader(http.StatusInternalServerError)
+		retErr := data.APIError{Code: data.DATABASE_ERROR, Message: err.Error()}
+		retErr.ToJSON(rw)
+		return
+	}
+	//Send the response back to the client
+	rw.WriteHeader(http.StatusOK)
+	connAgents.ToJSON(rw)
 }
 
 // Function for getting a single agent

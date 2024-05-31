@@ -8,6 +8,8 @@ import (
 	"github.com/lucacoratu/disertatie/api/data"
 	"github.com/lucacoratu/disertatie/api/database"
 	"github.com/lucacoratu/disertatie/api/logging"
+
+	response "github.com/lucacoratu/disertatie/api/data/response"
 )
 
 /*
@@ -74,7 +76,7 @@ func (pool *Pool) AgentRegistered(c *AgentClient) {
 	//Send a notification to all the dashboard client to announce that the agent connected to the API
 	message := Notification{AgentId: c.Id, Message: "Agent connected"}
 	wsMessage := WebSocketMessage{Type: WsAgentConnectedNotification, Data: message}
-	for client := range pool.AgentClients {
+	for client := range pool.DashboardClients {
 		err := client.Conn.WriteJSON(wsMessage)
 		//Check if an error occured when sending the notification to the dashboard client
 		if err != nil {
@@ -89,7 +91,7 @@ func (pool *Pool) AgentUnregistered(c *AgentClient) {
 	//Send a disconnect message to all the dashboard clients
 	message := Notification{AgentId: c.Id, Message: "Agent disconnected"}
 	wsMessage := WebSocketMessage{Type: WsAgentDisconnectedNotification, Data: message}
-	for client := range pool.AgentClients {
+	for client := range pool.DashboardClients {
 		err := client.Conn.WriteJSON(wsMessage)
 		//Check if an error occured when sending the notification to the dashboard client
 		if err != nil {
@@ -99,7 +101,7 @@ func (pool *Pool) AgentUnregistered(c *AgentClient) {
 }
 
 /*
- * This function will handle when a message is recevied from a client
+ * This function will handle when a message is received from a client
  * There should be more types of messages that can be received from the client
  */
 func (pool *Pool) AgentMessageReceived(message AgentMessage) {
@@ -236,6 +238,16 @@ func (pool *Pool) HandleAgentStatusRequest(msg WebSocketMessage) (AgentStatusRes
 	}
 	//Return the response
 	return response, nil
+}
+
+func (pool *Pool) GetConnectedAgents() (response.ConnectedAgentsResponse, error) {
+	//Create the response struct which will contain all the connected agents ids
+	connAgentsIds := response.ConnectedAgentsResponse{}
+	for agent := range pool.AgentClients {
+		//Add the agent id to the list of connected agents
+		connAgentsIds.Agents = append(connAgentsIds.Agents, agent.Id)
+	}
+	return connAgentsIds, nil
 }
 
 func (pool *Pool) HandleRuleDetectionAlert(msg WebSocketMessage) error {
