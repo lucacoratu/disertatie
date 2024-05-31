@@ -173,9 +173,7 @@ export default function AgentEditForm(props: AgentEditFormProps) {
                                     </FormControl>
                                     <SelectContent>
                                         {machines?.map((machine) => {
-                                            return <>
-                                                <SelectItem key={machine.id} className="dark:hover:bg-darksurface-400 dark:selected:bg-darksurface-400" key={machine.id} value={machine.id}>{machine.hostname} - {machine.id}</SelectItem>
-                                            </>;
+                                            return <SelectItem key={machine.id} className="dark:hover:bg-darksurface-400 dark:selected:bg-darksurface-400" value={machine.id}>{machine.hostname} - {machine.id}</SelectItem>;
                                         })}
                                     </SelectContent>
                                 </Select>

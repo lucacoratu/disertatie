@@ -2,6 +2,7 @@
 
 import { BarChart } from "@mui/x-charts";
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { useTheme } from "next-themes";
 import { FC } from "react";
 
@@ -17,12 +18,19 @@ const CustomPieChart: FC<CustomBarChartProps> = ({labels, values, title}): JSX.E
 
     const {theme, setTheme} = useTheme();
 
+    const muiTheme = createTheme({
+        palette: {
+          mode: theme === "dark" ? "dark" : "light",
+        },
+    });
+
     return (
         <div className="py-6 flex flex-col gap-0 items-center border-2 rounded-xl bg-card">
             <h3 className="font-bold text-sm">
                 {title}
             </h3>
             {values && values.length > 0 &&
+            <ThemeProvider theme={muiTheme}>
             <BarChart
                 series={[
                     {
@@ -30,49 +38,37 @@ const CustomPieChart: FC<CustomBarChartProps> = ({labels, values, title}): JSX.E
                         color: pieChartColors[1],
                     }
                 ]}
+                
                 xAxis={[
                     {
                         scaleType: "band",
                         data: labels,
                         labelStyle: {
                             fontSize: 14,
-                            transform: `translateY(${
-                                  // Hack that should be added in the lib latter.
-                                  5 * Math.abs(Math.sin((Math.PI * 45) / 180))
-                                }px)`
+                            // transform: `translateY(${
+                            //     // Hack that should be added in the lib latter.
+                            //     5 * Math.abs(Math.sin((Math.PI * 45) / 180))
+                            // }px)`,
+                            fill: theme === "light" ? "black": "whitesmoke"
                         },
                         tickLabelStyle: {
-                            angle: 20,
-                            textAnchor: 'start',
-                            fontSize: 10,
+                            angle: 15,
+                            textAnchor: 'middle',
+                            fontSize: 9,
+                            fill: theme === "light" ? "black": "whitesmoke"
                         },
                     },
                 ]}
                 yAxis={[{
                     label: "count",
                     labelStyle: {
-                        fill: theme === "light"? "black": "whitesmoke",
-                        
+                        fill: theme === "light" ? "black": "whitesmoke",
                     }
                 }]}
                 width={350}
                 height={270}
-                tooltip={{trigger: "item"}}
-                // sx={{
-                //     "& .MuiChartsAxis-tickContainer .MuiChartsAxis-tickLabel":{
-                //         fill: theme === "light" ? "black": "whitesmoke",
-                //     },
-                //     "& .MuiChartsAxis-directionY" : {
-                //         stroke: theme === "light" ? "black": "whitesmoke",
-                //         strokeWidth: 0.4,
-                //         fill: theme === "light" ? "black": "whitesmoke",
-                //     },
-                //     "& .MuiChartsAxis-directionX" : {
-                //         stroke: theme === "light" ? "black": "whitesmoke",
-                //         strokeWidth: 0.4,
-                //         fill: theme === "light" ? "black": "whitesmoke",
-                //     },
-                // }}
+                tooltip={{ trigger: 'axis' }}
+
                 sx={() => ({
                     [`.${axisClasses.root}`]: {
                       [`.${axisClasses.tick}, .${axisClasses.line}`]: {
@@ -82,9 +78,13 @@ const CustomPieChart: FC<CustomBarChartProps> = ({labels, values, title}): JSX.E
                       [`.${axisClasses.tickLabel}`]: {
                         fill: theme === "light" ? "black": "whitesmoke",
                       },
+                      [`.${axisClasses.label}`] : {
+                        fill: theme === "light" ? "black": "whitesmoke",
+                      }
                     },
                 })}
             />
+            </ThemeProvider>
             }
         </div>
     );
