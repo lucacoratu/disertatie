@@ -6,7 +6,8 @@ import {
   PanelLeft,
   Search,
   Server,
-  VenetianMask
+  VenetianMask,
+  ScrollText
 } from "lucide-react"
 
 
@@ -16,12 +17,11 @@ import {
   BreadcrumbLink,
   BreadcrumbList,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
+} from "@/components/ui/breadcrumb";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 
-import { Input } from "@/components/ui/input"
-
+import { Input } from "@/components/ui/input";
 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
@@ -49,6 +49,11 @@ export default function Navbar() {
             href: "/dashboard/agents",
             label: "Agents",
             icon: <VenetianMask className="w-4 h-4"/>,
+        },
+        {
+            href:"/dashboard/logs",
+            label: "Logs",
+            icon: <ScrollText className="w-5 h-5" />,
         }
     ];
 

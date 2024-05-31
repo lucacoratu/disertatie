@@ -66,36 +66,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { constants } from "@/app/constants";
 import { DropdownMenuGroup, DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
-import next from "next";
+import { useCookies } from 'next-client-cookies';
  
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   agentId: string
-}
-
-async function getLogs(agentId: string, nextPage: string | null ): Promise<LogShortResponse> {
-	//Create the URL where the logs will be fetched from
-  var URL = "";
-  if(nextPage === null) {
-    URL = `${constants.apiBaseURL}/agents/${agentId}/logs`;
-  } else {
-	  URL = `${constants.apiBaseURL}/agents/${agentId}/logs?page=${nextPage}`;
-  }
-	//Fetch the data (revalidate after 10 minutes)
-	const res = await fetch(URL, {next: {revalidate: 600}});
-	//Check if an error occured
-	if(!res.ok) {
-		throw new Error("could not load logs");
-	}
-	//Parse the json data
-	const logsResponse: LogShortResponse = await res.json();
-	return logsResponse;
-}
-
-async function ExportLogs(agentId: string, format: string) {
-  const URL = `${constants.apiBaseURL}/agents/${agentId}/export-logs?format=${format}`;
-  const res = await fetch(URL, {next: {revalidate: 0}});
 }
 
 const tableColumns = [
@@ -153,6 +129,8 @@ export function DataTable<TData, TValue>({
   const [open, setOpen] = React.useState(false);
   const [searchColumn, setSearchColumn] = React.useState("");
 
+  const cookie = useCookies().get('session');
+
   return (
     <div>
       <div className="flex items-center py-4 gap-1">
@@ -209,21 +187,7 @@ export function DataTable<TData, TValue>({
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button className="ml-auto h-8">
-              Export
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="center">
-            <DropdownMenuLabel className="text-center h-8">Format</DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-foreground/[0.3]"/>
-            <DropdownMenuItem className="capitalize text-center hover:bg-accent h-8" onClick={async () => await ExportLogs(agentId, "json")}>JSON</DropdownMenuItem>
-            <DropdownMenuItem className="capitalize text-center hover:bg-accent h-8" onClick={async () => await ExportLogs(agentId, "csv")}>CSV</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" >
+            <Button variant="outline" className="ml-auto h-8" >
               Columns
             </Button>
           </DropdownMenuTrigger>

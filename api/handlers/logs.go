@@ -708,5 +708,7 @@ func (lh *LogsHandler) ExportAgentLogs(rw http.ResponseWriter, r *http.Request) 
 	logs := response.LogsGetResponseElastic{Logs: agentLogs}
 
 	rw.WriteHeader(http.StatusOK)
+	rw.Header().Set("Content-Disposition", "attachment; filename=export."+format)
+	rw.Header().Set("Content-Type", "application/"+format)
 	logs.ToJSON(rw)
 }

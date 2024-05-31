@@ -34,18 +34,18 @@ import { cookies } from "next/headers";
 
 
 async function GetRecentLogs() {
-    const cookie = cookies().get('session');
-  	//Create the URL where the logs will be fetched from
-    const URL = `${constants.apiBaseURL}/logs/recent`;
-    //Fetch the data (revalidate after 10 minutes)
-    const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
-    //Check if an error occured
-    if(!res.ok) {
-      throw new Error("could not load logs");
-    }
-    //Parse the json data
-    const logsResponse: LogsShortElasticResponse = await res.json();
-    return logsResponse;
+  const cookie = cookies().get('session');
+  //Create the URL where the logs will be fetched from
+  const URL = `${constants.apiBaseURL}/logs/recent`;
+  //Fetch the data (revalidate after 10 minutes)
+  const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+  //Check if an error occured
+  if(!res.ok) {
+    throw new Error("could not load logs");
+  }
+  //Parse the json data
+  const logsResponse: LogsShortElasticResponse = await res.json();
+  return logsResponse;
 }
 
 async function GetRecentClassifiedLogs() {
@@ -65,32 +65,32 @@ async function GetRecentClassifiedLogs() {
 
 async function GetMachinesStatistics() {
   const cookie = cookies().get('session');
-    //Create the URL where the logs will be fetched from
-    const URL = `${constants.apiBaseURL}/machines/metrics`;
-    //Fetch the data (revalidate after 10 minutes)
-    const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
-    //Check if an error occured
-    if(!res.ok) {
-      throw new Error("could not load machines metrics");
-    }
-    //Parse the json data
-    const machinesStatisticsResponse: MachinesStatisticsResponse = await res.json();
-    return machinesStatisticsResponse;
+  //Create the URL where the logs will be fetched from
+  const URL = `${constants.apiBaseURL}/machines/metrics`;
+  //Fetch the data (revalidate after 10 minutes)
+  const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+  //Check if an error occured
+  if(!res.ok) {
+    throw new Error("could not load machines metrics");
+  }
+  //Parse the json data
+  const machinesStatisticsResponse: MachinesStatisticsResponse = await res.json();
+  return machinesStatisticsResponse;
 }
 
 async function GetTotalLogsCount() {
   const cookie = cookies().get('session');
-    //Create the URL where the logs will be fetched from
-    const URL = `${constants.apiBaseURL}/logs/count`;
-    //Fetch the data (revalidate after 10 minutes)
-    const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
-    //Check if an error occured
-    if(!res.ok) {
-      throw new Error("could not load machines metrics");
-    }
-    //Parse the json data
-    const logCount: LogCountResponse = await res.json();
-    return logCount.count;
+  //Create the URL where the logs will be fetched from
+  const URL = `${constants.apiBaseURL}/logs/count`;
+  //Fetch the data (revalidate after 10 minutes)
+  const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+  //Check if an error occured
+  if(!res.ok) {
+    throw new Error("could not load machines metrics");
+  }
+  //Parse the json data
+  const logCount: LogCountResponse = await res.json();
+  return logCount.count;
 }
 
 async function GetRuleFindingsMetrics() {
@@ -249,13 +249,13 @@ export default async function DashboardHome() {
               <Table className="text-sm">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="text-left max-w-40">
+                    <TableHead className="text-left max-w-30">
                       Agent
                     </TableHead>
                     <TableHead className="text-center">
                       Date
                     </TableHead>
-                    <TableHead className="text-center">
+                    <TableHead className="text-center max-w-14">
                       Method
                     </TableHead>
                     <TableHead className="text-center">
@@ -274,19 +274,19 @@ export default async function DashboardHome() {
                     const responsePreviewParts: string[] = log.response_preview.split(' '); 
                     return (
                       <TableRow key={log.id}>
-                        <TableCell className="text-left max-w-40">
+                        <TableCell className="text-left max-w-28">
                           <div className="font-medium">{log.agentName}</div>
                           <div className="text-sm truncate text-ellipsis overflow-hidden text-muted-foreground md:inline">
                             {log.agentId}
                           </div>
                         </TableCell>
-                        <TableCell className="text-center max-w-18">
+                        <TableCell className="text-center max-w-14">
                           {logDate.toLocaleString()}
                         </TableCell>
                         <TableCell className="text-center max-w-10">
                           {requestPreviewParts[0]}
                         </TableCell>
-                        <TableCell className="text-left">
+                        <TableCell className="text-left truncate">
                           {requestPreviewParts[1]}
                         </TableCell>
                         <TableCell className="text-right max-w-16">
@@ -379,7 +379,7 @@ export default async function DashboardHome() {
                 <Table className="text-sm">
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="text-left max-w-40">
+                      <TableHead className="text-left max-w-32">
                         Agent
                       </TableHead>
                       <TableHead className="text-center">
@@ -408,7 +408,7 @@ export default async function DashboardHome() {
                       const findings: RuleFinding[] = log.ruleFindings;
                       return (
                         <TableRow key={log.id}>
-                          <TableCell className="text-left">
+                          <TableCell className="text-left max-w-32">
                             <div className="font-medium">{log.agentName}</div>
                             <div className="text-sm truncate text-ellipsis overflow-hidden text-muted-foreground md:inline">
                               {log.agentId}
@@ -423,7 +423,7 @@ export default async function DashboardHome() {
                           <TableCell className="text-left truncate">
                             {requestPreviewParts[1]}
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-center max-w-32">
                             {responsePreviewParts[1]}
                           </TableCell>
                           <TableCell className="text-right flex flex-row gap-5 items-center">
