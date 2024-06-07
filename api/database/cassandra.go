@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"encoding/base64"
 	b64 "encoding/base64"
 	"encoding/hex"
 
@@ -331,6 +332,9 @@ func (cassandra *CassandraConnection) InsertLog(logData data.LogData) (string, b
 	//Create the request preview (the first line of the request)
 	request_preview := strings.Split(string(rawRequest), "\n")[0]
 
+	//Encode the request preview to base64
+	enc_request_preview := base64.StdEncoding.EncodeToString([]byte(request_preview))
+
 	//Get the request method
 	request_method := strings.Split(request_preview, " ")[0]
 
@@ -354,7 +358,7 @@ func (cassandra *CassandraConnection) InsertLog(logData data.LogData) (string, b
 	//Insert log data into the database
 	err = cassandra.session.Query("INSERT INTO "+cassandra.configuration.CassandraKeyspace+".logs (id, agent_id, request_preview, response_preview, remote_ip, timest, raw_request, raw_response, request_method, response_code) VALUES (?,?,?,?,?,?,?,?,?,?)", id, logData.AgentId, request_preview, response_preview, logData.RemoteIP, cassandraTimestamp, rawRequest, rawResponse, request_method, response_code).Exec()
 	if err != nil {
-		cassandra.logger.Error("could not insert the log in the database, "+err.Error(), request_preview, response_preview, rawRequest, rawResponse)
+		cassandra.logger.Error("could not insert the log in the database, "+err.Error(), enc_request_preview, response_preview, logData.Request, logData.Response)
 		return "", false, errors.New("could not insert the log in the database, " + err.Error())
 	}
 
@@ -635,6 +639,11 @@ func (cassandra *CassandraConnection) GetAgentLogsShort(agent_id string) ([]data
 	for iter.Scan(&log.Id, &log.AgentId, &log.RequestPreview, &log.ResponsePreview, &log.RemoteIP, &ts) {
 		//Convert time.Time to unix timestamp
 		log.Timestamp = ts.Unix()
+		//Decode the request preview from base64
+		if _, err := b64.StdEncoding.DecodeString(log.RequestPreview); err != nil {
+			aux, _ := b64.StdEncoding.DecodeString(log.RequestPreview)
+			log.RequestPreview = string(aux)
+		}
 		//Get the all the findings for the log
 		findings, err := cassandra.GetLogFindings(log.Id)
 		//cassandra.logger.Debug(findings)
@@ -692,6 +701,12 @@ func (cassandra *CassandraConnection) GetAgentLogsShortPaginated(agent_id string
 	for iter.Scan(&log.Id, &log.AgentId, &log.RequestPreview, &log.ResponsePreview, &log.RemoteIP, &ts) {
 		//Convert time.Time to unix timestamp
 		log.Timestamp = ts.Unix()
+		//Decode the request preview from base64
+		if _, err := b64.StdEncoding.DecodeString(log.RequestPreview); err != nil {
+			aux, _ := b64.StdEncoding.DecodeString(log.RequestPreview)
+			log.RequestPreview = string(aux)
+		}
+
 		//Get the all the findings for the log
 		findings, err := cassandra.GetLogFindings(log.Id)
 		//cassandra.logger.Debug(findings)
@@ -732,8 +747,12 @@ func (cassandra *CassandraConnection) GetAgentLogs(uuid string) ([]data.LogData,
 	for iter.Scan(&log.Id, &log.Request, &log.Response, &log.RemoteIP, &ts) {
 		log.Timestamp = ts.Unix()
 		log.AgentId = uuid
-		log.Request = b64.StdEncoding.EncodeToString([]byte(log.Request))
-		log.Response = b64.StdEncoding.EncodeToString([]byte(log.Response))
+		if _, err := b64.StdEncoding.DecodeString(log.Request); err != nil {
+			log.Request = b64.StdEncoding.EncodeToString([]byte(log.Request))
+		}
+		if _, err := b64.StdEncoding.DecodeString(log.Response); err != nil {
+			log.Response = b64.StdEncoding.EncodeToString([]byte(log.Response))
+		}
 		logs = append(logs, log)
 	}
 	return logs, nil
@@ -844,8 +863,12 @@ func (cassandra *CassandraConnection) GetLog(uuid string) (data.LogDataDatabase,
 	for iter.Scan(&log.Id, &log.Request, &log.Response, &log.RemoteIP, &ts, &log.RequestPreview, &log.ResponsePreview) {
 		log.Timestamp = ts.Unix()
 		log.AgentId = uuid
-		log.Request = b64.StdEncoding.EncodeToString([]byte(log.Request))
-		log.Response = b64.StdEncoding.EncodeToString([]byte(log.Response))
+		if _, err := b64.StdEncoding.DecodeString(log.Request); err != nil {
+			log.Request = b64.StdEncoding.EncodeToString([]byte(log.Request))
+		}
+		if _, err := b64.StdEncoding.DecodeString(log.Response); err != nil {
+			log.Response = b64.StdEncoding.EncodeToString([]byte(log.Response))
+		}
 	}
 	return log, nil
 }
@@ -858,12 +881,12 @@ func (cassandra *CassandraConnection) GetLogRequest(uuid string) (string, error)
 	if !result {
 		return "", errors.New("could not get the raw request of the log")
 	}
-	// rawReq, err := b64.StdEncoding.DecodeString(rawRequest)
-	// //Check if an error occured when decoding the raw request
-	// if err != nil {
-	// 	return "", errors.New("could not decode raw request from base64")
-	// }
-	return rawRequest, nil
+	rawReq, err := b64.StdEncoding.DecodeString(rawRequest)
+	//Check if an error occured when decoding the raw request
+	if err != nil {
+		return rawRequest, nil
+	}
+	return string(rawReq), nil
 }
 
 // Check if exploit code exists for a log

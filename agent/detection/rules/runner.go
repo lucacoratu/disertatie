@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"crypto/md5"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"io"
 	"net/http"
+	"net/url"
 	"reflect"
 	"regexp"
 	"strings"
@@ -17,6 +19,7 @@ import (
 	"github.com/lucacoratu/disertatie/agent/logging"
 	"github.com/lucacoratu/disertatie/agent/utils"
 	"github.com/lucacoratu/disertatie/agent/websocket"
+	"github.com/mowshon/iterium"
 )
 
 // Structure which will hold all the necessary data to match the rules on the request and the response
@@ -32,6 +35,66 @@ func NewRuleRunner(logger logging.ILogger, rules []Rule, apiWsConn *websocket.AP
 	return &RuleRunner{logger: logger, rules: rules, apiWsConn: apiWsConn, configuration: configuration}
 }
 
+// Decodes the value string using the encodings of the rule
+// Creates all the possible permutation of the list of encodings specified (length 1, 2 ...)
+// @param value - the value to be decoded
+// @param encodings - the list of encodings
+// Returns the list of possible decodings of the value
+func (rl *RuleRunner) decodeString(value string, encodings []string) ([]string, error) {
+	//Create the return list of decoded strings
+	decodedStrings := make([]string, 0)
+	//The first element in the list should be the unmodified string (len 0 of the encodings permutations)
+	decodedStrings = append(decodedStrings, value)
+
+	//Check if the list of encodings is not empty
+	if encodings != nil {
+		//Create the list of possible permutations
+		for i := 0; i < len(encodings); i++ {
+			sizeIPermutations := iterium.Permutations(encodings, i)
+			encPermutations, err := sizeIPermutations.Slice()
+			//Check if an error occured
+			if err != nil {
+				//Return the original value and the error
+				return decodedStrings, err
+			}
+			//For each permutation of the possible encodings
+			for _, permutation := range encPermutations {
+				//Create the result so that chained decoding can be made
+				var decString string = value
+				//Apply the decodings specified in the permutation
+				for _, decoding := range permutation {
+					//Do the correct decoding
+					switch decoding {
+					case "base64":
+						//Decode the string from base64
+						decodedString, err := base64.StdEncoding.DecodeString(decString)
+						if err != nil {
+							//The decoding failed from base64 so continue with the other decodings
+							continue
+						}
+						//Update the final decoded string
+						decString = string(decodedString)
+					case "url":
+						//Decode the string from url
+						decodedString, err := url.QueryUnescape(decString)
+						if err != nil {
+							//The decoding failed from url so continue with other decodings
+							continue
+						}
+						//Update the final decoded string
+						decString = decodedString
+					}
+				}
+				//Apend the decoded string to the list of decoded strings
+				decodedStrings = append(decodedStrings, decString)
+			}
+		}
+	}
+
+	//Return the list of decoded strings using the specified encodings
+	return decodedStrings, nil
+}
+
 // Searches for case insensitive match on the value or if the regex can find any matches on the given value
 // @param value - the value to be searched uppon
 // @param mode - the rule search specification
@@ -39,32 +102,38 @@ func NewRuleRunner(logger logging.ILogger, rules []Rule, apiWsConn *websocket.AP
 func (rl *RuleRunner) search(value string, mode *RuleSearchMode) []string {
 	allMatches := make([]string, 0)
 
-	//Check if the exact match is specified
-	if mode.Match != "" {
-		//Check if the value contains the match string (case insensitive)
-		if strings.Contains(strings.ToLower(value), strings.ToLower(mode.Match)) {
-			//Add the match to the list of matches
-			allMatches = append(allMatches, mode.Match)
-		}
-	}
+	//Get all the possible decodings of the value
+	decodedStrings, _ := rl.decodeString(value, mode.Encodings)
 
-	//Check if the regex match is specified
-	if mode.Regex != "" {
-		//Compile the regex
-		r, err := regexp.Compile(mode.Regex)
-		//Check if an error occured during the regex compilation
-		if err != nil {
-			rl.logger.Error("Could not the compile regex matcher from the rule, invalid regex:", mode.Regex)
-			return nil
+	//Check if any of the decoded string matches the rule conditions
+	for _, decString := range decodedStrings {
+		//Check if the exact match is specified
+		if mode.Match != "" {
+			//Check if the value contains the match string (case insensitive)
+			if strings.Contains(strings.ToLower(decString), strings.ToLower(mode.Match)) {
+				//Add the match to the list of matches
+				allMatches = append(allMatches, mode.Match)
+			}
 		}
-		//Find all the matches for the regex
-		matches := r.FindAllString(value, -1)
-		//rl.logger.Debug("Value:", value, "Regex:", mode.Regex, "Matches:", matches)
-		//Check if there were any matches
-		if len(matches) > 0 {
-			//rl.logger.Debug("Regex,", mode.Regex, "matched on", value)
-			//Add the matches to the list of matches
-			allMatches = append(allMatches, matches...)
+
+		//Check if the regex match is specified
+		if mode.Regex != "" {
+			//Compile the regex
+			r, err := regexp.Compile(mode.Regex)
+			//Check if an error occured during the regex compilation
+			if err != nil {
+				rl.logger.Error("Could not the compile regex matcher from the rule, invalid regex:", mode.Regex)
+				return nil
+			}
+			//Find all the matches for the regex
+			matches := r.FindAllString(decString, -1)
+			//rl.logger.Debug("Value:", value, "Regex:", mode.Regex, "Matches:", matches)
+			//Check if there were any matches
+			if len(matches) > 0 {
+				//rl.logger.Debug("Regex,", mode.Regex, "matched on", value)
+				//Add the matches to the list of matches
+				allMatches = append(allMatches, matches...)
+			}
 		}
 	}
 
@@ -124,7 +193,7 @@ func (rl *RuleRunner) checkHeaders(headers map[string][]string, ruleHeaders []*H
 				//Run the rule search for every value of this header
 				for _, headerVal := range headerValue {
 					//Call the search functions to get all the matches of the header with the rule header specifications
-					matches := rl.search(headerVal, &RuleSearchMode{Match: headerSpec.Match, Regex: headerSpec.Regex})
+					matches := rl.search(headerVal, &RuleSearchMode{Match: headerSpec.Match, Regex: headerSpec.Regex, Encodings: headerSpec.Encodings})
 					//Add the matches to the list of all matches
 					allMatches = append(allMatches, matches...)
 				}
@@ -157,7 +226,7 @@ func (rl *RuleRunner) checkParameters(parameters map[string][]string, ruleParame
 			if ruleParameter.Name == "any" {
 				//Check all the values for a matching string
 				for _, parameterValue := range parameterValues {
-					matches := rl.search(parameterValue, &RuleSearchMode{Match: ruleParameter.Match, Regex: ruleParameter.Regex})
+					matches := rl.search(parameterValue, &RuleSearchMode{Match: ruleParameter.Match, Regex: ruleParameter.Regex, Encodings: ruleParameter.Encodings})
 					//Add the found matches to the list of all matches
 					allMatches = append(allMatches, matches...)
 				}
@@ -166,7 +235,7 @@ func (rl *RuleRunner) checkParameters(parameters map[string][]string, ruleParame
 				if ruleParameter.Name == parameterName {
 					//Check all the values for a matching string
 					for _, parameterValue := range parameterValues {
-						matches := rl.search(parameterValue, &RuleSearchMode{Match: ruleParameter.Match, Regex: ruleParameter.Regex})
+						matches := rl.search(parameterValue, &RuleSearchMode{Match: ruleParameter.Match, Regex: ruleParameter.Regex, Encodings: ruleParameter.Encodings})
 						//Add the found matches to the list of all matches
 						allMatches = append(allMatches, matches...)
 					}
@@ -197,7 +266,7 @@ func (rl *RuleRunner) checkBody(body string, bodyRule []*BodyRule) ([]string, []
 	//Loop through every body rule
 	for _, bRule := range bodyRule {
 		//Get the matches for the exact string search and regex
-		matches := rl.search(body, &RuleSearchMode{Match: bRule.Match, Regex: bRule.Regex})
+		matches := rl.search(body, &RuleSearchMode{Match: bRule.Match, Regex: bRule.Regex, Encodings: bRule.Encodings})
 		allMatches = append(allMatches, matches...)
 
 		//Check if the any of the hash types matches

@@ -22,7 +22,7 @@ class WebSocketConnection {
         //Initialize the websocket connection
         this.conn = new WebSocket(constants.apiWebSocketURL);
         this.conn.onopen = () => { this.connOpen = true; }
-        this.conn.onclose = () => { this.connOpen = false; }
+        this.conn.onclose = () => { console.log("Websocket connection closed"); this.connOpen = false; }
         this.conn.onmessage = (event: MessageEvent) => this.handleMessage(event);
 
         this.handleNotification = (text: string) => {};

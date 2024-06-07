@@ -1,0 +1,15 @@
+id: EncodedLFI
+
+info:
+  name: Encoded LFI
+  description: Matches encoded LFI payloads
+  severity: medium
+  classification: lfi
+  encodings:
+    - base64
+    - url
+
+request:
+  params:
+    - name: any
+      match: ../

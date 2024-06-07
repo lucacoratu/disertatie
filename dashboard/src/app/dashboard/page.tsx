@@ -274,9 +274,9 @@ export default async function DashboardHome() {
                     const responsePreviewParts: string[] = log.response_preview.split(' '); 
                     return (
                       <TableRow key={log.id}>
-                        <TableCell className="text-left max-w-28">
-                          <div className="font-medium">{log.agentName}</div>
-                          <div className="text-sm truncate text-ellipsis overflow-hidden text-muted-foreground md:inline">
+                        <TableCell className="text-left max-w-24">
+                          <div className="truncate text-ellipsis overflow-hidden min-w-0 font-medium">{log.agentName}</div>
+                          <div className="text-sm truncate text-ellipsis overflow-hidden min-w-0 text-muted-foreground">
                             {log.agentId}
                           </div>
                         </TableCell>
@@ -382,7 +382,7 @@ export default async function DashboardHome() {
                       <TableHead className="text-left max-w-32">
                         Agent
                       </TableHead>
-                      <TableHead className="text-center">
+                      <TableHead className="text-center max-w-14">
                         Date
                       </TableHead>
                       <TableHead className="text-center max-w-10">
@@ -409,8 +409,8 @@ export default async function DashboardHome() {
                       return (
                         <TableRow key={log.id}>
                           <TableCell className="text-left max-w-32">
-                            <div className="font-medium">{log.agentName}</div>
-                            <div className="text-sm truncate text-ellipsis overflow-hidden text-muted-foreground md:inline">
+                            <div className="truncate text-ellipsis overflow-hidden min-w-0 font-medium">{log.agentName}</div>
+                            <div className="text-sm truncate text-ellipsis overflow-hidden text-muted-foreground">
                               {log.agentId}
                             </div>
                           </TableCell>

@@ -1,6 +1,8 @@
 package websocket
 
 import (
+	"time"
+
 	"github.com/gorilla/websocket"
 	"github.com/lucacoratu/disertatie/agent/config"
 	"github.com/lucacoratu/disertatie/agent/logging"
@@ -56,14 +58,16 @@ func (awsc *APIWebSocketConnection) Start() {
 	for {
 		mt, msg, err := awsc.connection.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				awsc.logger.Error(err.Error())
-				awsc.Connect()
-				continue
+			//Wait a bit then retry the connection
+			awsc.logger.Error(err.Error())
+			time.Sleep(time.Second * 10)
+			_, err = awsc.Connect()
+			if err == nil {
+				//Connection was restored
+				awsc.logger.Info("WebSocket connection to the API has been restored")
 			}
-			//If it is other type of error exit
-			awsc.logger.Debug("Websocket connection to the API closed")
-			return
+			//Enter in the loop from the beginning to read the next message
+			continue
 		}
 
 		//Call the handle message function

@@ -1,6 +1,7 @@
 import { authRoutes, protectedRoutes } from "@/app/constants";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { cookies } from 'next/headers';
 import { constants } from "@/app/constants";
 
 async function checkToken(token: string): Promise<boolean> {
@@ -27,7 +28,7 @@ export async function middleware(request: NextRequest) {
       //If the token is not valid redirect the user back to login
       if(!isTokenValid) {
         //Clear the token from the cookies
-        request.cookies.clear();
+        cookies().delete('token');
         return NextResponse.redirect(new URL("/login", request.url));
       }
       //If the token is valid redirect the user to the dashboard

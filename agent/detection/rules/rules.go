@@ -8,38 +8,44 @@ import (
 
 // Holds all the information in the info field of the rule.yaml files
 type RuleInfo struct {
-	Name           string `yaml:"name"`           //The name of the rule
-	Description    string `yaml:"description"`    //The description of the rule
-	Severity       string `yaml:"severity"`       //The severity of the rule, in the string representation
-	Classification string `yaml:"classification"` //The classification if it matches, in the string representation
+	Name           string   `yaml:"name"`           //The name of the rule
+	Description    string   `yaml:"description"`    //The description of the rule
+	Severity       string   `yaml:"severity"`       //The severity of the rule, in the string representation
+	Classification string   `yaml:"classification"` //The classification if it matches, in the string representation
+	Action         string   `yaml:"action"`         //The action that should be taken if anything matches the rule (only for waf operation mode) (drop or allow)
+	Encodings      []string `yaml:"encodings"`      //The encodings supported when searching (this will apply to all the fields)
 }
 
 // Holds all the modes the search can be made
 type RuleSearchMode struct {
-	Match string `yaml:"match"` //The string to match exactly
-	Regex string `yaml:"regex"` //The regex used for searching
+	Match     string   `yaml:"match"`     //The string to match exactly
+	Regex     string   `yaml:"regex"`     //The regex used for searching
+	Encodings []string `yaml:"encodings"` //The encodings supported when searching
 }
 
 // Holds all the information about headers
 type HeadersRule struct {
-	Name  string `yaml:"name"`  //The name of the search to search for matches
-	Match string `yaml:"match"` //The string to match exactly
-	Regex string `yaml:"regex"` //The regex used for searching
+	Name      string   `yaml:"name"`      //The name of the search to search for matches
+	Match     string   `yaml:"match"`     //The string to match exactly
+	Regex     string   `yaml:"regex"`     //The regex used for searching
+	Encodings []string `yaml:"encodings"` //The encodings supported when searching
 }
 
 // Holds all the information about request parameters
 type RequestParametersRule struct {
-	Name  string `yaml:"name"`  //The name of the query variable (can be any which means look through all the query variable names for a match)
-	Match string `yaml:"match"` //The string to match exactly
-	Regex string `yaml:"regex"` //The regex used for searching
+	Name      string   `yaml:"name"`      //The name of the query variable (can be any which means look through all the query variable names for a match)
+	Match     string   `yaml:"match"`     //The string to match exactly
+	Regex     string   `yaml:"regex"`     //The regex used for searching
+	Encodings []string `yaml:"encodings"` //The encodings supported when searching
 }
 
 // Holds all the information about the body
 type BodyRule struct {
-	SHA256Sum string `yaml:"sha256sum"` //The SHA256 hash of the body to match
-	MD5Sum    string `yaml:"md5sum"`    //The MD5 hash of the body
-	Match     string `yaml:"match"`     //The string to match exactly
-	Regex     string `yaml:"regex"`     //The regex used for searching
+	SHA256Sum string   `yaml:"sha256sum"` //The SHA256 hash of the body to match
+	MD5Sum    string   `yaml:"md5sum"`    //The MD5 hash of the body
+	Match     string   `yaml:"match"`     //The string to match exactly
+	Regex     string   `yaml:"regex"`     //The regex used for searching
+	Encodings []string `yaml:"encodings"` //The encodings supported when searching
 }
 
 // Holds all the information in the request field of the rule YAML file
