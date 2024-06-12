@@ -91,7 +91,7 @@ const MachineCard: FC<MachineProps> = ({machine}): JSX.Element => {
                             </CardHeader>
                             <CardContent className="flex flex-row gap-4 justify-between items-center">
                                 <div>
-                                    <p>Details 1</p>
+                                    <p>{machine?.ipAddresses.length} network interfaces</p>
                                     <p>Details 2</p>
                                 </div>
                                 <OsCard os={machine.os}/>

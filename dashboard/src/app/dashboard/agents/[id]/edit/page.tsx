@@ -51,7 +51,7 @@ export default async function AgentEditPage({ params }: { params: { id: string }
                 <h1 className="text-xl">Edit Agent</h1>
                 <HoverCard>
                     <HoverCardTrigger>
-                        <div className="rounded-full w-[25px] text-center">
+                        <div className="dark:bg-darksurface-300 rounded-full w-[25px] text-center">
                             ?
                         </div>
                     </HoverCardTrigger>

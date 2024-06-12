@@ -393,6 +393,11 @@ func (lh *LogsHandler) GetIPAddressesMetrics(rw http.ResponseWriter, r *http.Req
 		return responseData[i].Count > responseData[j].Count
 	})
 
+	//Check if there are more than 20 ip addresses in the list of metrics, if there are then truncate it to first 20
+	if len(responseData) > 20 {
+		responseData = responseData[:20]
+	}
+
 	//Create the response structure
 	resp := response.IPAddressMetricsResponse{Metrics: responseData}
 
@@ -421,6 +426,11 @@ func (lh *LogsHandler) GetAllIPAddressesMetrics(rw http.ResponseWriter, r *http.
 	sort.Slice(responseData[:], func(i, j int) bool {
 		return responseData[i].Count > responseData[j].Count
 	})
+
+	//Check if there are more than 20 ip addresses in the list of metrics, if there are then truncate it to first 20
+	if len(responseData) > 20 {
+		responseData = responseData[:20]
+	}
 
 	//Create the response structure
 	resp := response.IPAddressMetricsResponse{Metrics: responseData}

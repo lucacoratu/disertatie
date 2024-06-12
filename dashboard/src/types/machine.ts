@@ -10,7 +10,7 @@ type Machine = {
     id: string,
     os: string,
     hostname: string,
-    ipAddreses: string[],
+    ipAddresses: string[],
     numberAgents: number
 }
 

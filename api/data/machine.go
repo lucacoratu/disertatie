@@ -13,9 +13,9 @@ const (
 
 // Holds data collected by the proxy about the machine
 type MachineInformation struct {
-	OS          string   `json:"os"`           //The operating system of the machine
-	Hostname    string   `json:"hostname"`     //Hostname of the machine
-	IPAddresses []string `json:"ip_addresses"` //A list of ip addreses of the machine on all network interfaces
+	OS          string   `json:"os"`          //The operating system of the machine
+	Hostname    string   `json:"hostname"`    //Hostname of the machine
+	IPAddresses []string `json:"ipAddresses"` //A list of ip addreses of the machine on all network interfaces
 }
 
 func (mach *MachineInformation) ToJSON(w io.Writer) error {
@@ -32,7 +32,7 @@ type MachineDatabase struct {
 	ID           string   `json:"id"`           // The ID of the machine
 	OS           string   `json:"os"`           //The operating system of the machine
 	Hostname     string   `json:"hostname"`     //Hostname of the machine
-	IPAddresses  []string `json:"ip_addresses"` //A list of ip addreses of the machine on all network interfaces
+	IPAddresses  []string `json:"ipAddresses"`  //A list of ip addreses of the machine on all network interfaces
 	NumberAgents int64    `json:"numberAgents"` //The number of agents the machine has on itself
 }
 

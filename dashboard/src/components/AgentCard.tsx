@@ -16,6 +16,12 @@ import {
     ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 
+import {
+    HoverCard,
+    HoverCardContent,
+    HoverCardTrigger,
+} from "@/components/ui/hover-card";
+
 import OsCard from "@/components/OsCard";
 import Link from 'next/link';
 import { Separator } from "@/components/ui/separator";
@@ -69,10 +75,17 @@ const AgentCard: FC<AgentProps> = ({agent, agentStatus}): JSX.Element => {
                         </CardHeader>
                         <CardContent className="flex flex-row gap-4 justify-between items-center">
                             <div>
-                                <p>{agent?.machineOs}</p>
-                                <p>{agent?.listeningProtocol}://{agent?.listeningAddress}:{agent?.listeningPort} &#8594; {agent?.forwardServerProtocol}://{agent?.forwardServerAddress}:{agent?.forwardServerPort}</p>
+                                <p><b>{agent?.logsCollected}</b> logs collected</p>
+                                <p className="text-sm">{agent?.listeningProtocol}://{agent?.listeningAddress}:{agent?.listeningPort} &#8594; {agent?.forwardServerProtocol}://{agent?.forwardServerAddress}:{agent?.forwardServerPort}</p>
                             </div>
-                            <OsCard os={agent?.machineOs}/>
+                            <HoverCard>
+                                <HoverCardTrigger>
+                                    <OsCard os={agent?.machineOs}/>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="text-sm w-fit">
+                                    <p>Agent is deployed on a {agent?.machineOs} machine.</p>
+                                </HoverCardContent>
+                            </HoverCard>
                         </CardContent>
                         {/* <CardFooter>
                             <p>Card Footer</p>

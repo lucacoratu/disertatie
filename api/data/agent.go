@@ -18,6 +18,7 @@ type Agent struct {
 	MachineOS             string   `json:"machineOs"`             //The OS of the machine the agent is deployed on
 	MachineHostname       string   `json:"machineHostname"`       //The hostname of the machine the agent is deployed on
 	MachineIPAddreses     []string `json:"machineIpAddreses"`     //A list with all the ip addreses of the machine the agent is deployed on
+	LogsCollected         int64    `json:"logsCollected"`         //The number of logs collected by the agent
 }
 
 // Convert from json into the agent structure

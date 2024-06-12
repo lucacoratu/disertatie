@@ -24,7 +24,8 @@ import {
     HoverCardContent,
     HoverCardTrigger,
   } from "@/components/ui/hover-card";
-import { cookies } from "next/headers";
+
+import { useCookies } from 'next-client-cookies';
   
 
 const osRegex = new RegExp('^(linux|windows)$');
@@ -66,10 +67,11 @@ export default function MachinesRegisterPage() {
     })
     
     const [loading, setLoading] = useState(false);
+    const cookies = useCookies();
 
     // 2. Define a submit handler.
     async function onSubmit(values: z.infer<typeof formSchema>) {
-        const cookie = cookies().get('session');
+        const cookie = cookies.get('session');
         setLoading(true);
         //Send the values to the server
         const requestBody = JSON.stringify(values);
@@ -78,7 +80,7 @@ export default function MachinesRegisterPage() {
             body: requestBody,
             headers: {
                 "Content-Type": "application/json",
-                Cookie: `${cookie?.name}=${cookie?.value}`
+                Cookie: `sesison=${cookie}`
             },
         });
 
@@ -95,7 +97,7 @@ export default function MachinesRegisterPage() {
     }
 
     return (
-        <div className="p-6 w-1/2 h-[700px] min-w-[400px] dark:bg-darksurface-100 m-auto rounded-xl dark:border-darksurface-400 border-2">
+        <div className="p-6 w-1/2 h-[700px] min-w-[400px] bg-card m-auto rounded-xl border-2">
             <div className="flex flex-row justify-between items-center mb-[10px]">
                 <h1 className="text-xl">Register Machine</h1>
                 <HoverCard>
@@ -219,9 +221,9 @@ export default function MachinesRegisterPage() {
                                     </FormItem>
                                 )}
                             />
-                            { !loading && <Button className="w-1/2 m-auto mt-[20px]" type="submit">Submit</Button> }
+                            { !loading && <Button className="w-1/2 ml-auto mt-[20px]" type="submit">Submit</Button> }
                             { loading &&  
-                                <Button className="w-1/2 m-auto mt-[20px]" disabled>
+                                <Button className="w-1/2 ml-auto mt-[20px]" disabled>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating machine
                                 </Button>
                             }

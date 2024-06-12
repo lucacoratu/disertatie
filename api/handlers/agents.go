@@ -167,6 +167,7 @@ func (ah *AgentsHandler) GetAgents(rw http.ResponseWriter, r *http.Request) {
 		retErr.ToJSON(rw)
 		return
 	}
+
 	//Complete the agents data with the machine information
 	for index := range agents {
 		//Get the machine information
@@ -180,8 +181,23 @@ func (ah *AgentsHandler) GetAgents(rw http.ResponseWriter, r *http.Request) {
 		agents[index].MachineIPAddreses = machine.IPAddresses
 	}
 
+	//Get the agent metrics
+	metrics, err := ah.elasticConnection.GetAgentsStatistics()
+	//Check if an error occured when getting agent statistics
+	if err != nil {
+		ah.logger.Error("Error occured when getting the agent statistics", err.Error())
+	}
+
+	for index := range agents {
+		for _, metric := range metrics {
+			if agents[index].ID == metric.AgentId {
+				agents[index].LogsCollected = metric.Count
+			}
+		}
+	}
+
 	agResponse := response.AgentsGetResponse{Agents: agents}
-	ah.logger.Debug(agResponse)
+	//ah.logger.Debug(agResponse)
 	//Return the agents
 	rw.WriteHeader(http.StatusOK)
 	agResponse.ToJSON(rw)

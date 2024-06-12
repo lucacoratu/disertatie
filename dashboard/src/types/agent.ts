@@ -26,6 +26,7 @@ type Agent = {
 	machineOs:             string,
 	machineHostname:       string,
 	machineIPAddreses:     string[],
+	logsCollected: 		   number,
 } 
 
 type AgentResponse = {
