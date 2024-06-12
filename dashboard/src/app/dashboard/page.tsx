@@ -26,7 +26,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
+} from "@/components/ui/table";
+
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 import {constants} from "@/app/constants";
 import RuleFindingPreview from "@/components/ui/rulefinding-preview";
@@ -258,7 +265,7 @@ export default async function DashboardHome() {
                     <TableHead className="text-center max-w-14">
                       Method
                     </TableHead>
-                    <TableHead className="text-center">
+                    <TableHead className="text-center max-w-32">
                       URL
                     </TableHead>
                     <TableHead className="text-right max-w-16">
@@ -286,8 +293,10 @@ export default async function DashboardHome() {
                         <TableCell className="text-center max-w-10">
                           {requestPreviewParts[0]}
                         </TableCell>
-                        <TableCell className="text-left truncate">
-                          {requestPreviewParts[1]}
+                        <TableCell className="text-left max-w-72  ">
+                          <div className="truncate text-ellipsis overflow-hidden">
+                            {requestPreviewParts[1]}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right max-w-16">
                           {responsePreviewParts[1]}
@@ -388,7 +397,7 @@ export default async function DashboardHome() {
                       <TableHead className="text-center max-w-10">
                         Method
                       </TableHead>
-                      <TableHead className="text-center max-w-64">
+                      <TableHead className="text-center max-w-96">
                         URL
                       </TableHead>
                       <TableHead className="text-center max-w-10">
@@ -414,19 +423,21 @@ export default async function DashboardHome() {
                               {log.agentId}
                             </div>
                           </TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-center max-w-16">
                             {logDate.toLocaleString()}
                           </TableCell>
-                          <TableCell className="text-center max-w-10">
+                          <TableCell className="text-center max-w-16">
                             {requestPreviewParts[0]}
                           </TableCell>
-                          <TableCell className="text-left truncate">
-                            {requestPreviewParts[1]}
+                          <TableCell className="text-left max-w-md">
+                            <div className="truncate text-ellipsis overflow-hidden">
+                              {requestPreviewParts[1]}
+                            </div>
                           </TableCell>
-                          <TableCell className="text-center max-w-32">
+                          <TableCell className="text-center max-w-16">
                             {responsePreviewParts[1]}
                           </TableCell>
-                          <TableCell className="text-right flex flex-row gap-5 items-center">
+                          <TableCell className="text-right flex flex-row gap-5 mt-2 justify-end">
                             {findings.map((finding) => {
                               return <RuleFindingPreview key={finding.request?.id} ruleFinding={finding}/>
                             })}
