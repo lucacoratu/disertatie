@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"sort"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/lucacoratu/disertatie/api/config"
@@ -312,6 +313,13 @@ func (lh *LogsHandler) GetLogsCountPerDay(rw http.ResponseWriter, r *http.Reques
 	}
 
 	//lh.logger.Debug(responseData)
+
+	//Sort the response data based on date descending
+	sort.Slice(responseData[:], func(i, j int) bool {
+		leftDate, _ := time.Parse(time.DateOnly, responseData[i].Date)
+		rightDate, _ := time.Parse(time.DateOnly, responseData[j].Date)
+		return leftDate.Before(rightDate)
+	})
 
 	//Create the response for the client
 	resp := response.DaysMetricsResponse{Metrics: responseData}
