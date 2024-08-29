@@ -1,5 +1,5 @@
 import { constants } from "@/app/constants";
-import { DataTable } from "./data-table";
+import { DataTable } from "@/components/table/data-table";
 import { columns, LogColumn } from './columns';
 import { cookies } from "next/headers";
 
@@ -70,13 +70,10 @@ export default async function AllLogsTablePage() {
 		//Return the new column
 		return logCol;
 	});
-
-	//Set the initial data
-	//setTableData(auxTableData);
     
     return (
         <div>
-            <DataTable columns={columns} data={tableData} agentId={agentId}/>
+            <DataTable columns={columns} title="Logs" data={tableData}/>
         </div>
     );
 }

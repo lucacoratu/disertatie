@@ -31,6 +31,8 @@ import NotificationButton from "./NotificationButton"
 import ProfileButton from "./ProfileButton";
 
 import { usePathname } from "next/navigation";
+import React from "react";
+import BreadcrumbNavbar from "./navbar-breadcrumb";
 
 
 export default function Navbar() {
@@ -94,25 +96,8 @@ export default function Navbar() {
                     {constants.appName}
                 </h1>
             </Link>
-            <Breadcrumb className="hidden md:flex">
-                <BreadcrumbList>
-                    {pathParts.map((part, i) => {
-                        //Get the parts until the current one
-                        const refToCurrent: string = "/" + pathParts.slice(0, i + 1).join("/");
-                        part = part.charAt(0).toUpperCase() + part.slice(1);
-                        return (
-                            <>
-                                <BreadcrumbItem >
-                                    <BreadcrumbLink asChild>
-                                        <Link href={refToCurrent}>{part}</Link>
-                                    </BreadcrumbLink>
-                                </BreadcrumbItem>
-                                { i !== pathParts.length - 1 ? <BreadcrumbSeparator/> : <></> }
-                            </>
-                        );
-                    })}
-                </BreadcrumbList>
-            </Breadcrumb>
+            
+            <BreadcrumbNavbar />
             <div className="relative ml-auto flex-1 md:grow-0">
                 <Search className="absolute left-2.5 top-[12px] h-4 w-4 text-muted-foreground" />
                 <Input

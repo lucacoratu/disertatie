@@ -94,57 +94,57 @@ export default function Sidebar() {
   ];
 
     return (
-        <aside className="fixed inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
-        <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
-        <Link
-            href="#"
-            className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
-          >
-            <Ghost className="h-5 w-5 transition-all group-hover:scale-110" />
-            <span className="sr-only">Dashboard</span>
-          </Link>
-        <div className="flex flex-col">
-          {routes.map((route, i) => {
-              return (
-                <TooltipProvider key={i}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button key={i} asChild variant="ghost" className="justify-start dark:hover:bg-primary light:hover:bg-secondary">
-                        <Link key={i}
-                            href={route.href}
-                            className="transition-colors flex flex-row justify-start gap-6">
-                                {route.icon}
-                        </Link>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">{route.label}</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )
-          })}
-      </div>
-        </nav>
-        <nav className="mt-auto flex flex-col items-center gap-2 px-2 sm:py-5">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link href="#" className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8">
-                  <Settings className="h-5 w-5" />
-                  <span className="sr-only">Settings</span>
-                </Link>
+        <aside className="fixed z-40 inset-y-0 left-0 z-10 hidden w-14 flex-col border-r bg-background sm:flex">
+          <nav className="flex flex-col items-center gap-4 px-2 sm:py-5">
+          <Link
+              href="#"
+              className="group flex h-9 w-9 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:h-8 md:w-8 md:text-base"
+            >
+              <Ghost className="h-5 w-5 transition-all group-hover:scale-110" />
+              <span className="sr-only">Dashboard</span>
+            </Link>
+          <div className="flex flex-col">
+            {routes.map((route, i) => {
+                return (
+                  <TooltipProvider key={i}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button key={i} asChild variant="ghost" className="justify-start dark:hover:bg-primary light:hover:bg-secondary">
+                          <Link key={i}
+                              href={route.href}
+                              className="transition-colors flex flex-row justify-start gap-6">
+                                  {route.icon}
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">{route.label}</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )
+            })}
+        </div>
+          </nav>
+          <nav className="mt-auto flex flex-col items-center gap-2 px-2 sm:py-5">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link href="#" className="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground md:h-8 md:w-8">
+                    <Settings className="h-5 w-5" />
+                    <span className="sr-only">Settings</span>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right">Settings</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <label className="text-sm text-muted-foreground">v1.0</label>
               </TooltipTrigger>
-              <TooltipContent side="right">Settings</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <label className="text-sm text-muted-foreground">v1.0</label>
-            </TooltipTrigger>
-            <TooltipContent side="right">Version</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </nav>
+              <TooltipContent side="right">Version</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </nav>
       </aside>
     )
 }

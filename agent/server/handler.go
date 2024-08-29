@@ -226,7 +226,7 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 	//Check if an error occured when sending log to the API
 	if err != nil {
 		agentHandler.logger.Error(err.Error())
-		return
+		//return
 	}
 
 	//If the mode is testing then send the log data as response

@@ -215,7 +215,7 @@ func (elastic *ElasticConnection) GetAllLogs() []data.LogDataElastic {
 	//Create the query to extract all the logs of the agent
 	query := `
 		{
-			"size": 10000,
+			"size": 1000,
 			"query": { 
 				"match_all": {} 
 			},
@@ -318,7 +318,7 @@ func (elastic *ElasticConnection) GetLogsPaginated(agentId string) []data.LogDat
 	//Create the query to extract all the logs of the agent
 	query := fmt.Sprintf(`
 	{
-		"size": 10000,
+		"size": 1000,
 		"query": { 
 			"match": {
 				"agentId": "%s" 
@@ -367,7 +367,7 @@ func (elastic *ElasticConnection) GetAllAgentLogs(agentId string) []data.LogData
 	//Create the query to extract all the logs of the agent
 	query := fmt.Sprintf(`
 	{
-		"size": -1,
+		"size": 1000,
 		"query": { 
 			"match": {
 				"agentId": "%s" 

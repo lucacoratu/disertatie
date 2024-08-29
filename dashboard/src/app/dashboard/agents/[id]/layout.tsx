@@ -3,20 +3,20 @@
 export default function Layout({
     children,
     metrics,
-    tablelogs,
+    logs,
     modal,
   }: {
     children: React.ReactNode,
     metrics: React.ReactNode,
-    tablelogs: React.ReactNode,
+    logs: React.ReactNode,
     modal: React.ReactNode,
   }) {
     return (
-        <main className="h-full w-full flex flex-col py-4 gap-2 px-4">
+        <main className="h-full w-full flex flex-col gap-2 px-4">
           {children}
           {modal}            
           {metrics}
-          {tablelogs}
+          {logs}
         </main>
     )
 }

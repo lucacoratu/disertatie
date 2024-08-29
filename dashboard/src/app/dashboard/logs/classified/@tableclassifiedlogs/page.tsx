@@ -1,5 +1,5 @@
 import { constants } from "@/app/constants";
-import { DataTable } from "./data-table";
+import { DataTable } from "@/components/table/data-table";
 import { columns, LogColumn } from './columns';
 import { cookies } from "next/headers";
 
@@ -68,7 +68,7 @@ export default async function ClassifiedLogsTablePage() {
     
     return (
         <div>
-            <DataTable columns={columns} data={tableData} agentId={agentId}/>
+            <DataTable columns={columns} data={tableData} title="Classified Logs"/>
         </div>
     );
 }

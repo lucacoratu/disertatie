@@ -1,5 +1,5 @@
 import { constants } from "@/app/constants";
-import { DataTable } from "./data-table";
+import { DataTable } from "@/components/table/data-table";
 import { columns, LogColumn } from './columns';
 import { cookies } from "next/headers";
 
@@ -61,7 +61,7 @@ async function getFindingsStringFormat(): Promise<FindingClassificationString[]>
 	const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
 	//Check if an error occured
 	if(!res.ok) {
-		throw new Error("could not load logs");
+		throw new Error("could not load findings string");
 	}
 	//Parse the json data
 	const findingsStringResponse: FindingClassificationStringResponse = await res.json();
@@ -69,20 +69,16 @@ async function getFindingsStringFormat(): Promise<FindingClassificationString[]>
 }
 
 export default async function TableLogsPage({ params }: { params: { id: string } }) {
-    const agentId: string = params.id; 
+    const agentId: string = params.id;
+	if(!agentId) {
+		return;
+	}
     //Get the logs
 	//const log: LogShortResponse = await getLogs(agentId);
 	const log: LogsShortElasticResponse = await getLogsElastic(agentId);
-	// const router = useRouter();
-	//const searchParams = useSearchParams();
-	//const router = useRouter();
-	//const page = searchParams.get('page');
 
-	//const log: LogShortResponse = await getLogsPaginated(agentId, page);
 	//Get the findings classifications in string format
 	const findingsClassficationString : FindingClassificationString[] = await getFindingsStringFormat();
-
-	//const [tableData, setTableData] = useState<LogColumn[]>([]);
 
 	//Create the structure for the table
 	const tableData: LogColumn[] = log.logs?.map((l, index) => {
@@ -105,13 +101,10 @@ export default async function TableLogsPage({ params }: { params: { id: string }
 		//Return the new column
 		return logCol;
 	});
-
-	//Set the initial data
-	//setTableData(auxTableData);
     
     return (
         <div>
-            <DataTable columns={columns} data={tableData} agentId={agentId}/>
+            <DataTable columns={columns} data={tableData} title="Logs"/>
         </div>
     );
 }
