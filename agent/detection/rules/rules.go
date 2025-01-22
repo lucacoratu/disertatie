@@ -51,7 +51,7 @@ type BodyRule struct {
 // Holds all the information in the request field of the rule YAML file
 type RequestRule struct {
 	Method     *RuleSearchMode          `yaml:"method"`  //The modes to search on the method
-	URL        *RuleSearchMode          `yaml:"url"`     //The modes to search on the URL
+	URL        []*RuleSearchMode        `yaml:"url"`     //The modes to search on the URL
 	Headers    []*HeadersRule           `yaml:"headers"` //The headers to be checked
 	Parameters []*RequestParametersRule `yaml:"params"`  //The request parameters (both from URL and body)
 	Body       []*BodyRule              `yaml:"body"`    //The string to search for in the body

@@ -217,16 +217,19 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 
 	//Create the log structure that should be sent to the API
 	logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: r.RemoteAddr, Timestamp: time.Now().Unix(), Request: b64RawRequest, Response: b64RawResponse, Findings: allFindings, RuleFindings: allRuleFindings}
-	if false {
-		agentHandler.logger.Debug(logData)
+	if true {
+		agentHandler.logger.Debug("Log data", logData)
 	}
-	//Send log information to the API
-	apiHandler := api.NewAPIHandler(agentHandler.logger, agentHandler.configuration)
-	_, err = apiHandler.SendLog(agentHandler.apiBaseURL, logData)
-	//Check if an error occured when sending log to the API
-	if err != nil {
-		agentHandler.logger.Error(err.Error())
-		//return
+
+	if agentHandler.apiWsConn != nil {
+		//Send log information to the API
+		apiHandler := api.NewAPIHandler(agentHandler.logger, agentHandler.configuration)
+		_, err = apiHandler.SendLog(agentHandler.apiBaseURL, logData)
+		//Check if an error occured when sending log to the API
+		if err != nil {
+			agentHandler.logger.Error(err.Error())
+			//return
+		}
 	}
 
 	//If the mode is testing then send the log data as response

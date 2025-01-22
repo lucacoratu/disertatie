@@ -160,15 +160,23 @@ func (rl *RuleRunner) checkMethod(method string, ruleMethod *RuleSearchMode) ([]
 // @param url - the URL to be searched uppon
 // @param ruleURL - the rule search specification
 // Returns the list of matches or an error if something occured
-func (rl *RuleRunner) checkURL(url string, ruleURL *RuleSearchMode) ([]string, error) {
+func (rl *RuleRunner) checkURL(url string, ruleURL []*RuleSearchMode) ([]string, error) {
 	//Check if the rule has a URL specification
 	if ruleURL == nil {
 		//Return an empty match list
 		return make([]string, 0), nil
 	}
-	//Search in the URL path for any matches
-	matches := rl.search(url, ruleURL)
-	return matches, nil
+
+	//Initialize the return list of matches
+	ret_matches := make([]string, 0)
+
+	for _, rule := range ruleURL {
+		//Search in the URL path for any matches
+		matches := rl.search(url, rule)
+		ret_matches = append(ret_matches, matches...)
+	}
+
+	return ret_matches, nil
 }
 
 // Check if any of the header value matches a rule specification for that header name
@@ -392,10 +400,12 @@ func (rl *RuleRunner) RunRulesOnRequest(r *http.Request) ([]*data.RuleFindingDat
 		//Check if the rule has at least high severity
 		if ConvertSeverityStringToInteger(rule.Info.Severity) >= data.HIGH {
 			//Send an alert to the API via WebSocket
-			err := rl.apiWsConn.SendRuleDetectionAlert(websocket.RuleDetectionAlert{AgentId: rl.configuration.UUID, RuleId: rule.Id, RuleName: rule.Info.Name, RuleDescription: rule.Info.Description, Classification: rule.Info.Classification, Severity: rule.Info.Severity, Timestamp: time.Now().Unix()})
-			//Check if an error occured when sending the alert
-			if err != nil {
-				rl.logger.Error("Error occured when sending alert to API when a high or critical payload was detected")
+			if rl.apiWsConn != nil {
+				err := rl.apiWsConn.SendRuleDetectionAlert(websocket.RuleDetectionAlert{AgentId: rl.configuration.UUID, RuleId: rule.Id, RuleName: rule.Info.Name, RuleDescription: rule.Info.Description, Classification: rule.Info.Classification, Severity: rule.Info.Severity, Timestamp: time.Now().Unix()})
+				//Check if an error occured when sending the alert
+				if err != nil {
+					rl.logger.Error("Error occured when sending alert to API when a high or critical payload was detected")
+				}
 			}
 		}
 	}

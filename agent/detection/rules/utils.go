@@ -150,8 +150,10 @@ func HandleEncodingsField(rule *Rule) error {
 			}
 
 			if rule.Request.URL != nil {
-				if rule.Request.URL.Encodings == nil {
-					rule.Request.URL.Encodings = rule.Info.Encodings
+				for i, _ := range rule.Request.URL {
+					if rule.Request.URL[i].Encodings == nil {
+						rule.Request.URL[i].Encodings = rule.Info.Encodings
+					}
 				}
 			}
 		}
@@ -222,8 +224,10 @@ func CheckRule(rule Rule, logger logging.ILogger) error {
 	//Check if the regexes specified in the rule are compiling
 	//Check if the URL regex compiles
 	if rule.Request.URL != nil {
-		if _, err := regexp.Compile(rule.Request.URL.Regex); err != nil {
-			return errors.New("cannot compile URL regex, " + err.Error())
+		for i, _ := range rule.Request.URL {
+			if _, err := regexp.Compile(rule.Request.URL[i].Regex); err != nil {
+				return errors.New("cannot compile URL regex, " + err.Error())
+			}
 		}
 	}
 	//Check if the method regex compiles
@@ -282,10 +286,12 @@ func CheckEncodingSubfields(rule Rule, logger logging.ILogger) error {
 
 		//Check the request URL encodings list
 		if rule.Request.URL != nil {
-			err := CheckEncodingsList(rule.Request.URL.Encodings)
-			//Check if an error occured
-			if err != nil {
-				return errors.New("Invalid encodings list in request URL, " + err.Error())
+			for i, _ := range rule.Request.URL {
+				err := CheckEncodingsList(rule.Request.URL[i].Encodings)
+				//Check if an error occured
+				if err != nil {
+					return errors.New("Invalid encodings list in request URL, " + err.Error())
+				}
 			}
 		}
 
