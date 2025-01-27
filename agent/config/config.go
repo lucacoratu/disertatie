@@ -27,7 +27,7 @@ type Configuration struct {
 	UUID                   string `json:"uuid"`                                                                     //The UUID of the agent, received after registration to the API
 	RulesDirectory         string `json:"rulesDirectory"`                                                           //The directory where rules can be found
 	OperationMode          string `json:"operationMode" validate:"required,oneof_insensitive=testing waf adaptive"` //The mode the agent will operate on (can be testing, waf, adaptive) - case insensitive
-	//Mode of operation
+	LLMAPIURL              string `json:"llmAPIURL"`                                                                //The URL for the LLM API
 }
 
 // Validate function for one of (case insensitive)

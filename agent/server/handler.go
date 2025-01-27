@@ -178,7 +178,7 @@ func (agentHandler *AgentHandler) sendB64RequestToLLMAPI(req *http.Request) *dat
 	b64RawRequest := b64.StdEncoding.EncodeToString(rawRequest)
 
 	//Create the request to the LLM API
-	requestURL := fmt.Sprintf("http://10.13.0.102:5000/generic?raw_request=%s", b64RawRequest)
+	requestURL := fmt.Sprintf("%s/generic?raw_request=%s", agentHandler.configuration.LLMAPIURL, b64RawRequest)
 	llm_req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
 		agentHandler.logger.Error("Failed to create request to LLM API", err.Error())
@@ -225,6 +225,9 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 
 	//If the mode of operation is adaptive then send the raw request encoded base64 to LLM
 	if agentHandler.configuration.OperationMode == "adaptive" {
+		//Check if the request should be sent to the LLM API
+		//If it shouldn't be sent then serve a static page
+
 		//Send the request
 		agentHandler.logger.Debug("Sending request to LLM API...")
 		llm_response_data := agentHandler.sendB64RequestToLLMAPI(r)
