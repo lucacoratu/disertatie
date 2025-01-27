@@ -83,11 +83,13 @@ func CreatePythonExploitCode(rawRequest string, exploitTemplatePath string) (str
 
 	exploitReq := ExploitRequest{}
 
+	exploitReq.Cookies = make(map[string]string, 0)
 	for _, cookie := range req.Cookies() {
 		exploitReq.Cookies[cookie.Name] = cookie.Value
 	}
 	exploitReq.Method = req.Method
 	exploitReq.Headers = req.Header
+
 	exploitReq.Headers["Host"] = make([]string, 0)
 	exploitReq.Headers["Host"] = append(exploitReq.Headers["Host"], req.Host)
 

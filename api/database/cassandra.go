@@ -93,11 +93,11 @@ func (cassandra *CassandraConnection) createTables() error {
 	// 	return errors.New("cannot create agent_id index in logs table, " + err.Error())
 	// }
 
-	//Create the index for the method in the logs table
-	err = cassandra.session.Query("CREATE CUSTOM INDEX IF NOT EXISTS logs_methods_index_sasi ON " + cassandra.configuration.CassandraKeyspace + ".logs(request_preview) USING 'org.apache.cassandra.index.sasi.SASIIndex' WITH OPTIONS = {'mode': 'CONTAINS'}").Exec()
-	if err != nil {
-		return errors.New("cannot create request preview index in logs table, " + err.Error())
-	}
+	// //Create the index for the method in the logs table
+	// err = cassandra.session.Query("CREATE CUSTOM INDEX IF NOT EXISTS logs_methods_index_sasi ON " + cassandra.configuration.CassandraKeyspace + ".logs(request_preview) USING 'org.apache.cassandra.index.sasi.SASIIndex' WITH OPTIONS = {'mode': 'CONTAINS'}").Exec()
+	// if err != nil {
+	// 	return errors.New("cannot create request preview index in logs table, " + err.Error())
+	// }
 
 	// err = cassandra.session.Query("CREATE CUSTOM INDEX IF NOT EXISTS ON  " + cassandra.configuration.CassandraKeyspace + ".logs(agent_id) USING 'org.apache.cassandra.index.sasi.SASIIndex';").Exec()
 	// if err != nil {

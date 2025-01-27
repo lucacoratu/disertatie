@@ -7,7 +7,7 @@ services:
       - 9042:9042
     volumes:
       - ./data/cassandra:/var/lib/cassandra
-      - ./config/:/etc/cassandra
+      #- ./config/:/etc/cassandra
     environment:
       - CASSANDRA_CLUSTER_NAME=honeypot
   init-cassandra:

@@ -128,7 +128,7 @@ func (agent *AgentServer) Init() error {
 
 		//Connect to the API websocket
 		apiWsURL := "ws://" + agent.configuration.APIIpAddress + ":" + agent.configuration.APIPort + "/api/v1/agents/" + agent.configuration.UUID + "/ws"
-		apiWsConnection := websocket.NewAPIWebSocketConnection(agent.logger, apiWsURL, agent.configuration)
+		apiWsConnection = websocket.NewAPIWebSocketConnection(agent.logger, apiWsURL, agent.configuration)
 		_, err = apiWsConnection.Connect()
 		//Check if an error occured when connection to the API ws endpoint for the agent
 		if err != nil {

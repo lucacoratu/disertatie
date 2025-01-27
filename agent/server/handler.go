@@ -151,6 +151,21 @@ func (agentHandler *AgentHandler) combineRuleFindings(requestRuleFindings []*dat
 	return allFindings
 }
 
+// Converts the response to raw string then base64 encodes it
+func (agentHandler *AgentHandler) convertRequestToB64(req *http.Request) (string, error) {
+	//Dump the HTTP request to raw string
+	rawRequest, err := utils.DumpHTTPRequest(req)
+	//Check if an error occured when dumping the request as raw string
+	if err != nil {
+		agentHandler.logger.Error(err.Error())
+		return "", err
+	}
+	//Convert raw request to base64
+	b64RawRequest := b64.StdEncoding.EncodeToString(rawRequest)
+	//Return the base64 string of the request and the response
+	return b64RawRequest, nil
+}
+
 // Converts the request and the response to raw string then base64 encodes both of them
 func (agentHandler *AgentHandler) convertRequestAndResponseToB64(req *http.Request, resp *http.Response) (string, string, error) {
 	//Dump the HTTP request to raw string
@@ -208,6 +223,12 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 	//Log the endpoint where the request was made
 	agentHandler.logger.Info("Received request on", r.URL.Path)
 
+	//If the requested path is favicon.ico then return the file from the static folder
+	if r.URL.Path == "/favicon.ico" {
+		http.ServeFile(rw, r, "./static/favicon.ico")
+		return
+	}
+
 	//Create the validator runner
 	validatorRunner := code.NewValidatorRunner(agentHandler.checkers, agentHandler.logger)
 	//Create the rule runner
@@ -232,6 +253,15 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 		agentHandler.logger.Debug("Sending request to LLM API...")
 		llm_response_data := agentHandler.sendB64RequestToLLMAPI(r)
 
+		//Check if the response from LLM is valid (not nil)
+		if llm_response_data == nil {
+			agentHandler.logger.Error("Received invalid response from LLM API, sending a default message to the client...")
+			//Send the response back to the client
+			rw.WriteHeader(http.StatusOK)
+			rw.Write([]byte("Ok"))
+			return
+		}
+
 		//Debug log the response from the LLM API
 		agentHandler.logger.Debug(*llm_response_data)
 
@@ -246,6 +276,50 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 		agentHandler.logger.Debug("Sending body")
 		//Send the body
 		rw.Write([]byte(llm_response_data.Body))
+
+		//Send the data to the API
+
+		//Combine the findings into a single structure
+		//In this case the response findings will always be empty list
+
+		allFindings := agentHandler.combineFindings(requestFindings, make([]data.FindingData, 0))
+		//Combine the rule findings into a single structure
+		allRuleFindings := agentHandler.combineRuleFindings(requestRuleFindings, make([]*data.RuleFindingData, 0))
+
+		//Convert the request to base64 string
+		b64RawRequest, _ := agentHandler.convertRequestToB64(r)
+
+		//Create the response based on the headers and the body received from LLM API
+		var rawResponse string = "HTTP/1.1 200 OK\r\n"
+		//Add the headers
+		for header_name, header_value := range llm_response_data.Headers {
+			rawResponse += fmt.Sprintf("%s: %s\r\n", header_name, header_value)
+		}
+		//Add an empty line
+		rawResponse += "\r\n"
+		//Add the body
+		rawResponse += llm_response_data.Body
+
+		agentHandler.logger.Debug(rawResponse)
+
+		//Convert the raw response to base64
+		b64RawResponse := b64.StdEncoding.EncodeToString([]byte(rawResponse))
+
+		//Create the log structure that should be sent to the API
+		logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: r.RemoteAddr, Timestamp: time.Now().Unix(), Request: b64RawRequest, Response: b64RawResponse, Findings: allFindings, RuleFindings: allRuleFindings}
+
+		if agentHandler.apiWsConn != nil {
+			agentHandler.logger.Debug("Sending log in adaptive mode to the API...")
+			//Send log information to the API
+			apiHandler := api.NewAPIHandler(agentHandler.logger, agentHandler.configuration)
+			_, err := apiHandler.SendLog(agentHandler.apiBaseURL, logData)
+			//Check if an error occured when sending log to the API
+			if err != nil {
+				agentHandler.logger.Error(err.Error())
+				//return
+			}
+		}
+
 		return
 	}
 
