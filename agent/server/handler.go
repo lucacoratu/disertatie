@@ -200,8 +200,13 @@ func (agentHandler *AgentHandler) sendB64RequestToLLMAPI(req *http.Request) *dat
 		return nil
 	}
 
+	//Create the http client
+	client := http.Client{
+		Timeout: 120 * time.Second,
+	}
+
 	//Send the request to the LLM API
-	llm_response, err := http.DefaultClient.Do(llm_req)
+	llm_response, err := client.Do(llm_req)
 	if err != nil {
 		agentHandler.logger.Error("Failed to send request to LLM API", err.Error())
 		return nil
