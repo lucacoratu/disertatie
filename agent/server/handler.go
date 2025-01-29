@@ -202,7 +202,7 @@ func (agentHandler *AgentHandler) sendB64RequestToLLMAPI(req *http.Request) *dat
 
 	//Create the http client
 	client := http.Client{
-		Timeout: 120 * time.Second,
+		Timeout: 10 * time.Minute,
 	}
 
 	//Send the request to the LLM API
