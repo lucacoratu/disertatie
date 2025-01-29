@@ -158,7 +158,7 @@ func (agent *AgentServer) Init() error {
 	agent.srv = &http.Server{
 		Addr: agent.configuration.ListeningAddress + ":" + agent.configuration.ListeningPort,
 		// Good practice to set timeouts to avoid Slowloris attacks.
-		WriteTimeout: time.Second * 15,
+		WriteTimeout: time.Second * 600,
 		ReadTimeout:  time.Second * 15,
 		IdleTimeout:  time.Second * 60,
 		Handler:      r, // Pass our instance of gorilla/mux in.

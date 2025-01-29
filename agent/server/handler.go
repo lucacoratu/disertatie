@@ -278,7 +278,7 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 		//Send the response back to the client
 		rw.WriteHeader(http.StatusOK)
 
-		agentHandler.logger.Debug("Sending body")
+		agentHandler.logger.Debug("Sending body...")
 		//Send the body
 		rw.Write([]byte(llm_response_data.Body))
 
