@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/lucacoratu/disertatie/agent/config"
 	"github.com/lucacoratu/disertatie/agent/data"
 	"github.com/lucacoratu/disertatie/agent/logging"
 )
@@ -19,7 +20,9 @@ var SupportedEncodings = []string{"base64", "url"}
 // @param rulesDirectory - the directory from which the rules should be pulled
 // @param logger - the logger to be used to display the errors
 // If the directory cannot be opened to read all the files in it then an error is returned
-func LoadRulesFromDirectory(rulesDirectory string, logger logging.ILogger) ([]Rule, error) {
+func LoadRulesFromDirectory(configuration config.Configuration, logger logging.ILogger) ([]Rule, error) {
+	rulesDirectory := configuration.RulesDirectory
+
 	//Check if the directory exists
 	_, err := os.Stat(rulesDirectory)
 	if err != nil {
@@ -28,6 +31,19 @@ func LoadRulesFromDirectory(rulesDirectory string, logger logging.ILogger) ([]Ru
 	//Traverse the directory to get all the rules and append them to the list
 	rulesList := make([]Rule, 0)
 	err = filepath.WalkDir(rulesDirectory, func(path string, d fs.DirEntry, err error) error {
+		//Check if the directory is not in the list of ignored directories from the config
+		if d.IsDir() {
+			if configuration.IgnoreRulesDirectories != nil {
+				for _, ignoreDir := range configuration.IgnoreRulesDirectories {
+					if ignoreDir == d.Name() {
+						logger.Info("Skipped rule directory", d.Name(), ", present in list of ignored directories")
+						//Skip the directory
+						return filepath.SkipDir
+					}
+				}
+			}
+		}
+
 		//If the directory entry is not a directory
 		if !d.IsDir() {
 			//If the file ends doesn't .yaml
@@ -221,42 +237,45 @@ func CheckRule(rule Rule, logger logging.ILogger) error {
 		return err
 	}
 
-	//Check if the regexes specified in the rule are compiling
-	//Check if the URL regex compiles
-	if rule.Request.URL != nil {
-		for i, _ := range rule.Request.URL {
-			if _, err := regexp.Compile(rule.Request.URL[i].Regex); err != nil {
-				return errors.New("cannot compile URL regex, " + err.Error())
+	//Check if the request field exists in the rule
+	if rule.Request != nil {
+		//Check if the regexes specified in the rule are compiling
+		//Check if the URL regex compiles
+		if rule.Request.URL != nil {
+			for i, _ := range rule.Request.URL {
+				if _, err := regexp.Compile(rule.Request.URL[i].Regex); err != nil {
+					return errors.New("cannot compile URL regex, " + err.Error())
+				}
 			}
 		}
-	}
-	//Check if the method regex compiles
-	if rule.Request.Method != nil {
-		if _, err := regexp.Compile(rule.Request.Method.Regex); err != nil {
-			return errors.New("cannot compile Method regex, " + err.Error())
-		}
-	}
-	//Check if the parameters regex compiles
-	if rule.Request.Parameters != nil {
-		for _, parameter := range rule.Request.Parameters {
-			if _, err := regexp.Compile(parameter.Regex); err != nil {
-				return errors.New("cannot compile regex for parameter, " + parameter.Name + ", " + err.Error())
+		//Check if the method regex compiles
+		if rule.Request.Method != nil {
+			if _, err := regexp.Compile(rule.Request.Method.Regex); err != nil {
+				return errors.New("cannot compile Method regex, " + err.Error())
 			}
 		}
-	}
-	//Check if the headers regex compiles
-	if rule.Request.Headers != nil {
-		for _, header := range rule.Request.Headers {
-			if _, err := regexp.Compile(header.Regex); err != nil {
-				return errors.New("cannot compile regex for header, " + header.Name + ", " + err.Error())
+		//Check if the parameters regex compiles
+		if rule.Request.Parameters != nil {
+			for _, parameter := range rule.Request.Parameters {
+				if _, err := regexp.Compile(parameter.Regex); err != nil {
+					return errors.New("cannot compile regex for parameter, " + parameter.Name + ", " + err.Error())
+				}
 			}
 		}
-	}
-	//Check if the regex for body
-	if rule.Request.Body != nil {
-		for _, bodyRule := range rule.Request.Body {
-			if _, err := regexp.Compile(bodyRule.Regex); err != nil {
-				return errors.New("cannot compile regex for the body, " + err.Error())
+		//Check if the headers regex compiles
+		if rule.Request.Headers != nil {
+			for _, header := range rule.Request.Headers {
+				if _, err := regexp.Compile(header.Regex); err != nil {
+					return errors.New("cannot compile regex for header, " + header.Name + ", " + err.Error())
+				}
+			}
+		}
+		//Check if the regex for body
+		if rule.Request.Body != nil {
+			for _, bodyRule := range rule.Request.Body {
+				if _, err := regexp.Compile(bodyRule.Regex); err != nil {
+					return errors.New("cannot compile regex for the body, " + err.Error())
+				}
 			}
 		}
 	}
@@ -377,4 +396,18 @@ func ConvertSeverityStringToInteger(severity string) int64 {
 	default:
 		return -1
 	}
+}
+
+// Gets the action for a specific rule
+// @param rules - the list of rules loaded from disk
+// @param ruleId - the id of the rule to retrieve the action field
+// Returns the action defined inside the rule (allow, drop) or empty string if no action is specified
+func GetRuleAction(rules []Rule, ruleId string) string {
+	for _, rule := range rules {
+		if rule.Id == ruleId {
+			return rule.Info.Action
+		}
+	}
+
+	return ""
 }

@@ -11,7 +11,7 @@ request:
     - name: any
       regex: "\\/etc\\/.*"
     - name: any
-      regex: "\\/proc\\/[0-9]+\\/"
+      regex: "\\/proc\\/[0-9]+\\/?"
     - name: any
       regex: "\\/var\\/"
     - name: any

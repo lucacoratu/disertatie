@@ -53,7 +53,7 @@ func (agent *AgentServer) Init() error {
 	//Check if the rules directory was specified in the configuration file
 	if agent.configuration.RulesDirectory != "" {
 		//Load the rules from the rules directory
-		allRules, err := rules.LoadRulesFromDirectory(agent.configuration.RulesDirectory, agent.logger)
+		allRules, err := rules.LoadRulesFromDirectory(agent.configuration, agent.logger)
 		if err != nil {
 			agent.logger.Error("Could not load rules from", agent.configuration.RulesDirectory, err.Error())
 		}

@@ -2,11 +2,13 @@ package server
 
 import (
 	"bytes"
+	"encoding/base64"
 	b64 "encoding/base64"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -223,6 +225,130 @@ func (agentHandler *AgentHandler) sendB64RequestToLLMAPI(req *http.Request) *dat
 	return &llm_response_data
 }
 
+// Handle the request if the agent is running adaptive mode of operation
+func (agentHandler *AgentHandler) HandleAdaptiveOperationMode(rw http.ResponseWriter, r *http.Request, requestFindings []data.FindingData, requestRuleFindings []*data.RuleFindingData) {
+	//Check if the request should be sent to the LLM API
+	//If it shouldn't be sent then serve a static page
+
+	//Send the request
+	agentHandler.logger.Debug("Sending request to LLM API...")
+	llm_response_data := agentHandler.sendB64RequestToLLMAPI(r)
+
+	//Check if the response from LLM is valid (not nil)
+	if llm_response_data == nil {
+		agentHandler.logger.Error("Received invalid response from LLM API, sending a default message to the client...")
+		//Send the response back to the client
+		rw.WriteHeader(http.StatusOK)
+		rw.Write([]byte("Ok"))
+		return
+	}
+
+	//Debug log the response from the LLM API
+	agentHandler.logger.Debug(*llm_response_data)
+
+	//Add the headers to the response
+	for header_name, header_value := range llm_response_data.Headers {
+		rw.Header().Set(header_name, header_value)
+	}
+
+	//Send the response back to the client
+	rw.WriteHeader(http.StatusOK)
+
+	agentHandler.logger.Debug("Sending body...")
+	//Send the body
+	rw.Write([]byte(llm_response_data.Body))
+
+	//Send the data to the API
+
+	//Combine the findings into a single structure
+	//In this case the response findings will always be empty list
+
+	allFindings := agentHandler.combineFindings(requestFindings, make([]data.FindingData, 0))
+	//Combine the rule findings into a single structure
+	allRuleFindings := agentHandler.combineRuleFindings(requestRuleFindings, make([]*data.RuleFindingData, 0))
+
+	//Convert the request to base64 string
+	b64RawRequest, _ := agentHandler.convertRequestToB64(r)
+
+	//Create the response based on the headers and the body received from LLM API
+	var rawResponse string = "HTTP/1.1 200 OK\r\n"
+	//Add the headers
+	for header_name, header_value := range llm_response_data.Headers {
+		rawResponse += fmt.Sprintf("%s: %s\r\n", header_name, header_value)
+	}
+	//Add an empty line
+	rawResponse += "\r\n"
+	//Add the body
+	rawResponse += llm_response_data.Body
+
+	agentHandler.logger.Debug(rawResponse)
+
+	//Convert the raw response to base64
+	b64RawResponse := b64.StdEncoding.EncodeToString([]byte(rawResponse))
+
+	//Create the log structure that should be sent to the API
+	logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: r.RemoteAddr, Timestamp: time.Now().Unix(), Request: b64RawRequest, Response: b64RawResponse, Findings: allFindings, RuleFindings: allRuleFindings}
+
+	if agentHandler.apiWsConn != nil {
+		agentHandler.logger.Debug("Sending log in adaptive mode to the API...")
+		//Send log information to the API
+		apiHandler := api.NewAPIHandler(agentHandler.logger, agentHandler.configuration)
+		_, err := apiHandler.SendLog(agentHandler.apiBaseURL, logData)
+		//Check if an error occured when sending log to the API
+		if err != nil {
+			agentHandler.logger.Error(err.Error())
+			//return
+		}
+	}
+}
+
+// Handle the request if the agent is running in waf operation mode
+// @param requestFindings the code findings after checking the request
+// @param requestRuleFindings the findings after applying the rules on the request
+// Returns bool (true if the request should be dropped, false if should be allowed)
+// Returns error if an error occured during the handling of findings
+func (agentHandler *AgentHandler) HandleWAFOperationModeOnRequest(requestFindings []data.FindingData, requestRuleFindings []*data.RuleFindingData) (bool, error) {
+	//Loop through all the code findings
+
+	//Loop through all the rules findings
+	for _, ruleFinding := range requestRuleFindings {
+		//Get the id of the rule
+		ruleAction := rules.GetRuleAction(agentHandler.rules, ruleFinding.RuleId)
+		//Check if the rule action is drop
+		//If the rule action is empty the default behavior should be to drop
+		if ruleAction == "drop" || ruleAction == "" {
+			//The request should be blocked
+			return true, nil
+		}
+	}
+
+	//The request shouldn't be blocked
+	return false, nil
+}
+
+// Handle the response in waf operation mode
+// @param responseFindings the code findings after checking the request
+// @param responseRuleFindings the findings after applying the rules on the request
+// Returns bool (true if the request should be dropped, false if should be allowed)
+// Returns error if an error occured during the handling of findings
+func (agentHandler *AgentHandler) HandleWAFOperationModeOnResponse(responseFindings []data.FindingData, responseRuleFindings []*data.RuleFindingData) (bool, error) {
+	//Loop through all the code findings
+
+	//Loop through all the rules findings
+	for _, ruleFinding := range responseRuleFindings {
+		//Get the id of the rule
+		ruleAction := rules.GetRuleAction(agentHandler.rules, ruleFinding.RuleId)
+		//Check if the rule action is drop
+		//If the rule action is empty the default behavior should be to drop
+		if ruleAction == "drop" || ruleAction == "" {
+			//The request should be blocked
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // Handles the requests received by the agent
 func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.Request) {
 	//Log the endpoint where the request was made
@@ -249,112 +375,85 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 	//Log the request rule findings
 	agentHandler.logger.Debug("Request rule findings", requestRuleFindings)
 
+	//If the mode of operation is waf check the action from the rule
+	//If the action specified inside the rule is block then the forbidden page should be sent to the client
+	var requestDropped bool = false
+	var err error = nil
+
+	if agentHandler.configuration.OperationMode == "waf" {
+		requestDropped, err = agentHandler.HandleWAFOperationModeOnRequest(requestFindings, requestRuleFindings)
+		if err != nil {
+			agentHandler.logger.Error("Error occured when handling waf operation mode on request", err.Error())
+		}
+	}
+
 	//If the mode of operation is adaptive then send the raw request encoded base64 to LLM
 	if agentHandler.configuration.OperationMode == "adaptive" {
-		//Check if the request should be sent to the LLM API
-		//If it shouldn't be sent then serve a static page
+		agentHandler.HandleAdaptiveOperationMode(rw, r, requestFindings, requestRuleFindings)
+		//The function handles everything so we can return
+		return
+	}
 
-		//Send the request
-		agentHandler.logger.Debug("Sending request to LLM API...")
-		llm_response_data := agentHandler.sendB64RequestToLLMAPI(r)
+	//Check if the operation mode is waf and the forbidden page has been returned
+	//If the forbidden page has been returned then the request should not be forwarded to the target service
+	//Also the rules and validators shouldn't be applied on response (as it will always be the forbidden page)
 
-		//Check if the response from LLM is valid (not nil)
-		if llm_response_data == nil {
-			agentHandler.logger.Error("Received invalid response from LLM API, sending a default message to the client...")
-			//Send the response back to the client
-			rw.WriteHeader(http.StatusOK)
-			rw.Write([]byte("Ok"))
+	var response *http.Response = nil
+	var responseFindings []data.FindingData = make([]data.FindingData, 0)
+	var responseRuleFindings []*data.RuleFindingData = make([]*data.RuleFindingData, 0)
+
+	//Initialize the response dropped
+	var responseDropped bool = false
+
+	if !requestDropped || agentHandler.configuration.OperationMode != "waf" {
+		//Forward the request to the destination web server
+		response, err = agentHandler.forwardRequest(r)
+		if err != nil {
+			agentHandler.logger.Error(err.Error())
 			return
 		}
 
-		//Debug log the response from the LLM API
-		agentHandler.logger.Debug(*llm_response_data)
+		//Run the validators on the response
+		responseFindings, _ = validatorRunner.RunValidatorsOnResponse(response)
+		//Run the rules on the response
+		responseRuleFindings, _ = ruleRunner.RunRulesOnResponse(response)
 
-		//Add the headers to the response
-		for header_name, header_value := range llm_response_data.Headers {
-			rw.Header().Set(header_name, header_value)
+		//Log response findings
+		agentHandler.logger.Debug("Response findings", responseFindings)
+		//Log the rules response findings
+		agentHandler.logger.Debug("Response rule findings", responseRuleFindings)
+
+		//Check if the response should be dropped
+		responseDropped, err = agentHandler.HandleWAFOperationModeOnResponse(responseFindings, responseRuleFindings)
+		if err != nil {
+			agentHandler.logger.Error("Error occured when handling waf operation mode on request", err.Error())
 		}
-
-		//Send the response back to the client
-		rw.WriteHeader(http.StatusOK)
-
-		agentHandler.logger.Debug("Sending body...")
-		//Send the body
-		rw.Write([]byte(llm_response_data.Body))
-
-		//Send the data to the API
-
-		//Combine the findings into a single structure
-		//In this case the response findings will always be empty list
-
-		allFindings := agentHandler.combineFindings(requestFindings, make([]data.FindingData, 0))
-		//Combine the rule findings into a single structure
-		allRuleFindings := agentHandler.combineRuleFindings(requestRuleFindings, make([]*data.RuleFindingData, 0))
-
-		//Convert the request to base64 string
-		b64RawRequest, _ := agentHandler.convertRequestToB64(r)
-
-		//Create the response based on the headers and the body received from LLM API
-		var rawResponse string = "HTTP/1.1 200 OK\r\n"
-		//Add the headers
-		for header_name, header_value := range llm_response_data.Headers {
-			rawResponse += fmt.Sprintf("%s: %s\r\n", header_name, header_value)
-		}
-		//Add an empty line
-		rawResponse += "\r\n"
-		//Add the body
-		rawResponse += llm_response_data.Body
-
-		agentHandler.logger.Debug(rawResponse)
-
-		//Convert the raw response to base64
-		b64RawResponse := b64.StdEncoding.EncodeToString([]byte(rawResponse))
-
-		//Create the log structure that should be sent to the API
-		logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: r.RemoteAddr, Timestamp: time.Now().Unix(), Request: b64RawRequest, Response: b64RawResponse, Findings: allFindings, RuleFindings: allRuleFindings}
-
-		if agentHandler.apiWsConn != nil {
-			agentHandler.logger.Debug("Sending log in adaptive mode to the API...")
-			//Send log information to the API
-			apiHandler := api.NewAPIHandler(agentHandler.logger, agentHandler.configuration)
-			_, err := apiHandler.SendLog(agentHandler.apiBaseURL, logData)
-			//Check if an error occured when sending log to the API
-			if err != nil {
-				agentHandler.logger.Error(err.Error())
-				//return
-			}
-		}
-
-		return
 	}
-
-	//Forward the request to the destination web server
-	response, err := agentHandler.forwardRequest(r)
-	if err != nil {
-		agentHandler.logger.Error(err.Error())
-		return
-	}
-
-	//Run the validators on the response
-	responseFindings, _ := validatorRunner.RunValidatorsOnResponse(response)
-	//Run the rules on the response
-	responseRuleFindings, _ := ruleRunner.RunRulesOnResponse(response)
-
-	//Log response findings
-	agentHandler.logger.Debug("Response findings", responseFindings)
-	//Log the rules response findings
-	agentHandler.logger.Debug("Response rule findings", responseRuleFindings)
 
 	//Combine the findings into a single structure
+	//If the request is not forwarded then the response findings should be empty arrays
 	allFindings := agentHandler.combineFindings(requestFindings, responseFindings)
 	//Combine the rule findings into a single structure
 	allRuleFindings := agentHandler.combineRuleFindings(requestRuleFindings, responseRuleFindings)
 
 	//Convert the request and response to base64 string
-	b64RawRequest, b64RawResponse, _ := agentHandler.convertRequestAndResponseToB64(r, response)
+	//If the response is nil (the request was dropped then convert the forbidden page to base64)
+	var b64RawRequest string = ""
+	var b64RawResponse string = ""
+	if !requestDropped {
+		b64RawRequest, b64RawResponse, _ = agentHandler.convertRequestAndResponseToB64(r, response)
+	} else {
+		forbiddenPageContent, err := os.ReadFile(agentHandler.configuration.ForbiddenPagePath)
+		//Check if an error occured when reading forbidden page
+		if err != nil {
+			forbiddenPageContent = []byte("Forbidden")
+		}
+		b64RawResponse = base64.StdEncoding.EncodeToString(forbiddenPageContent)
+	}
 
 	//Create the log structure that should be sent to the API
 	logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: r.RemoteAddr, Timestamp: time.Now().Unix(), Request: b64RawRequest, Response: b64RawResponse, Findings: allFindings, RuleFindings: allRuleFindings}
+
 	if true {
 		agentHandler.logger.Debug("Log data", logData)
 	}
@@ -368,6 +467,26 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 			agentHandler.logger.Error(err.Error())
 			//return
 		}
+	}
+
+	//Send the forbidden page if the request should be dropped and the operation mode is waf
+	if (requestDropped || responseDropped) && agentHandler.configuration.OperationMode == "waf" {
+		//Send the forbidden page
+		//Read the forbidden page from the disk
+		forbiddenPageContent, err := os.ReadFile(agentHandler.configuration.ForbiddenPagePath)
+
+		//Check if an error occured when reading forbidden page
+		if err != nil {
+			agentHandler.logger.Error("Failed to read forbidden page from disk,", err.Error())
+			rw.WriteHeader(http.StatusForbidden)
+			rw.Write([]byte("Forbidden"))
+			return
+		}
+
+		//Send the content of forbidden file to client
+		rw.WriteHeader(http.StatusForbidden)
+		rw.Write(forbiddenPageContent)
+		return
 	}
 
 	//If the mode is testing then send the log data as response

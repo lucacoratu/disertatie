@@ -319,6 +319,7 @@ func (rl *RuleRunner) RunRulesOnRequest(r *http.Request) ([]*data.RuleFindingDat
 	}
 
 	//Loop through all the rules and check if any one of them matches a string in the request
+	//TO DO... Run each rule on a different go routine
 	for _, rule := range rl.rules {
 		//Check if the rule has request matchers specified
 		if rule.Request == nil {
