@@ -10,5 +10,5 @@ request:
   params:
     - name: any
       regex: "\\{\\{.*\\.toUPPERCASE\\(\\).*\\}\\}"
-        - name: any
+    - name: any
       regex: "\\{\\{.*\\.getClass\\(\\)\\.forName\\('java\\.lang\\.Runtime'\\)\\.getRuntime\\(\\)\\.exec\\('.*'\\).*\\}\\}"
