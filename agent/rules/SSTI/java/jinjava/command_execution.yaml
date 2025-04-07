@@ -9,10 +9,10 @@ info:
 request:
   params:
     - name: any
-      regex: "\\{.*\\{'.*'\\.getClass\\(\\)\\.forName\\('javax\\.script\\.ScriptEngineManager'\\)\\.newInstance\\(\\)\\.getEngineByName\\('JavaScript'\\).eval\\(\\\"new java.lang.String('xxx')\\\"\\).*\\}\\}"
-    - name: any
-      regex: "\\{\\{'.*'\\.getClass\\(\\)\\.forName\\('javax\\.script\\.ScriptEngineManager'\\)\\.newInstance\\(\\)\\.getEngineByName\\('JavaScript'\\)\\.eval\\(\\\"var .*=new java\\.lang\\.ProcessBuilder; .*\\.command\\(\\\\\".*\\\\\"\\); .*\\.start\\(\\)\\\"\\).*\\}\\}"
-    - name: any
-      regex: "\\{\\{.*'.*'\\.getClass\\(\\)\\.forName\\('javax\\.script\\.ScriptEngineManager'\\)\\.newInstance\\(\\)\\.getEngineByName\\('JavaScript'\\)\\.eval\\(\\\\\"var .*=new java\\.lang\\.ProcessBuilder; .*\\.command\\(\\\\\".*\\\\\"\\); org\\.apache\\.commons\\.io\\.IOUtils\\.toString\\(.*\\.start\\(\\)\\.getInputStream\\(\\)\\)\\\"\\)\\}\\}"
-    - name: any
-      regex: "\\{\\{.*'.*'\\.getClass\\(\\)\\.forName\\('javax\\.script\\.ScriptEngineManager'\\)\\.newInstance\\(\\)\\.getEngineByName\\('JavaScript'\\).eval\\(\\\"var .*=new java\\.lang\\.ProcessBuilder; .*\\.command\\(\\\\\".*\\\\\"\\); org\\.apache\\.commons\\.io\\.IOUtils\\.toString\\(.*\\.start\\(\\)\\.getInputStream\\(\\)\\)\\\"\\)\\}\\}"
+      regex: "\\{\\{.*\\.getClass\\(\\)\\.forName\\('javax\\.script\\.ScriptEngineManager'\\)\\.newInstance\\(\\)\\.getEngineByName\\('JavaScript'\\)\\.eval\\(.*"
+    # - name: any
+    #   regex: "\\{\\{'.*'\\.getClass\\(\\)\\.forName\\('javax\\.script\\.ScriptEngineManager'\\)\\.newInstance\\(\\)\\.getEngineByName\\('JavaScript'\\)\\.eval\\(\\\"var .*=new java\\.lang\\.ProcessBuilder; .*\\.command\\(\\\\\".*\\\\\"\\); .*\\.start\\(\\)\\\"\\).*\\}\\}"
+    # - name: any
+    #   regex: "\\{\\{.*'.*'\\.getClass\\(\\)\\.forName\\('javax\\.script\\.ScriptEngineManager'\\)\\.newInstance\\(\\)\\.getEngineByName\\('JavaScript'\\)\\.eval\\(\\\\\"var .*=new java\\.lang\\.ProcessBuilder; .*\\.command\\(\\\\\".*\\\\\"\\); org\\.apache\\.commons\\.io\\.IOUtils\\.toString\\(.*\\.start\\(\\)\\.getInputStream\\(\\)\\)\\\"\\)\\}\\}"
+    # - name: any
+    #   regex: "\\{\\{.*'.*'\\.getClass\\(\\)\\.forName\\('javax\\.script\\.ScriptEngineManager'\\)\\.newInstance\\(\\)\\.getEngineByName\\('JavaScript'\\).eval\\(\\\"var .*=new java\\.lang\\.ProcessBuilder; .*\\.command\\(\\\\\".*\\\\\"\\); org\\.apache\\.commons\\.io\\.IOUtils\\.toString\\(.*\\.start\\(\\)\\.getInputStream\\(\\)\\)\\\"\\)\\}\\}"
