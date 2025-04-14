@@ -15,6 +15,7 @@ func NewAIClassifierRunner(logger logging.ILogger) *AIClassifierRunner {
 }
 
 func (vr *AIClassifierRunner) RunAIClassifierOnRequest(r *http.Request) {
+
 }
 
 func (vr *AIClassifierRunner) RunAIClassifierOnResponse(r *http.Response) {
