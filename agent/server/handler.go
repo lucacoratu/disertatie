@@ -15,6 +15,7 @@ import (
 	"github.com/lucacoratu/disertatie/agent/api"
 	"github.com/lucacoratu/disertatie/agent/config"
 	"github.com/lucacoratu/disertatie/agent/data"
+	ai "github.com/lucacoratu/disertatie/agent/detection/ai"
 	code "github.com/lucacoratu/disertatie/agent/detection/code"
 	rules "github.com/lucacoratu/disertatie/agent/detection/rules"
 	"github.com/lucacoratu/disertatie/agent/logging"
@@ -364,11 +365,15 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 	validatorRunner := code.NewValidatorRunner(agentHandler.checkers, agentHandler.logger)
 	//Create the rule runner
 	ruleRunner := rules.NewRuleRunner(agentHandler.logger, agentHandler.rules, agentHandler.apiWsConn, agentHandler.configuration)
+	//Create the AI classifier runner
+	aiClassifierRunner := ai.NewAIClassifierRunner(agentHandler.logger, agentHandler.configuration)
 
 	//Run all the validators on the request
 	requestFindings, _ := validatorRunner.RunValidatorsOnRequest(r)
 	//Run all the rules on the request
 	requestRuleFindings, _ := ruleRunner.RunRulesOnRequest(r)
+	//Run the ai classifier on the request
+	aiClassifierRunner.RunAIClassifierOnRequest(r)
 
 	//Log request findings
 	agentHandler.logger.Debug("Request findings", requestFindings)

@@ -1,4 +1,3 @@
-data/
-data/cassandra/data
+data/**
 scripts/python/
 config/

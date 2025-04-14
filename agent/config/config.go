@@ -29,8 +29,8 @@ type Configuration struct {
 	OperationMode          string   `json:"operationMode" validate:"required,oneof_insensitive=testing waf adaptive"` //The mode the agent will operate on (can be testing, waf, adaptive) - case insensitive
 	IgnoreRulesDirectories []string `json:"ignoreRulesDirectories"`                                                   //The directories with rules that should be ignored when loading the rules
 	LLMAPIURL              string   `json:"llmAPIURL"`                                                                //The URL for the LLM API
-	CreateDataset          bool     `json:"createDataset"`                                                            //If the agent should save the requests features in a dataset
-	DatasetPath            string   `json:"datasetPath"`                                                              //The path where the dataset will be saved
+	CreateDataset          bool     `json:"createDataset" validate:"required"`                                        //If the agent should save the requests features in a dataset
+	DatasetPath            string   `json:"datasetPath" validate:"required"`                                          //The path where the dataset will be saved
 }
 
 // Validate function for one of (case insensitive)
