@@ -29,7 +29,7 @@ func (vr *AIClassifierRunner) RunAIClassifierOnRequest(r *http.Request) {
 	features := featuresExtractor.ExtractFeaturesFromRequest(r)
 
 	//Check if the features should be saved in a dataset
-	if vr.configuration.CreateDataset == true {
+	if vr.configuration.CreateDataset {
 		//Save the features in a csv file specified in the configuration
 		datasetFile, err := os.OpenFile(vr.configuration.DatasetPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
@@ -38,10 +38,13 @@ func (vr *AIClassifierRunner) RunAIClassifierOnRequest(r *http.Request) {
 
 		//Convert the features to a record for csv file
 		var csvRow []string
-		//UrlLength|NumberParams|NumberSpecialChars|NumberRoundBrackets|NumberSquareBrackets|NumberCurlyBrackets|NumberApostrophes|NumberQuotationMarks|NumberDots|NumberSlash|NumberBackslash|DistanceDots|DistanceSlash|DistanceBackslash
+		//UrlLength|NumberParams|NumberSpecialChars|RatioSpecialChars|NumberRoundBrackets|NumberSquareBrackets|NumberCurlyBrackets|NumberApostrophes|NumberQuotationMarks|NumberDots|NumberSlash|NumberBackslash|NumberComma|NumberColon|NumberSemicolon|NumberMinus|NumberPlus|DistanceDots|DistanceSlash|DistanceBackslash|DistanceComma|DistanceColon|DistanceSemicolon|DistanceMinus|DistancePlus
 		csvRow = append(csvRow, strconv.FormatInt(features.UrlLength, 10))
 		csvRow = append(csvRow, strconv.FormatInt(features.NumberParams, 10))
 		csvRow = append(csvRow, strconv.FormatInt(features.NumberSpecialChars, 10))
+
+		csvRow = append(csvRow, fmt.Sprintf("%f", features.RatioSpecialChars))
+
 		csvRow = append(csvRow, strconv.FormatInt(features.NumberRoundBrackets, 10))
 		csvRow = append(csvRow, strconv.FormatInt(features.NumberSquareBrackets, 10))
 		csvRow = append(csvRow, strconv.FormatInt(features.NumberCurlyBrackets, 10))
@@ -50,9 +53,20 @@ func (vr *AIClassifierRunner) RunAIClassifierOnRequest(r *http.Request) {
 		csvRow = append(csvRow, strconv.FormatInt(features.NumberDots, 10))
 		csvRow = append(csvRow, strconv.FormatInt(features.NumberSlash, 10))
 		csvRow = append(csvRow, strconv.FormatInt(features.NumberBackslash, 10))
+		csvRow = append(csvRow, strconv.FormatInt(features.NumberComma, 10))
+		csvRow = append(csvRow, strconv.FormatInt(features.NumberColon, 10))
+		csvRow = append(csvRow, strconv.FormatInt(features.NumberSemicolon, 10))
+		csvRow = append(csvRow, strconv.FormatInt(features.NumberMinus, 10))
+		csvRow = append(csvRow, strconv.FormatInt(features.NumberPlus, 10))
+
 		csvRow = append(csvRow, fmt.Sprintf("%f", features.DistanceDots))
 		csvRow = append(csvRow, fmt.Sprintf("%f", features.DistanceSlash))
 		csvRow = append(csvRow, fmt.Sprintf("%f", features.DistanceBackslash))
+		csvRow = append(csvRow, fmt.Sprintf("%f", features.DistanceComma))
+		csvRow = append(csvRow, fmt.Sprintf("%f", features.DistanceColon))
+		csvRow = append(csvRow, fmt.Sprintf("%f", features.DistanceSemicolon))
+		csvRow = append(csvRow, fmt.Sprintf("%f", features.DistanceMinus))
+		csvRow = append(csvRow, fmt.Sprintf("%f", features.DistancePlus))
 
 		//Create csv writer from dataset file
 		w := csv.NewWriter(datasetFile)

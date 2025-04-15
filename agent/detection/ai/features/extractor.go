@@ -50,11 +50,17 @@ func (featuresExtractor *FeaturesExtractor) ExtractFeaturesFromRequest(request *
 	features.NumberSlash = 0
 	features.NumberBackslash = 0
 
+	paramValuesLen := 0
+
 	//All parameters
 	for _, paramValues := range urlParams {
 		//The params can also be a list of values
 		for _, value := range paramValues {
+			//Add the len of the param to total len of parameters
+			paramValuesLen += len(value)
+
 			for _, ch := range value {
+
 				//If the character is present in the list of special chars
 				if strings.ContainsRune("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~", ch) {
 					features.NumberSpecialChars += 1
@@ -99,6 +105,31 @@ func (featuresExtractor *FeaturesExtractor) ExtractFeaturesFromRequest(request *
 				if ch == '\\' {
 					features.NumberBackslash += 1
 				}
+
+				//If the character is ,
+				if ch == ',' {
+					features.NumberComma += 1
+				}
+
+				//If the character is :
+				if ch == ':' {
+					features.NumberColon += 1
+				}
+
+				//If the character is ;
+				if ch == ';' {
+					features.NumberSemicolon += 1
+				}
+
+				//If the character is -
+				if ch == '-' {
+					features.NumberMinus += 1
+				}
+
+				//If the character is +
+				if ch == '+' {
+					features.NumberPlus += 1
+				}
 			}
 
 			//Compute distances
@@ -110,6 +141,21 @@ func (featuresExtractor *FeaturesExtractor) ExtractFeaturesFromRequest(request *
 
 			sumBackslashDistances := 0
 			noBackslashDistances := 0
+
+			sumCommaDistances := 0
+			noCommaDistances := 0
+
+			sumColonDistances := 0
+			noColonDistances := 0
+
+			sumSemicolonDistances := 0
+			noSemicolonDistances := 0
+
+			sumMinusDistances := 0
+			noMinusDistances := 0
+
+			sumPlusDistances := 0
+			noPlusDistances := 0
 
 			for index, ch := range value {
 				if ch == '.' {
@@ -147,6 +193,66 @@ func (featuresExtractor *FeaturesExtractor) ExtractFeaturesFromRequest(request *
 					sumBackslashDistances += distance
 					noBackslashDistances += 1
 				}
+
+				if ch == ',' {
+					part := value[index+1:]
+					distance := strings.IndexRune(part, ch)
+					//If this is the last char of this type then ignore the distance (it will always be -1)
+					if distance == -1 && noCommaDistances > 0 {
+						continue
+					}
+
+					sumCommaDistances += distance
+					noCommaDistances += 1
+				}
+
+				if ch == ':' {
+					part := value[index+1:]
+					distance := strings.IndexRune(part, ch)
+					//If this is the last char of this type then ignore the distance (it will always be -1)
+					if distance == -1 && noColonDistances > 0 {
+						continue
+					}
+
+					sumColonDistances += distance
+					noColonDistances += 1
+				}
+
+				if ch == ';' {
+					part := value[index+1:]
+					distance := strings.IndexRune(part, ch)
+					//If this is the last char of this type then ignore the distance (it will always be -1)
+					if distance == -1 && noSemicolonDistances > 0 {
+						continue
+					}
+
+					sumSemicolonDistances += distance
+					noSemicolonDistances += 1
+				}
+
+				if ch == '-' {
+					part := value[index+1:]
+					distance := strings.IndexRune(part, ch)
+					//If this is the last char of this type then ignore the distance (it will always be -1)
+					if distance == -1 && noMinusDistances > 0 {
+						continue
+					}
+
+					sumMinusDistances += distance
+					noMinusDistances += 1
+				}
+
+				if ch == '+' {
+					part := value[index+1:]
+					distance := strings.IndexRune(part, ch)
+					//If this is the last char of this type then ignore the distance (it will always be -1)
+					if distance == -1 && noPlusDistances > 0 {
+						continue
+					}
+
+					sumPlusDistances += distance
+					noPlusDistances += 1
+				}
 			}
 
 			//Check if the number of distances > 0 (meaning if the character was found the string or not)
@@ -167,8 +273,45 @@ func (featuresExtractor *FeaturesExtractor) ExtractFeaturesFromRequest(request *
 			} else {
 				features.DistanceBackslash = -1
 			}
+
+			if noCommaDistances > 0 {
+				features.DistanceComma = float64(sumCommaDistances) / float64(noCommaDistances)
+			} else {
+				features.DistanceComma = -1
+			}
+
+			if noColonDistances > 0 {
+				features.DistanceColon = float64(sumColonDistances) / float64(noColonDistances)
+			} else {
+				features.DistanceColon = -1
+			}
+
+			if noSemicolonDistances > 0 {
+				features.DistanceSemicolon = float64(sumSemicolonDistances) / float64(noSemicolonDistances)
+			} else {
+				features.DistanceSemicolon = -1
+			}
+
+			if noMinusDistances > 0 {
+				features.DistanceMinus = float64(sumMinusDistances) / float64(noMinusDistances)
+			} else {
+				features.DistanceMinus = -1
+			}
+
+			if noPlusDistances > 0 {
+				features.DistancePlus = float64(sumPlusDistances) / float64(noPlusDistances)
+			} else {
+				features.DistancePlus = -1
+			}
+
 			// featuresExtractor.logger.Debug("Dot distances", features.DistanceDots)
 		}
+	}
+
+	if paramValuesLen > 0 {
+		features.RatioSpecialChars = float64(features.NumberSpecialChars) / float64(paramValuesLen)
+	} else {
+		features.RatioSpecialChars = 0.0
 	}
 
 	return features

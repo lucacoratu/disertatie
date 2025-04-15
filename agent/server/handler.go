@@ -453,7 +453,13 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 		if err != nil {
 			forbiddenPageContent = []byte("Forbidden")
 		}
-		b64RawResponse = base64.StdEncoding.EncodeToString(forbiddenPageContent)
+		rawResponse := append([]byte("HTTP/1.1 403 Forbidden\r\nContent-Type: text/html\r\n\r\n"), forbiddenPageContent...)
+		b64RawResponse = base64.StdEncoding.EncodeToString(rawResponse)
+
+		//Dump the HTTP request to raw string
+		rawRequest, _ := utils.DumpHTTPRequest(r)
+		//Convert raw request to base64
+		b64RawRequest = b64.StdEncoding.EncodeToString(rawRequest)
 	}
 
 	//Create the log structure that should be sent to the API
