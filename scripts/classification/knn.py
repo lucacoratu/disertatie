@@ -1,3 +1,5 @@
+import pickle
+
 import pandas as pd
 
 # Modelling
@@ -5,38 +7,24 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, classification_report
 from sklearn.model_selection import train_test_split
 
-names = ['UrlLength', 'NumberParams', 'NumberSpecialChars', 'NumberRoundBrackets', 'NumberSquareBrackets', 'NumberCurlyBrackets', 'NumberApostrophes', 'NumberQuotationMarks', 'NumberDots', 'NumberSlash', 'NumberBackslash', 'NumberComma', 'NumberColon', 'NumberSemicolon', 'NumberMinus', 'NumberPlus', 'DistanceDots', 'DistanceSlash', 'DistanceBackslash', 'DistanceComma', 'DistanceColon', 'DistanceSemicolon', 'DistanceMinus', 'DistancePlus']
+names = ['UrlLength', 'NumberParams', 'NumberSpecialChars', 'RatioSpecialChars', 'NumberRoundBrackets', 'NumberSquareBrackets', 'NumberCurlyBrackets', 'NumberApostrophes', 'NumberQuotationMarks', 'NumberDots', 'NumberSlash', 'NumberBackslash', 'NumberComma', 'NumberColon', 'NumberSemicolon', 'NumberMinus', 'NumberPlus','NumberLessGreater', 'DistanceDots', 'DistanceSlash', 'DistanceBackslash', 'DistanceComma', 'DistanceColon', 'DistanceSemicolon', 'DistanceMinus', 'DistancePlus']
 
 #Read the csv files
 df_benign = pd.read_csv("../../agent/datasets/benign.csv", header=None, names=names)
-# df_lfi1 = pd.read_csv("../../agent/datasets/lfi_jhaddix.csv", header=None, names=names)
-# df_lfi2 = pd.read_csv("../../agent/datasets/lfi_linux.csv", header=None, names=names)
-# df_lfi3 = pd.read_csv("../../agent/datasets/lfi_windows.csv", header=None, names=names)
 df_lfi = pd.read_csv("../../agent/datasets/lfi.csv", header=None, names=names)
-
 df_sqli = pd.read_csv("../../agent/datasets/sqli.csv", header=None, names=names)
-
-df_test = pd.read_csv("../../agent/datasets/lfi_test.csv", header=None, names=names)
-df_sqli_test = pd.read_csv("../../agent/datasets/sqli_test.csv", header=None, names=names)
+df_xss = pd.read_csv("../../agent/datasets/xss.csv", header=None, names=names)
+df_ssti = pd.read_csv("../../agent/datasets/ssti.csv", header=None, names=names)
 
 
 df_benign['label'] = 'benign'
-# df_lfi1['label'] = 'lfi'
-# df_lfi2['label'] = 'lfi'
-# df_lfi3['label'] = 'lfi'
-
 df_lfi['label'] = 'lfi'
 df_sqli['label'] = 'sqli'
-
-df_test['label'] = 'lfi'
-df_sqli_test['label'] = 'sqli'
-
-#Dataset de test
-df_test = pd.concat([df_test, df_sqli_test], ignore_index=True)
-#print(df_test)
+df_xss['label'] = 'xss'
+df_ssti['label'] = 'ssti'
 
 #Concatenate all the datasets
-full_df = pd.concat([df_benign, df_lfi, df_sqli] , ignore_index=True)
+full_df = pd.concat([df_benign, df_lfi, df_sqli, df_xss, df_ssti] , ignore_index=True)
 
 #Randomize the rows
 full_df = full_df.sample(frac=1, random_state=42).reset_index(drop=True)
@@ -66,7 +54,8 @@ y_pred = knn.predict(X_test)
 print("Accuracy:", accuracy_score(y_test, y_pred))
 print("\nClassification Report:\n", classification_report(y_test, y_pred))
 
-y_pred2 = knn.predict(df_test.drop('label', axis=1))
+model = KNeighborsClassifier(n_neighbors=5)
+model.fit(X, y)
 
-print("Accuracy:", accuracy_score(df_test['label'], y_pred2))
-print("\nClassification Report:\n", classification_report(df_test['label'], y_pred2))
+with open('../../agent/detection/ai/models/knn.pkl', 'wb') as f:
+    pickle.dump(model, f)

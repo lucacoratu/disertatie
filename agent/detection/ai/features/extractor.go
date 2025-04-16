@@ -49,6 +49,12 @@ func (featuresExtractor *FeaturesExtractor) ExtractFeaturesFromRequest(request *
 	features.NumberDots = 0
 	features.NumberSlash = 0
 	features.NumberBackslash = 0
+	features.NumberComma = 0
+	features.NumberColon = 0
+	features.NumberSemicolon = 0
+	features.NumberMinus = 0
+	features.NumberPlus = 0
+	features.NumberLessGreater = 0
 
 	paramValuesLen := 0
 
@@ -129,6 +135,10 @@ func (featuresExtractor *FeaturesExtractor) ExtractFeaturesFromRequest(request *
 				//If the character is +
 				if ch == '+' {
 					features.NumberPlus += 1
+				}
+
+				if ch == '<' || ch == '>' {
+					features.NumberLessGreater += 1
 				}
 			}
 
