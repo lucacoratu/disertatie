@@ -65,20 +65,25 @@ func (agentHandler *AgentHandler) forwardRequest(req *http.Request) (*http.Respo
 		proxyReq.Header[h] = val
 	}
 
-	httpClient := &http.Client{}
+	//Create a client which will not follow rediects
+	httpClient := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
 
 	resp, err := httpClient.Do(proxyReq)
 	if err != nil {
 		return nil, errors.New("could not send the request to the target web server, " + err.Error())
 	}
 
+	agentHandler.logger.Debug("Forward request, response status code", resp.StatusCode)
+
 	return resp, nil
 }
 
 // Forwards the response back to the client
 func (agentHandler *AgentHandler) forwardResponse(rw http.ResponseWriter, response *http.Response) {
-	//Send the status code
-	rw.WriteHeader(response.StatusCode)
 	//Send the headers
 	for name, values := range response.Header {
 		val := ""
@@ -90,6 +95,10 @@ func (agentHandler *AgentHandler) forwardResponse(rw http.ResponseWriter, respon
 		}
 		rw.Header().Set(name, val)
 	}
+	//Send the status code
+	agentHandler.logger.Debug(response.Status)
+	rw.WriteHeader(response.StatusCode)
+
 	//Send the body
 	body, err := io.ReadAll(response.Body)
 	//agent.logger.Debug("Body:", body)
@@ -381,7 +390,7 @@ func (agentHandler *AgentHandler) HandleWAFOperationModeOnResponse(responseFindi
 // Handles the requests received by the agent
 func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.Request) {
 	//Log the endpoint where the request was made
-	agentHandler.logger.Info("Received request on", r.URL.Path)
+	agentHandler.logger.Info("Received", r.Method, "request on", r.URL.Path)
 
 	//If the requested path is favicon.ico then return the file from the static folder
 	if r.URL.Path == "/favicon.ico" {
