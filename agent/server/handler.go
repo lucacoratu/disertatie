@@ -217,19 +217,41 @@ func (agentHandler *AgentHandler) sendB64RequestToLLMAPI(req *http.Request) *dat
 
 	//Parse the response from the LLM
 	var llm_response_data data.LLMResponse
-	err = llm_response_data.FromJSON(llm_response.Body)
+	// err = llm_response_data.FromJSON(llm_response.Body)
+	// if err != nil {
+	// 	agentHandler.logger.Error("Failed to decode JSON from LLM API response", err.Error())
+	// 	return nil
+	// }
+	llm_response_data.Headers = nil
+	llm_response_body_data, err := io.ReadAll(llm_response.Body)
 	if err != nil {
-		agentHandler.logger.Error("Failed to decode JSON from LLM API response", err.Error())
+		agentHandler.logger.Error("Failed to read LLM API response", err.Error())
 		return nil
 	}
+	llm_response_data.Body = string(llm_response_body_data)
 
 	return &llm_response_data
 }
 
 // Handle the request if the agent is running adaptive mode of operation
-func (agentHandler *AgentHandler) HandleAdaptiveOperationMode(rw http.ResponseWriter, r *http.Request, requestFindings []data.FindingData, requestRuleFindings []*data.RuleFindingData) {
+func (agentHandler *AgentHandler) HandleAdaptiveOperationMode(rw http.ResponseWriter, r *http.Request, requestFindings []data.FindingData, requestRuleFindings []*data.RuleFindingData, aiClassification string) {
 	//Check if the request should be sent to the LLM API
 	//If it shouldn't be sent then serve a static page
+
+	//Check if the ai classifier says the request is benign and the rules didn't find anything
+	agentHandler.logger.Debug(aiClassification)
+	if len(requestRuleFindings) == 0 && aiClassification == "benign" {
+		agentHandler.logger.Debug("The request is benign, sending the request to the target web server")
+		//Send the request to the target server and send the response to the client
+		response, err := agentHandler.forwardRequest(r)
+		if err != nil {
+			agentHandler.logger.Error("Failed to send request to target server", err.Error())
+			return
+		}
+		//Forward the response back to the client
+		agentHandler.forwardResponse(rw, response)
+		return
+	}
 
 	//Send the request
 	agentHandler.logger.Debug("Sending request to LLM API...")
@@ -256,6 +278,12 @@ func (agentHandler *AgentHandler) HandleAdaptiveOperationMode(rw http.ResponseWr
 	rw.WriteHeader(http.StatusOK)
 
 	agentHandler.logger.Debug("Sending body...")
+
+	//Check if the endpoint is defined in the templates
+	//Templates will be used to mark the location in the HTML page where the response from the LLM API will be inserted
+	//This will be useful when wanting to mimic a website
+	//There should exist a default template
+
 	//Send the body
 	rw.Write([]byte(llm_response_data.Body))
 
@@ -373,7 +401,7 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 	//Run all the rules on the request
 	requestRuleFindings, _ := ruleRunner.RunRulesOnRequest(r)
 	//Run the ai classifier on the request
-	aiClassifierRunner.RunAIClassifierOnRequest(r)
+	requestClassification := aiClassifierRunner.RunAIClassifierOnRequest(r)
 
 	//Log request findings
 	agentHandler.logger.Debug("Request findings", requestFindings)
@@ -394,7 +422,7 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 
 	//If the mode of operation is adaptive then send the raw request encoded base64 to LLM
 	if agentHandler.configuration.OperationMode == "adaptive" {
-		agentHandler.HandleAdaptiveOperationMode(rw, r, requestFindings, requestRuleFindings)
+		agentHandler.HandleAdaptiveOperationMode(rw, r, requestFindings, requestRuleFindings, requestClassification)
 		//The function handles everything so we can return
 		return
 	}

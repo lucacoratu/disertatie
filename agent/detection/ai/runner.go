@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 
 	"github.com/lucacoratu/disertatie/agent/config"
 	"github.com/lucacoratu/disertatie/agent/data"
@@ -97,7 +98,7 @@ func (acr *AIClassifierRunner) RunAIClassifierOnRequest(r *http.Request) string 
 		}
 
 		acr.logger.Debug("Classification using AI for request is", string(classification))
-		return string(classification)
+		return strings.TrimSpace(string(classification))
 	}
 
 	return "benign"
