@@ -13,9 +13,11 @@ import (
 
 // Structure that will hold the configuration parameters of the proxy
 type Configuration struct {
-	ListeningProtocol      string   `json:"protocol" validate:"required"`                                             //The protocol the agent uses to communicate to users
+	ListeningProtocol      string   `json:"protocol" validate:"required,oneof_insensitive=http https"`                //The protocol the agent uses to communicate to users
 	ListeningAddress       string   `json:"address" validate:"required,ipv4"`                                         //Address to listen on (127.0.0.1, 0.0.0.0, etc.)
 	ListeningPort          string   `json:"port" validate:"required,number,gt=0,lt=65536"`                            //Port to listen on
+	TLSCertificateFilepath string   `json:"tlsCertificateFilepath"`                                                   //The path to the certificate file
+	TLSKeyFilepath         string   `json:"tlsKeyFilepath"`                                                           //The path to the key associated with TLS Certificate
 	ForbiddenPagePath      string   `json:"forbiddenPagePath" validate:"required"`                                    //Forbidden page location
 	BlacklistUserAgentPath string   `json:"blacklistUserAgentPath" validate:"required"`                               //Path to the wordlist of banned User-Agents
 	ForwardServerProtocol  string   `json:"forwardServerProtocol" validate:"required"`                                //Protocol used when forwarding request to webserver

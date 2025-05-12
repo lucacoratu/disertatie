@@ -7,10 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	ws_gorilla "github.com/gorilla/websocket"
 
 	"github.com/lucacoratu/disertatie/agent/api"
 	"github.com/lucacoratu/disertatie/agent/config"
@@ -387,8 +391,80 @@ func (agentHandler *AgentHandler) HandleWAFOperationModeOnResponse(responseFindi
 	return false, nil
 }
 
+// Upgrader for the websocket
+var upgrader = ws_gorilla.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true // Allow all origins, modify as needed
+	},
+}
+
+// Handle websocket messages
+func (agentHandler *AgentHandler) HandleWebsocketConnection(rw http.ResponseWriter, r *http.Request) {
+	// Upgrade incoming HTTP request to WebSocket
+	clientConn, err := upgrader.Upgrade(rw, r, nil)
+	if err != nil {
+		log.Println("Upgrade error:", err)
+		return
+	}
+	defer clientConn.Close()
+
+	agentHandler.logger.Debug("Upgraded to websocket connection")
+
+	//Create the target server
+	targetServer := agentHandler.configuration.ForwardServerAddress + ":" + agentHandler.configuration.ForwardServerPort
+	agentHandler.logger.Debug("Forwarding websocket messages to", targetServer)
+
+	// Dial to target backend WebSocket server
+	backendURL := url.URL{Scheme: "ws", Host: targetServer, Path: r.URL.Path}
+	backendConn, _, err := ws_gorilla.DefaultDialer.Dial(backendURL.String(), nil)
+	if err != nil {
+		log.Println("Dial error:", err)
+		return
+	}
+	defer backendConn.Close()
+
+	// Proxy messages between client and backend
+	errc := make(chan error, 2)
+
+	//Proxy messages from client to the backend web server
+	go agentHandler.proxyWS(clientConn, backendConn, errc)
+	//Proxy messages from the backend web server to the client
+	go agentHandler.proxyWS(backendConn, clientConn, errc)
+
+	<-errc // wait for first error or disconnect
+}
+
+func (agentHandler *AgentHandler) proxyWS(src, dest *ws_gorilla.Conn, errc chan error) {
+	for {
+		mt, message, err := src.ReadMessage()
+		if err != nil {
+			agentHandler.logger.Error("Websocket connection closed,", err.Error())
+			errc <- err
+			return
+		}
+
+		//Apply the rules on the websocket messages
+
+		err = dest.WriteMessage(mt, message)
+		if err != nil {
+			agentHandler.logger.Error("Websocket connection closed,", err.Error())
+			errc <- err
+			return
+		}
+	}
+}
+
 // Handles the requests received by the agent
 func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.Request) {
+	//Check if the request is a websocket upgrade
+	if ws_gorilla.IsWebSocketUpgrade(r) {
+		agentHandler.logger.Debug("Websocket upgrade message received")
+		//Handle the websocket connection separately
+		agentHandler.HandleWebsocketConnection(rw, r)
+		//Return from the function
+		return
+	}
+
 	//Log the endpoint where the request was made
 	agentHandler.logger.Info("Received", r.Method, "request on", r.URL.Path)
 

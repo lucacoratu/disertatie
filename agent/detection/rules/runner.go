@@ -515,3 +515,7 @@ func (rl *RuleRunner) RunRulesOnResponse(r *http.Response) ([]*data.RuleFindingD
 
 	return findings, nil
 }
+
+func (rl *RuleRunner) RunRulesOnWebsocketMessage(messageType int, messageText []byte) ([]*data.RuleFindingData, error) {
+	return nil, nil
+}

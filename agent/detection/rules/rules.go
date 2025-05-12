@@ -48,6 +48,15 @@ type BodyRule struct {
 	Encodings []string `yaml:"encodings"` //The encodings supported when searching
 }
 
+// Holds all the information about the websocket message
+type WebsocketRule struct {
+	MessageType int    `yaml:"message_type"` //The type of the websocket message (can be 1 - TextMessage, 2 - BinaryMessage, 8 - CloseMessage, 9 - PingMessage, 10 - PongMessage) RFC 6455, section 11.8.
+	Match       string `yaml:"match"`        //The string to find in message
+	Regex       string `yaml:"regex"`        //The regex used for matching
+	HexMatch    string `yaml:"hexmatch"`     //The hexstring to find in message
+	HexRegex    string `yaml:"hexregex"`     //The regex which contains hex bytes used for matching
+}
+
 // Holds all the information in the request field of the rule YAML file
 type RequestRule struct {
 	Method     *RuleSearchMode          `yaml:"method"`  //The modes to search on the method

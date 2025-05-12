@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -64,6 +65,21 @@ func (agent *AgentServer) Init() error {
 		agent.logger.Warning("No rules were loaded because the rules directory was not specified")
 		//Assign empty slice to the rules slice of the server structure
 		agent.rules = make([]rules.Rule, 0)
+	}
+
+	//Check if the listening protocol is https and if it is check if the certificate file and the key file exist on disk
+	if strings.ToLower(agent.configuration.ListeningProtocol) == "https" {
+		//Check if the certificate exists
+		if !utils.CheckFileExists(agent.configuration.TLSCertificateFilepath) {
+			agent.logger.Fatal("TLS Certificate file does not exist")
+			return errors.New("Invalid TLS certificate file path")
+		}
+
+		//Check if the key exists
+		if !utils.CheckFileExists(agent.configuration.TLSCertificateFilepath) {
+			agent.logger.Fatal("TLS key file does not exist")
+			return errors.New("Invalid TLS key file path")
+		}
 	}
 
 	//Assemble the collector base URL
@@ -172,8 +188,15 @@ func (agent *AgentServer) Run() {
 	var wait time.Duration = 5
 	// Run our server in a goroutine so that it doesn't block.
 	go func() {
-		if err := agent.srv.ListenAndServe(); err != nil {
-			agent.logger.Error(err.Error())
+		//Check if it should listen on TLS
+		if agent.configuration.ListeningProtocol == "https" {
+			if err := agent.srv.ListenAndServeTLS(agent.configuration.TLSCertificateFilepath, agent.configuration.TLSKeyFilepath); err != nil {
+				agent.logger.Error(err.Error())
+			}
+		} else {
+			if err := agent.srv.ListenAndServe(); err != nil {
+				agent.logger.Error(err.Error())
+			}
 		}
 	}()
 
