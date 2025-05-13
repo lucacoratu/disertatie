@@ -21,7 +21,7 @@ type Configuration struct {
 	ForbiddenPagePath      string   `json:"forbiddenPagePath" validate:"required"`                                    //Forbidden page location
 	BlacklistUserAgentPath string   `json:"blacklistUserAgentPath" validate:"required"`                               //Path to the wordlist of banned User-Agents
 	ForwardServerProtocol  string   `json:"forwardServerProtocol" validate:"required"`                                //Protocol used when forwarding request to webserver
-	ForwardServerAddress   string   `json:"forwardServerAddress" validate:"required,ipv4"`                            //Address of the webserver to send the request to
+	ForwardServerAddress   string   `json:"forwardServerAddress" validate:"required"`                                 //Address of the webserver to send the request to
 	ForwardServerPort      string   `json:"forwardServerPort" validate:"required,number,gt=0,lt=65536"`               //Port to forward the request to
 	APIProtocol            string   `json:"apiProtocol"`                                                              //API protocol
 	APIIpAddress           string   `json:"apiIpAddress"`                                                             //API ip address
