@@ -11,6 +11,7 @@ type LogData struct {
 	AgentId      string        `json:"agentId"`      //The UUID of the agent that collected the log data
 	RemoteIP     string        `json:"remoteIp"`     //The IP address of the sender of the request
 	Timestamp    int64         `json:"timestamp"`    //Timestamp when the request was received
+	Websocket    bool          `json:"websocket"`    //If the message is a websocket
 	Request      string        `json:"request"`      //The request base64 encoded
 	Response     string        `json:"response"`     // The response base64 encoded
 	Findings     []Finding     `json:"findings"`     //A list of findings
@@ -77,6 +78,7 @@ type LogDataElastic struct {
 	RequestPreview  string        `json:"request_preview"`  //The preview of the request
 	ResponsePreview string        `json:"response_preview"` //The preview of the response
 	Findings        []Finding     `json:"findings"`         //A list of findings
+	Websocket       bool          `json:"websocket"`        //If the message is an websocket message
 	RuleFindings    []RuleFinding `json:"ruleFindings"`     //The list of rule findings
 }
 

@@ -435,6 +435,9 @@ func (agentHandler *AgentHandler) HandleWebsocketConnection(rw http.ResponseWrit
 }
 
 func (agentHandler *AgentHandler) proxyWS(src, dest *ws_gorilla.Conn, errc chan error) {
+	//Create the rule runner
+	ruleRunner := rules.NewRuleRunner(agentHandler.logger, agentHandler.rules, agentHandler.apiWsConn, agentHandler.configuration)
+
 	for {
 		mt, message, err := src.ReadMessage()
 		if err != nil {
@@ -444,6 +447,40 @@ func (agentHandler *AgentHandler) proxyWS(src, dest *ws_gorilla.Conn, errc chan 
 		}
 
 		//Apply the rules on the websocket messages
+		findings, err := ruleRunner.RunRulesOnWebsocketMessage(mt, message)
+		if err != nil {
+			agentHandler.logger.Error("Error when running rules on websocket message", err.Error())
+		}
+		agentHandler.logger.Debug(findings)
+
+		//Convert the request to base64
+		b64RawRequest := b64.StdEncoding.EncodeToString(message)
+
+		//Add all the findings from all the validators to a list which will be sent to the API
+		allFindings := make([]data.RuleFinding, 0)
+		//Add all request findings
+		for _, finding := range findings {
+			allFindings = append(allFindings, data.RuleFinding{Request: finding, Response: nil})
+		}
+
+		//Create the log structure that should be sent to the API
+		logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: src.NetConn().RemoteAddr().String(), Timestamp: time.Now().Unix(), Websocket: true, Request: b64RawRequest, Response: "", Findings: nil, RuleFindings: allFindings}
+
+		if true {
+			agentHandler.logger.Debug("Log data", logData)
+		}
+
+		//Send the findings to the API
+		if agentHandler.apiWsConn != nil {
+			//Send log information to the API
+			apiHandler := api.NewAPIHandler(agentHandler.logger, agentHandler.configuration)
+			_, err = apiHandler.SendLog(agentHandler.apiBaseURL, logData)
+			//Check if an error occured when sending log to the API
+			if err != nil {
+				agentHandler.logger.Error(err.Error())
+				//return
+			}
+		}
 
 		err = dest.WriteMessage(mt, message)
 		if err != nil {
@@ -576,7 +613,7 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 	}
 
 	//Create the log structure that should be sent to the API
-	logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: r.RemoteAddr, Timestamp: time.Now().Unix(), Request: b64RawRequest, Response: b64RawResponse, Findings: allFindings, RuleFindings: allRuleFindings}
+	logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: r.RemoteAddr, Timestamp: time.Now().Unix(), Websocket: false, Request: b64RawRequest, Response: b64RawResponse, Findings: allFindings, RuleFindings: allRuleFindings}
 
 	if true {
 		agentHandler.logger.Debug("Log data", logData)

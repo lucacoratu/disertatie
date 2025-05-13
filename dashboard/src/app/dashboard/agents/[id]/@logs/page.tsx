@@ -8,7 +8,7 @@ async function getLogs(agentId: string): Promise<LogShortResponse> {
 	//Create the URL where the logs will be fetched from
 	const URL = `${constants.apiBaseURL}/agents/${agentId}/logs`;
 	//Fetch the data (revalidate after 10 minutes)
-	const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+	const res = await fetch(URL, {next: {revalidate: 0}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
 	//Check if an error occured
 	if(!res.ok) {
 		throw new Error("could not load logs");
@@ -23,7 +23,7 @@ async function getLogsElastic(agentId: string): Promise<LogsShortElasticResponse
 	//Create the URL where the logs will be fetched from
 	const URL = `${constants.apiBaseURL}/agents/${agentId}/logs-elastic`;
 	//Fetch the data (revalidate after 10 minutes)
-	const res = await fetch(URL, {next: {revalidate: 0}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+	const res = await fetch(URL, {cache: "no-store", headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
 	//Check if an error occured
 	if(!res.ok) {
 		throw new Error("could not load logs");
@@ -43,7 +43,7 @@ async function getLogsPaginated(agentId: string, nextPage: string | null ): Prom
 	  URL = `${constants.apiBaseURL}/agents/${agentId}/logs?page=${nextPage}`;
   	}
 	//Fetch the data (revalidate after 10 minutes)
-	const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+	const res = await fetch(URL, {next: {revalidate: 0}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
 	//Check if an error occured
 	if(!res.ok) {
 		throw new Error("could not load logs");
@@ -58,7 +58,7 @@ async function getFindingsStringFormat(): Promise<FindingClassificationString[]>
 	//Create the URL where the findings classfication in string format will be fetched from
 	const URL = `${constants.apiBaseURL}/findings/string`;
 	//Fetch the data (revalidate after 10 minutes)
-	const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+	const res = await fetch(URL, {next: {revalidate: 0}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
 	//Check if an error occured
 	if(!res.ok) {
 		throw new Error("could not load findings string");
@@ -84,12 +84,19 @@ export default async function TableLogsPage({ params }: { params: { id: string }
 	const tableData: LogColumn[] = log.logs?.map((l, index) => {
 		//Convert timestamp to local date time
 		const logDate = new Date(l.timestamp * 1000);
+		let requestPreviewParts: string[];
+		if(l.websocket == true) {
+			requestPreviewParts = ["WS", l.request_preview]
+		  } else {
+			requestPreviewParts = l.request_preview.split(' '); 
+		}
+
 		const logCol: LogColumn = {
 			id: l.id,
 			agentId: agentId,
 			remoteip: l.remoteIp,
-			requestmethod: l.request_preview.split(" ")[0],
-			url: l.request_preview.split(" ")[1],
+			requestmethod: requestPreviewParts[0],
+			url: requestPreviewParts[1],
 			response: l.response_preview.split(" ").slice(1, Infinity).join(" "),
 			timestamp: logDate.toLocaleString(),
 			findings: l.findings,

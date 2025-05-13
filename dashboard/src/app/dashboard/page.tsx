@@ -45,7 +45,7 @@ async function GetRecentLogs() {
   //Create the URL where the logs will be fetched from
   const URL = `${constants.apiBaseURL}/logs/recent`;
   //Fetch the data (revalidate after 10 minutes)
-  const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+  const res = await fetch(URL, {cache: "no-store", headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
   //Check if an error occured
   if(!res.ok) {
     throw new Error("could not load logs");
@@ -60,7 +60,7 @@ async function GetRecentClassifiedLogs() {
   //Create the URL where the logs will be fetched from
   const URL = `${constants.apiBaseURL}/logs/recent-classified`;
   //Fetch the data (revalidate after 10 minutes)
-  const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+  const res = await fetch(URL, {cache: "no-store", headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
   //Check if an error occured
   if(!res.ok) {
     throw new Error("could not load logs");
@@ -266,7 +266,7 @@ export default async function DashboardHome() {
                       Method
                     </TableHead>
                     <TableHead className="text-center max-w-32">
-                      URL
+                      URL / WS Message
                     </TableHead>
                     <TableHead className="text-right max-w-16">
                       Status Code
@@ -277,7 +277,12 @@ export default async function DashboardHome() {
                   {logs.logs.map((log) => {
                     //Convert the date from unix timestamp to locale date
                     const logDate: Date = new Date(log.timestamp * 1000);
-                    const requestPreviewParts: string[] = log.request_preview.split(' '); 
+                    let requestPreviewParts: string[];
+                    if(log.websocket == true) {
+                      requestPreviewParts = ["WS", log.request_preview]
+                    } else {
+                      requestPreviewParts = log.request_preview.split(' '); 
+                    }
                     const responsePreviewParts: string[] = log.response_preview.split(' '); 
                     return (
                       <TableRow key={log.id}>
@@ -398,7 +403,7 @@ export default async function DashboardHome() {
                         Method
                       </TableHead>
                       <TableHead className="text-center max-w-96">
-                        URL
+                        URL / WS Message
                       </TableHead>
                       <TableHead className="text-center max-w-10">
                         Status Code
@@ -412,7 +417,12 @@ export default async function DashboardHome() {
                     {classifiedLogs.logs.map((log) => {
                       //Convert the date from unix timestamp to locale date
                       const logDate: Date = new Date(log.timestamp * 1000);
-                      const requestPreviewParts: string[] = log.request_preview.split(' '); 
+                      let requestPreviewParts: string[];
+                      if(log.websocket == true) {
+                        requestPreviewParts = ["WS", log.request_preview]
+                      } else {
+                        requestPreviewParts = log.request_preview.split(' '); 
+                      }
                       const responsePreviewParts: string[] = log.response_preview.split(' ');
                       const findings: RuleFinding[] = log.ruleFindings;
                       return (

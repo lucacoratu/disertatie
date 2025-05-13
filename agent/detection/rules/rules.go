@@ -16,6 +16,12 @@ type RuleInfo struct {
 	Encodings      []string `yaml:"encodings"`      //The encodings supported when searching (this will apply to all the fields)
 }
 
+// Holds all the modes the hex search can be made
+type RuleHexSearchMod struct {
+	Match string `yaml:"match"` //The hex string to find
+	Regex string `yaml:"regex"` //The regex (as hex - except regex special chars) to match
+}
+
 // Holds all the modes the search can be made
 type RuleSearchMode struct {
 	Match     string   `yaml:"match"`     //The string to match exactly
@@ -75,10 +81,11 @@ type ResponseRule struct {
 
 // Structure which holds all the information about the rule parsed from the rule.yaml file
 type Rule struct {
-	Id       string        `yaml:"id"`       //The ID of the rule (should be unique)
-	Info     *RuleInfo     `yaml:"info"`     //The info structure
-	Request  *RequestRule  `yaml:"request"`  //The request matchers
-	Response *ResponseRule `yaml:"response"` //The response matchers
+	Id        string         `yaml:"id"`        //The ID of the rule (should be unique)
+	Info      *RuleInfo      `yaml:"info"`      //The info structure
+	Request   *RequestRule   `yaml:"request"`   //The request matchers
+	Response  *ResponseRule  `yaml:"response"`  //The response matchers
+	Websocket *WebsocketRule `yaml:"websocket"` //The websocket matchers
 }
 
 // Function to read the yaml rule from a reader into the struct

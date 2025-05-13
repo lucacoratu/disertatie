@@ -62,11 +62,15 @@ func (elastic *ElasticConnection) InsertLog(log data.LogData) error {
 		return errors.New("could not decode the request from base64, " + err.Error())
 	}
 
-	//Convert response from base64 to string
-	rawResponse, err := b64.StdEncoding.DecodeString(log.Response)
-	//Check if an error occured when decoding the request from base64
-	if err != nil {
-		return errors.New("could not decode the request from base64, " + err.Error())
+	//Check if the log is a websocket message
+	rawResponse := []byte{}
+	if !log.Websocket {
+		//Convert response from base64 to string
+		rawResponse, err = b64.StdEncoding.DecodeString(log.Response)
+		//Check if an error occured when decoding the request from base64
+		if err != nil {
+			return errors.New("could not decode the request from base64, " + err.Error())
+		}
 	}
 
 	//Set the decoded values to the log struct
@@ -147,7 +151,7 @@ func (elastic *ElasticConnection) GetRecentLogs() []data.LogDataElastic {
 		//Create the response preview
 		response_preview := strings.Split(hit.Source.Response, "\n")[0]
 		//Create the rule findings structure
-		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Timestamp: hit.Source.Timestamp, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
+		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Websocket: hit.Source.Websocket, Timestamp: hit.Source.Timestamp, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
 	}
 
 	elastic.logger.Debug(len(response.Hits.Hits))
@@ -203,7 +207,7 @@ func (elastic *ElasticConnection) GetRecentRuleClassifiedLogs() []data.LogDataEl
 		//Create the response preview
 		response_preview := strings.Split(hit.Source.Response, "\n")[0]
 		//Create the rule findings structure
-		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Timestamp: hit.Source.Timestamp, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
+		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Timestamp: hit.Source.Timestamp, Websocket: hit.Source.Websocket, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
 	}
 
 	elastic.logger.Debug(len(response.Hits.Hits))
@@ -246,11 +250,14 @@ func (elastic *ElasticConnection) GetAllLogs() []data.LogDataElastic {
 
 	for _, hit := range response.Hits.Hits {
 		//Create the request preview
-		request_preview := strings.Split(hit.Source.Request, "\n")[0]
+		request_preview := hit.Source.Request
+		if !hit.Source.Websocket {
+			request_preview = strings.Split(hit.Source.Request, "\n")[0]
+		}
 		//Create the response preview
 		response_preview := strings.Split(hit.Source.Response, "\n")[0]
 		//Create the rule findings structure
-		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Timestamp: hit.Source.Timestamp, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
+		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Timestamp: hit.Source.Timestamp, Websocket: hit.Source.Websocket, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
 	}
 
 	elastic.logger.Debug(len(response.Hits.Hits))
@@ -302,11 +309,14 @@ func (elastic *ElasticConnection) GetAllClassifiedLogs() []data.LogDataElastic {
 
 	for _, hit := range response.Hits.Hits {
 		//Create the request preview
-		request_preview := strings.Split(hit.Source.Request, "\n")[0]
+		request_preview := hit.Source.Request
+		if !hit.Source.Websocket {
+			request_preview = strings.Split(hit.Source.Request, "\n")[0]
+		}
 		//Create the response preview
 		response_preview := strings.Split(hit.Source.Response, "\n")[0]
 		//Create the rule findings structure
-		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Timestamp: hit.Source.Timestamp, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
+		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Timestamp: hit.Source.Timestamp, Websocket: hit.Source.Websocket, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
 	}
 
 	elastic.logger.Debug(len(response.Hits.Hits))
@@ -351,11 +361,14 @@ func (elastic *ElasticConnection) GetLogsPaginated(agentId string) []data.LogDat
 
 	for _, hit := range response.Hits.Hits {
 		//Create the request preview
-		request_preview := strings.Split(hit.Source.Request, "\n")[0]
+		request_preview := hit.Source.Request
+		if !hit.Source.Websocket {
+			request_preview = strings.Split(hit.Source.Request, "\n")[0]
+		}
 		//Create the response preview
 		response_preview := strings.Split(hit.Source.Response, "\n")[0]
 		//Create the rule findings structure
-		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Timestamp: hit.Source.Timestamp, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
+		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Timestamp: hit.Source.Timestamp, Websocket: hit.Source.Websocket, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
 	}
 
 	elastic.logger.Debug(len(response.Hits.Hits))
@@ -404,7 +417,7 @@ func (elastic *ElasticConnection) GetAllAgentLogs(agentId string) []data.LogData
 		//Create the response preview
 		response_preview := strings.Split(hit.Source.Response, "\n")[0]
 		//Create the rule findings structure
-		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Timestamp: hit.Source.Timestamp, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
+		returnData = append(returnData, data.LogDataElastic{Id: hit.Source.Id, AgentId: hit.Source.AgentId, RemoteIP: hit.Source.RemoteIP, Timestamp: hit.Source.Timestamp, Websocket: hit.Source.Websocket, RequestPreview: request_preview, ResponsePreview: response_preview, Findings: hit.Source.Findings, RuleFindings: hit.Source.RuleFindings})
 	}
 
 	elastic.logger.Debug(len(response.Hits.Hits))

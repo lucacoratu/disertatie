@@ -142,6 +142,7 @@ type LogShort = {
     request_preview: string,
     response_preview: string,
     findings: Finding[],
+	websocket: boolean,
 	ruleFindings: RuleFinding[],
 }
 

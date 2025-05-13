@@ -516,6 +516,98 @@ func (rl *RuleRunner) RunRulesOnResponse(r *http.Response) ([]*data.RuleFindingD
 	return findings, nil
 }
 
+// Searches for hex match on the value or if the regex can find any hex matches on the given value
+// @param value - the value to be searched uppon (as hex)
+// @param mode - the rule search specification
+// Returns the list of matches it found
+func (rl *RuleRunner) searchHex(value []byte, mode *RuleHexSearchMod) []string {
+	allMatches := make([]string, 0)
+
+	//Check if the exact match is specified
+	if mode.Match != "" {
+		//Check if the value as hex contains the match string
+		if strings.Contains(strings.ToLower(hex.EncodeToString(value)), strings.ToLower(mode.Match)) {
+			//Add the match to the list of matches
+			allMatches = append(allMatches, mode.Match)
+		}
+	}
+
+	//Check if the regex match is specified
+	if mode.Regex != "" {
+		//Compile the regex
+		r, err := regexp.Compile(mode.Regex)
+
+		//Check if an error occured during the regex compilation
+		if err != nil {
+			rl.logger.Error("Could not the compile regex matcher from the rule, invalid regex:", mode.Regex)
+			return nil
+		}
+		//Find all the matches for the regex
+		matches := r.FindAllString(strings.ToLower(hex.EncodeToString(value)), -1)
+		//rl.logger.Debug("Value:", value, "Regex:", mode.Regex, "Matches:", matches)
+		//Check if there were any matches
+		if len(matches) > 0 {
+			//rl.logger.Debug("Regex,", mode.Regex, "matched on", value)
+			//Add the matches to the list of matches
+			allMatches = append(allMatches, matches...)
+		}
+	}
+
+	//Return all the matches
+	return allMatches
+}
+
+// Run the rules on the websocket message
 func (rl *RuleRunner) RunRulesOnWebsocketMessage(messageType int, messageText []byte) ([]*data.RuleFindingData, error) {
-	return nil, nil
+	//Create the list which will hold all the matches from all the rules for the request
+	findings := make([]*data.RuleFindingData, 0)
+
+	//Check if the rules are nil
+	if rl.rules == nil {
+		return findings, nil
+	}
+
+	//Loop through all the rules and check if any one of them matches a string in the request
+	//TO DO... Run each rule on a different go routine
+	for _, rule := range rl.rules {
+		//Create the list of all matches
+		allMatches := make([]string, 0)
+
+		//Check if the rule has request matchers specified
+		if rule.Websocket == nil {
+			continue
+		}
+
+		//Check if the message is text
+		if messageType == 1 {
+			matches := rl.search(string(messageText), &RuleSearchMode{Match: rule.Websocket.Match, Regex: rule.Websocket.Regex, Encodings: nil})
+			allMatches = append(allMatches, matches...)
+		}
+
+		//Check if the message is binary and apply the hex search
+		if messageType == 2 {
+			matches := rl.searchHex(messageText, &RuleHexSearchMod{Match: rule.Websocket.Match, Regex: rule.Websocket.Regex})
+			allMatches = append(allMatches, matches...)
+		}
+
+		//Append matches to the list of findings
+		for _, match := range allMatches {
+			findingFound := false
+			//Check if the finding is not the classification is already made for this request
+			for _, finding := range findings {
+				if finding.RuleId == rule.Id {
+					findingFound = true
+					break
+				}
+			}
+
+			if findingFound {
+				continue
+			}
+
+			findings = append(findings, &data.RuleFindingData{RuleId: rule.Id, RuleName: rule.Info.Name, RuleDescription: rule.Info.Description, Classification: rule.Info.Classification, Severity: ConvertSeverityStringToInteger(rule.Info.Severity), MatchedString: match, Length: int64(len(match)), Line: -1, LineIndex: -1})
+		}
+	}
+
+	return findings, nil
 }

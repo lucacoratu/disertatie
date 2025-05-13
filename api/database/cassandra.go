@@ -330,26 +330,41 @@ func (cassandra *CassandraConnection) InsertLog(logData data.LogData) (string, b
 	}
 
 	//Create the request preview (the first line of the request)
-	request_preview := strings.Split(string(rawRequest), "\n")[0]
+	request_preview := string(rawRequest)
+	if !logData.Websocket {
+		request_preview = strings.Split(string(rawRequest), "\n")[0]
+	}
 
 	//Encode the request preview to base64
 	enc_request_preview := base64.StdEncoding.EncodeToString([]byte(request_preview))
 
 	//Get the request method
-	request_method := strings.Split(request_preview, " ")[0]
+	request_method := "WS"
+	if !logData.Websocket {
+		request_method = strings.Split(request_preview, " ")[0]
+	}
 
 	//Convert response from base64 to string
-	rawResponse, err := b64.StdEncoding.DecodeString(logData.Response)
-	//Check if an error occured when decoding the response from base64
-	if err != nil {
-		return "", false, errors.New("could not decode the response from base64, " + err.Error())
+	rawResponse := []byte{}
+	if !logData.Websocket {
+		rawResponse, err = b64.StdEncoding.DecodeString(logData.Response)
+		//Check if an error occured when decoding the response from base64
+		if err != nil {
+			return "", false, errors.New("could not decode the response from base64, " + err.Error())
+		}
 	}
 
 	//Create the response preview (the first line of the response)
-	response_preview := strings.Split(string(rawResponse), "\n")[0]
+	response_preview := ""
+	if !logData.Websocket {
+		response_preview = strings.Split(string(rawResponse), "\n")[0]
+	}
 
 	//Get the response status code
-	response_code := strings.Split(response_preview, " ")[1]
+	response_code := "200"
+	if !logData.Websocket {
+		response_code = strings.Split(response_preview, " ")[1]
+	}
 
 	//Convert unix timestamp to cassandra timestamp
 	cassandraTimestamp := time.Unix(logData.Timestamp, 0)
