@@ -72,7 +72,7 @@ const HTTPHighlighter: FC<HTTPHighlighterProps> = ({log}): JSX.Element => {
                 </div>
                 <ScrollArea>
                     {requestHeaders != "" &&
-                        <SyntaxHighlighter language="http" style={theme === "light" ? oneLight : oneDark} showLineNumbers wrapLines={true} lineProps={{style: {wordBreak: 'break-all', whiteSpace: 'pre-wrap'}}} >
+                        <SyntaxHighlighter language="http" style={theme === "light" ? oneLight : oneDark} showLineNumbers z >
                             {requestHeaders}
                         </SyntaxHighlighter>
                     }
