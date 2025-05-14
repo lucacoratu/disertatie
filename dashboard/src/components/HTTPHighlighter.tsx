@@ -72,12 +72,12 @@ const HTTPHighlighter: FC<HTTPHighlighterProps> = ({log}): JSX.Element => {
                 </div>
                 <ScrollArea>
                     {requestHeaders != "" &&
-                        <SyntaxHighlighter language="http" style={theme === "light" ? oneLight : oneDark} showLineNumbers>
+                        <SyntaxHighlighter language="http" style={theme === "light" ? oneLight : oneDark} showLineNumbers wrapLines={true} lineProps={{style: {wordBreak: 'break-all', whiteSpace: 'pre-wrap'}}} >
                             {requestHeaders}
                         </SyntaxHighlighter>
                     }
                     {requestBody != "" && 
-                        <SyntaxHighlighter language="json" style={theme === "light" ? oneLight : oneDark} showLineNumbers>
+                        <SyntaxHighlighter language="json" style={theme === "light" ? oneLight : oneDark} showLineNumbers wrapLines={true} lineProps={{style: {wordBreak: 'break-all', whiteSpace: 'pre-wrap'}}}>
                             {requestBody}
                         </SyntaxHighlighter>
                     }
@@ -92,12 +92,12 @@ const HTTPHighlighter: FC<HTTPHighlighterProps> = ({log}): JSX.Element => {
                 </div>
                 <ScrollArea>
                     {responseHeaders != "" &&
-                        <SyntaxHighlighter language="http" style={theme === "light" ? oneLight : oneDark} showLineNumbers>
+                        <SyntaxHighlighter language="http" style={theme === "light" ? oneLight : oneDark} showLineNumbers wrapLines={true} lineProps={{style: {wordBreak: 'break-all', whiteSpace: 'pre-wrap'}}}>
                             {responseHeaders}
                         </SyntaxHighlighter>
                     }
                     {responseBody != "" && 
-                        <SyntaxHighlighter language="html" style={theme === "light" ? oneLight : oneDark} showLineNumbers>
+                        <SyntaxHighlighter language="html" style={theme === "light" ? oneLight : oneDark} showLineNumbers wrapLines={true} lineProps={{style: {wordBreak: 'break-all', whiteSpace: 'pre-wrap'}}}>
                             {responseBody}
                         </SyntaxHighlighter>
                     }
