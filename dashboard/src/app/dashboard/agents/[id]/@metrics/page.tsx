@@ -8,7 +8,7 @@ async function getMethodsMetrics(agentId: string) : Promise<MethodsMetrics[]>{
 	//Create the URL where the metrics will be fetched from
 	const URL = `${constants.apiBaseURL}/agents/${agentId}/logs-methods-metrics`;
 	//Fetch the data (revalidate data after 10 minutes)
-	const res = await fetch(URL, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+	const res = await fetch(URL, {cache: "no-store", headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
 	//Check if an error occured
 	if(!res.ok) {
 		throw new Error("could not load methods metrics");
@@ -24,7 +24,7 @@ async function getDaysMetrics(agentId: string) : Promise<DaysMetrics[]> {
 	//Create the URL where the metrics will be fetched from
 	const URL = `${constants.apiBaseURL}/agents/${agentId}/logs-each-day-metrics`;
 	//Fetch the data (revalidate after 10 minutes)
-	const res = await fetch(URL, {next: { revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+	const res = await fetch(URL, {cache:"no-store", headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
 	//Check if an error occured
 	if(!res.ok) {
 		throw new Error("could not load days metrics");
@@ -39,7 +39,7 @@ async function getStatusCodeMetrics(agentId: string) : Promise<StatusCodeMetrics
 	//Create the URL where the metrics will be fetched from
 	const URL = `${constants.apiBaseURL}/agents/${agentId}/logs-statuscode-metrics`;
 	//Fetch the data (revalidate after 10 minutes)
-	const res = await fetch(URL, {next: { revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+	const res = await fetch(URL, {cache: "no-store", headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
 	//Check if an error occured
 	if(!res.ok) {
 		throw new Error("could not load status code metrics");
@@ -54,7 +54,7 @@ async function getIPAddressesMetrics(agentId: string) : Promise<IPMetrics[]> {
 	//Create the URL where the metrics will be fetched from
 	const URL = `${constants.apiBaseURL}/agents/${agentId}/logs-ipaddresses-metrics`;
 	//Fetch the data (revalidate after 10 minutes)
-	const res = await fetch(URL, {next: { revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+	const res = await fetch(URL, {cache: "no-store", headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
 	//Check if an error occured
 	if(!res.ok) {
 		throw new Error("could not load status code metrics");

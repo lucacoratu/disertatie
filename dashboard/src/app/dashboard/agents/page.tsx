@@ -10,7 +10,7 @@ async function getAgents() : Promise<Agent[]> {
     //Create the URL where the data will be fetched from
     const url = constants.apiBaseURL + "/agents";
     //Revalidate the data once every 10 mins
-    const res = await fetch(url, { next: { revalidate: 600 }, headers: {Cookie: `${cookie?.name}=${cookie?.value}`} });
+    const res = await fetch(url, { cache: "no-store", headers: {Cookie: `${cookie?.name}=${cookie?.value}`} });
     //Check if there was an error
     if(!res.ok) {
         throw new Error("could not get agents data");
@@ -24,7 +24,7 @@ async function GetConnectedAgents() : Promise<string[]> {
     const cookie = cookies().get('session');
     //Create the URL where the data will be fetched froms
     const url = constants.apiBaseURL + "/agents/connected";
-    const res = await fetch(url, {next: {revalidate: 600}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+    const res = await fetch(url, {cache: "no-store", headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
     if(!res.ok) {
         throw new Error("could not get connected agents");
     }

@@ -8,7 +8,7 @@ async function getClassifiedLogs(): Promise<LogShortResponse> {
 	//Create the URL where the logs will be fetched from
 	const URL = `${constants.apiBaseURL}/logs/classified`;
 	//Fetch the data (revalidate after 10 minutes)
-	const res = await fetch(URL, {next: {revalidate: 0}, headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
+	const res = await fetch(URL, {cache: "no-store", headers: {Cookie: `${cookie?.name}=${cookie?.value}`}});
 	//Check if an error occured
 	if(!res.ok) {
 		throw new Error("could not load logs");

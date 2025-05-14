@@ -11,7 +11,7 @@ async function getMachines() : Promise<Machine[]> {
     //Create the URL for fetching the machines
     const url = constants.apiBaseURL + "/machines" 
     //Revalidate the data once every 10 mins
-    const res = await fetch(url, { next: { revalidate: 600 }, headers: {Cookie: `${cookie?.name}=${cookie?.value}`} });
+    const res = await fetch(url, { cache: "no-store", headers: {Cookie: `${cookie?.name}=${cookie?.value}`} });
     //Check if there was an error
     if(!res.ok) {
         throw new Error("could not get machines data");
