@@ -578,16 +578,18 @@ func (rl *RuleRunner) RunRulesOnWebsocketMessage(messageType int, messageText []
 			continue
 		}
 
-		//Check if the message is text
-		if messageType == 1 {
-			matches := rl.search(string(messageText), &RuleSearchMode{Match: rule.Websocket.Match, Regex: rule.Websocket.Regex, Encodings: nil})
-			allMatches = append(allMatches, matches...)
-		}
+		for _, ws_rule := range rule.Websocket {
+			//Check if the message is text
+			if messageType == 1 {
+				matches := rl.search(string(messageText), &RuleSearchMode{Match: ws_rule.Match, Regex: ws_rule.Regex, Encodings: nil})
+				allMatches = append(allMatches, matches...)
+			}
 
-		//Check if the message is binary and apply the hex search
-		if messageType == 2 {
-			matches := rl.searchHex(messageText, &RuleHexSearchMod{Match: rule.Websocket.Match, Regex: rule.Websocket.Regex})
-			allMatches = append(allMatches, matches...)
+			//Check if the message is binary and apply the hex search
+			if messageType == 2 {
+				matches := rl.searchHex(messageText, &RuleHexSearchMod{Match: ws_rule.Match, Regex: ws_rule.Regex})
+				allMatches = append(allMatches, matches...)
+			}
 		}
 
 		//Append matches to the list of findings

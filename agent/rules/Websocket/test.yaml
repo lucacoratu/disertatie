@@ -5,6 +5,7 @@ info:
   description: Tests the match in the websocket message
   severity: low
   classification: lfi
+  action: drop
 
 websocket:
-  match: "test"
+  - match: "test"

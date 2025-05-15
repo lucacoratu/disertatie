@@ -62,20 +62,24 @@ func (elastic *ElasticConnection) InsertLog(log data.LogData) error {
 		return errors.New("could not decode the request from base64, " + err.Error())
 	}
 
-	//Check if the log is a websocket message
-	rawResponse := []byte{}
-	if !log.Websocket {
-		//Convert response from base64 to string
-		rawResponse, err = b64.StdEncoding.DecodeString(log.Response)
-		//Check if an error occured when decoding the request from base64
-		if err != nil {
-			return errors.New("could not decode the request from base64, " + err.Error())
-		}
+	//Convert response from base64 to string
+	rawResponse, err := b64.StdEncoding.DecodeString(log.Response)
+	//Check if an error occured when decoding the request from base64
+	if err != nil {
+		elastic.logger.Error("could not decode the response from base64, " + err.Error())
+
+		///Empty value in response
+		log.Response = ""
 	}
 
 	//Set the decoded values to the log struct
 	log.Request = string(rawRequest)
-	log.Response = string(rawResponse)
+
+	//If the response could have been decoded from
+	//Applicable for websocket 403 messages
+	if err == nil {
+		log.Response = string(rawResponse)
+	}
 
 	//Marshal the struct to json string
 	logString, err := json.Marshal(log)

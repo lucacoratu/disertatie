@@ -81,11 +81,11 @@ type ResponseRule struct {
 
 // Structure which holds all the information about the rule parsed from the rule.yaml file
 type Rule struct {
-	Id        string         `yaml:"id"`        //The ID of the rule (should be unique)
-	Info      *RuleInfo      `yaml:"info"`      //The info structure
-	Request   *RequestRule   `yaml:"request"`   //The request matchers
-	Response  *ResponseRule  `yaml:"response"`  //The response matchers
-	Websocket *WebsocketRule `yaml:"websocket"` //The websocket matchers
+	Id        string           `yaml:"id"`        //The ID of the rule (should be unique)
+	Info      *RuleInfo        `yaml:"info"`      //The info structure
+	Request   *RequestRule     `yaml:"request"`   //The request matchers
+	Response  *ResponseRule    `yaml:"response"`  //The response matchers
+	Websocket []*WebsocketRule `yaml:"websocket"` //The websocket matchers
 }
 
 // Function to read the yaml rule from a reader into the struct

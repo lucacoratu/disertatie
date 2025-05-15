@@ -456,15 +456,31 @@ func (agentHandler *AgentHandler) proxyWS(src, dest *ws_gorilla.Conn, errc chan 
 		//Convert the request to base64
 		b64RawRequest := b64.StdEncoding.EncodeToString(message)
 
+		//Initialize the request should be blocked variable
+		var requestBlocked bool = false
+
 		//Add all the findings from all the validators to a list which will be sent to the API
 		allFindings := make([]data.RuleFinding, 0)
 		//Add all request findings
 		for _, finding := range findings {
 			allFindings = append(allFindings, data.RuleFinding{Request: finding, Response: nil})
+
+			rule_action := rules.GetRuleAction(agentHandler.rules, finding.RuleId)
+			if rule_action == "drop" || rule_action == "" {
+				requestBlocked = true
+			}
 		}
+
+		//Initialize the forbidden message
+		forbiddenMessage := []byte("{\"status_code\": 403, \"message\": \"Forbidden, you do not have permissions to access this resource\"}")
 
 		//Create the log structure that should be sent to the API
 		logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: src.NetConn().RemoteAddr().String(), Timestamp: time.Now().Unix(), Websocket: true, Request: b64RawRequest, Response: "", Findings: nil, RuleFindings: allFindings}
+
+		//If the request is blocked then add the forbidden message as response in the log data
+		if requestBlocked {
+			logData.Response = b64.StdEncoding.EncodeToString(forbiddenMessage)
+		}
 
 		if true {
 			agentHandler.logger.Debug("Log data", logData)
@@ -482,11 +498,18 @@ func (agentHandler *AgentHandler) proxyWS(src, dest *ws_gorilla.Conn, errc chan 
 			}
 		}
 
-		err = dest.WriteMessage(mt, message)
-		if err != nil {
-			agentHandler.logger.Error("Websocket connection closed,", err.Error())
-			errc <- err
-			return
+		//If the request is blocked
+		if requestBlocked {
+			src.WriteMessage(ws_gorilla.TextMessage, forbiddenMessage)
+		}
+
+		if !requestBlocked {
+			err = dest.WriteMessage(mt, message)
+			if err != nil {
+				agentHandler.logger.Error("Websocket connection closed,", err.Error())
+				errc <- err
+				return
+			}
 		}
 	}
 }
