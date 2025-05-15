@@ -418,12 +418,15 @@ export default async function DashboardHome() {
                       //Convert the date from unix timestamp to locale date
                       const logDate: Date = new Date(log.timestamp * 1000);
                       let requestPreviewParts: string[];
+                      let responsePreviewParts: string[];
                       if(log.websocket == true) {
-                        requestPreviewParts = ["WS", log.request_preview]
+                        requestPreviewParts = ["WS", log.request_preview];
+                        responsePreviewParts = ["", log.response_preview.slice(16,19)];
                       } else {
                         requestPreviewParts = log.request_preview.split(' '); 
+                        responsePreviewParts = log.response_preview.split(' ');
                       }
-                      const responsePreviewParts: string[] = log.response_preview.split(' ');
+
                       const findings: RuleFinding[] = log.ruleFindings;
                       return (
                         <TableRow key={log.id}>

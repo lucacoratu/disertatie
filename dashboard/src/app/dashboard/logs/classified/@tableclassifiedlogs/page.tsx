@@ -44,10 +44,13 @@ export default async function ClassifiedLogsTablePage() {
 	//Create the structure for the table
 	const tableData: LogColumn[] = log.logs?.map((l, index) => {
 		let requestPreviewParts: string[];
+		let responsePreviewParts: string[];
 		if(l.websocket == true) {
-			requestPreviewParts = ["WS", l.request_preview]
+			requestPreviewParts = ["WS", l.request_preview];
+			responsePreviewParts = ["", l.response_preview];
 		} else {
-			requestPreviewParts = l.request_preview.split(' '); 
+			requestPreviewParts = l.request_preview.split(' ');
+			responsePreviewParts = l.response_preview.split(" ");
 		}
 		//Convert timestamp to local date time
 		const logDate = new Date(l.timestamp * 1000);
@@ -57,7 +60,7 @@ export default async function ClassifiedLogsTablePage() {
 			remoteip: l.remoteIp,
 			requestmethod: requestPreviewParts[0],
 			url: requestPreviewParts[1],
-			response: l.response_preview.split(" ").slice(1, Infinity).join(" "),
+			response: responsePreviewParts.slice(1, Infinity).join(" "),
 			timestamp: logDate.toLocaleString(),
 			findings: l.findings,
 			findingsClassificationString: findingsClassficationString,
