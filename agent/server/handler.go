@@ -210,7 +210,8 @@ func (agentHandler *AgentHandler) sendB64RequestToLLMAPI(req *http.Request, clas
 	b64RawRequest := b64.StdEncoding.EncodeToString(rawRequest)
 
 	//Create the request to the LLM API
-	requestURL := fmt.Sprintf("%s/generic?raw_request=%s&classification=%s", agentHandler.configuration.LLMAPIURL, b64RawRequest, classification)
+	model := "honeypot"
+	requestURL := fmt.Sprintf("%s/generic?raw_request=%s&classification=%s&model=%s", agentHandler.configuration.LLMAPIURL, b64RawRequest, classification, model)
 	llm_req, err := http.NewRequest(http.MethodGet, requestURL, nil)
 	if err != nil {
 		agentHandler.logger.Error("Failed to create request to LLM API", err.Error())

@@ -13,7 +13,7 @@ names = ['UrlLength', 'NumberParams', 'NumberSpecialChars', 'RatioSpecialChars',
 #Read the csv files
 df_benign = pd.read_csv("../../agent/datasets/benign.csv", header=None, names=names)
 df_lfi = pd.read_csv("../../agent/datasets/lfi.csv", header=None, names=names)
-df_xss = pd.read_csv("../../agent/datasets/lfi.csv", header=None, names=names)
+df_xss = pd.read_csv("../../agent/datasets/xss.csv", header=None, names=names)
 df_sqli = pd.read_csv("../../agent/datasets/sqli.csv", header=None, names=names)
 df_ssti = pd.read_csv("../../agent/datasets/ssti.csv", header=None, names=names)
 

@@ -54,8 +54,8 @@ y_pred = knn.predict(X_test)
 print("Accuracy:", accuracy_score(y_test, y_pred))
 print("\nClassification Report:\n", classification_report(y_test, y_pred))
 
-model = KNeighborsClassifier(n_neighbors=5)
-model.fit(X, y)
+# model = KNeighborsClassifier(n_neighbors=5)
+# model.fit(X, y)
 
-with open('../../agent/detection/ai/models/knn.pkl', 'wb') as f:
-    pickle.dump(model, f)
+# with open('../../agent/detection/ai/models/knn.pkl', 'wb') as f:
+#     pickle.dump(model, f)

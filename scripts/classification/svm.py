@@ -53,8 +53,8 @@ print("\nClassification Report:\n", classification_report(y_test, y_pred))
 
 #Train the model with all dataset and save it to file
 
-svm = SVC(kernel='rbf', C=1, gamma='scale')  # kernel can be 'linear', 'poly', 'rbf', 'sigmoid'
-svm.fit(X, y)
+# svm = SVC(kernel='rbf', C=1, gamma='scale')  # kernel can be 'linear', 'poly', 'rbf', 'sigmoid'
+# svm.fit(X, y)
 
-with open('../../agent/detection/ai/models/svc.pkl', 'wb') as f:
-    pickle.dump(svm, f)
+# with open('../../agent/detection/ai/models/svc.pkl', 'wb') as f:
+#     pickle.dump(svm, f)
