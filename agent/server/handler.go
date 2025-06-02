@@ -323,7 +323,7 @@ func (agentHandler *AgentHandler) HandleAdaptiveOperationMode(rw http.ResponseWr
 	//Templates will be used to mark the location in the HTML page where the response from the LLM API will be inserted
 	//This will be useful when wanting to mimic a website
 	//There should exist a default template
-	var templateSent bool = true
+	var templateSent bool = false
 	for _, adaptive_template := range agentHandler.configuration.AdaptiveTemplates {
 		if r.URL.Path == adaptive_template.URL {
 			//Load the template from the template path
@@ -334,15 +334,20 @@ func (agentHandler *AgentHandler) HandleAdaptiveOperationMode(rw http.ResponseWr
 			}
 			//Create the structure which will be used inside html template
 			templateVar := data.TemplateLLMResponse{LLM_Template_Response: llm_response_data.Body}
+			agentHandler.logger.Debug("Sending template for", r.URL.Path)
 			err = tmpl.Execute(rw, templateVar)
 			if err != nil {
 				agentHandler.logger.Error("Failed to execute template from", adaptive_template.TemplatePath, err.Error())
+				templateSent = false
 			}
+			templateSent = true
+			break
 		}
 	}
 
 	//Send the body
 	if !templateSent {
+		agentHandler.logger.Debug("Response body", llm_response_data.Body)
 		rw.Write([]byte(llm_response_data.Body))
 	}
 
@@ -593,7 +598,11 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 	//Run all the rules on the request
 	requestRuleFindings, _ := ruleRunner.RunRulesOnRequest(r)
 	//Run the ai classifier on the request
-	requestClassification := aiClassifierRunner.RunAIClassifierOnRequest(r)
+	requestClassification := ""
+
+	if agentHandler.configuration.UseAIClassifier {
+		requestClassification = aiClassifierRunner.RunAIClassifierOnRequest(r)
+	}
 
 	//Log request findings
 	agentHandler.logger.Debug("Request findings", requestFindings)

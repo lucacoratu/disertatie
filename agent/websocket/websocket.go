@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -19,6 +20,7 @@ type APIWebSocketConnection struct {
 	configuration config.Configuration //The configuration structure of the agent
 	State         bool                 //The state of the websocket connection (true for active, false for inactive)
 	connection    *websocket.Conn      //The connection structure
+	mu            sync.Mutex           //Mutex for the websocket connection
 }
 
 func NewAPIWebSocketConnection(logger logging.ILogger, apiWsURL string, configuration config.Configuration) *APIWebSocketConnection {
@@ -83,5 +85,8 @@ func (awsc *APIWebSocketConnection) SendNotification(message string) error {
 
 // Function to send an alert when a high or critical payload is detected
 func (awsc *APIWebSocketConnection) SendRuleDetectionAlert(alert RuleDetectionAlert) error {
-	return awsc.connection.WriteJSON(WebSocketMessage{Type: WsRuleDetectionAlert, Data: alert})
+	awsc.mu.Lock()
+	err := awsc.connection.WriteJSON(WebSocketMessage{Type: WsRuleDetectionAlert, Data: alert})
+	awsc.mu.Unlock()
+	return err
 }

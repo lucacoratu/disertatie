@@ -12,6 +12,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/lucacoratu/disertatie/agent/config"
 	"github.com/lucacoratu/disertatie/agent/data"
@@ -397,17 +398,17 @@ func (rl *RuleRunner) RunRulesOnRequest(r *http.Request) ([]*data.RuleFindingDat
 			}
 		}
 
-		// //Check if the rule has at least high severity
-		// if ConvertSeverityStringToInteger(rule.Info.Severity) >= data.HIGH {
-		// 	//Send an alert to the API via WebSocket
-		// 	if rl.apiWsConn != nil {
-		// 		err := rl.apiWsConn.SendRuleDetectionAlert(websocket.RuleDetectionAlert{AgentId: rl.configuration.UUID, RuleId: rule.Id, RuleName: rule.Info.Name, RuleDescription: rule.Info.Description, Classification: rule.Info.Classification, Severity: rule.Info.Severity, Timestamp: time.Now().Unix()})
-		// 		//Check if an error occured when sending the alert
-		// 		if err != nil {
-		// 			rl.logger.Error("Error occured when sending alert to API when a high or critical payload was detected")
-		// 		}
-		// 	}
-		// }
+		//Check if the rule has at least high severity
+		if ConvertSeverityStringToInteger(rule.Info.Severity) >= data.HIGH {
+			//Send an alert to the API via WebSocket
+			if rl.apiWsConn != nil {
+				err := rl.apiWsConn.SendRuleDetectionAlert(websocket.RuleDetectionAlert{AgentId: rl.configuration.UUID, RuleId: rule.Id, RuleName: rule.Info.Name, RuleDescription: rule.Info.Description, Classification: rule.Info.Classification, Severity: rule.Info.Severity, Timestamp: time.Now().Unix()})
+				//Check if an error occured when sending the alert
+				if err != nil {
+					rl.logger.Error("Error occured when sending alert to API when a high or critical payload was detected")
+				}
+			}
+		}
 	}
 
 	//Dump the request

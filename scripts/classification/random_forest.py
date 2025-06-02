@@ -10,34 +10,24 @@ from sklearn.model_selection import train_test_split
 
 names = ['UrlLength', 'NumberParams', 'NumberSpecialChars', 'RatioSpecialChars', 'NumberRoundBrackets', 'NumberSquareBrackets', 'NumberCurlyBrackets', 'NumberApostrophes', 'NumberQuotationMarks', 'NumberDots', 'NumberSlash', 'NumberBackslash', 'NumberComma', 'NumberColon', 'NumberSemicolon', 'NumberMinus', 'NumberPlus','NumberLessGreater', 'DistanceDots', 'DistanceSlash', 'DistanceBackslash', 'DistanceComma', 'DistanceColon', 'DistanceSemicolon', 'DistanceMinus', 'DistancePlus']
 
+print(len(names))
+
 #Read the csv files
 df_benign = pd.read_csv("../../agent/datasets/benign.csv", header=None, names=names)
 df_lfi = pd.read_csv("../../agent/datasets/lfi.csv", header=None, names=names)
-df_xss = pd.read_csv("../../agent/datasets/xss.csv", header=None, names=names)
 df_sqli = pd.read_csv("../../agent/datasets/sqli.csv", header=None, names=names)
+df_xss = pd.read_csv("../../agent/datasets/xss.csv", header=None, names=names)
 df_ssti = pd.read_csv("../../agent/datasets/ssti.csv", header=None, names=names)
-
-# df_test = pd.read_csv("../../agent/datasets/lfi_test.csv", header=None, names=names)
-# df_sqli_test = pd.read_csv("../../agent/datasets/sqli_test.csv", header=None, names=names)
-# df_xss_test = pd.read_csv("../../agent/datasets/xss_test.csv", header=None, names=names)
 
 
 df_benign['label'] = 'benign'
 df_lfi['label'] = 'lfi'
-df_xss['label'] = 'xss'
 df_sqli['label'] = 'sqli'
+df_xss['label'] = 'xss'
 df_ssti['label'] = 'ssti'
 
-# df_test['label'] = 'lfi'
-# df_sqli_test['label'] = 'sqli'
-# df_xss_test['label'] = 'xss'
-
-#df_test = pd.concat([df_test, df_sqli_test, df_xss_test], ignore_index=True)
-#df_test = pd.concat([df_test, df_sqli_test, df_xss_test.iloc[0:1000,]], ignore_index=True)
-
 #Concatenate all the datasets
-#full_df = pd.concat([df_benign, df_lfi, df_sqli, df_xss], ignore_index=True)
-full_df = pd.concat([df_benign, df_lfi, df_sqli, df_xss, df_ssti], ignore_index=True)
+full_df = pd.concat([df_benign, df_lfi, df_sqli, df_xss, df_ssti] , ignore_index=True)
 
 #Randomize the rows
 full_df = full_df.sample(frac=1, random_state=42).reset_index(drop=True)
@@ -64,7 +54,7 @@ y_pred = model.predict(X_test)
 print("Accuracy:", accuracy_score(y_test, y_pred))
 print("\nClassification Report:\n", classification_report(y_test, y_pred))
 
-# y_pred2 = model.predict(df_test.drop('label', axis=1))
+#y_pred2 = model.predict(df_test.drop('label', axis=1))
 
 # print("Accuracy:", accuracy_score(df_test['label'], y_pred2))
 # print("\nClassification Report:\n", classification_report(df_test['label'], y_pred2))
