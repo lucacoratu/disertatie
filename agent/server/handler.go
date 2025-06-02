@@ -248,6 +248,46 @@ func (agentHandler *AgentHandler) sendB64RequestToLLMAPI(req *http.Request, clas
 	return &llm_response_data
 }
 
+func (agentHandler *AgentHandler) sendAdaptiveLogToApi(r *http.Request, requestFindings []data.FindingData, requestRuleFindings []*data.RuleFindingData, llm_response_data data.LLMResponse) {
+	allFindings := agentHandler.combineFindings(requestFindings, make([]data.FindingData, 0))
+	//Combine the rule findings into a single structure
+	allRuleFindings := agentHandler.combineRuleFindings(requestRuleFindings, make([]*data.RuleFindingData, 0))
+
+	//Convert the request to base64 string
+	b64RawRequest, _ := agentHandler.convertRequestToB64(r)
+
+	//Create the response based on the headers and the body received from LLM API
+	var rawResponse string = "HTTP/1.1 200 OK\r\n"
+	//Add the headers
+	for header_name, header_value := range llm_response_data.Headers {
+		rawResponse += fmt.Sprintf("%s: %s\r\n", header_name, header_value)
+	}
+	//Add an empty line
+	rawResponse += "\r\n"
+	//Add the body
+	rawResponse += llm_response_data.Body
+
+	agentHandler.logger.Debug(rawResponse)
+
+	//Convert the raw response to base64
+	b64RawResponse := b64.StdEncoding.EncodeToString([]byte(rawResponse))
+
+	//Create the log structure that should be sent to the API
+	logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: r.RemoteAddr, Timestamp: time.Now().Unix(), Request: b64RawRequest, Response: b64RawResponse, Findings: allFindings, RuleFindings: allRuleFindings}
+
+	if agentHandler.apiWsConn != nil {
+		agentHandler.logger.Debug("Sending log in adaptive mode to the API...")
+		//Send log information to the API
+		apiHandler := api.NewAPIHandler(agentHandler.logger, agentHandler.configuration)
+		_, err := apiHandler.SendLog(agentHandler.apiBaseURL, logData)
+		//Check if an error occured when sending log to the API
+		if err != nil {
+			agentHandler.logger.Error(err.Error())
+			//return
+		}
+	}
+}
+
 // Handle the request if the agent is running adaptive mode of operation
 func (agentHandler *AgentHandler) HandleAdaptiveOperationMode(rw http.ResponseWriter, r *http.Request, requestFindings []data.FindingData, requestRuleFindings []*data.RuleFindingData, aiClassification string) {
 	//Check if the request should be sent to the LLM API
@@ -265,6 +305,29 @@ func (agentHandler *AgentHandler) HandleAdaptiveOperationMode(rw http.ResponseWr
 		}
 		//Forward the response back to the client
 		agentHandler.forwardResponse(rw, response)
+
+		allFindings := agentHandler.combineFindings(requestFindings, make([]data.FindingData, 0))
+		//Combine the rule findings into a single structure
+		allRuleFindings := agentHandler.combineRuleFindings(requestRuleFindings, make([]*data.RuleFindingData, 0))
+
+		//Convert the request to base64 string
+		b64RawRequest, b64RawResponse, _ := agentHandler.convertRequestAndResponseToB64(r, response)
+
+		//Create the log structure that should be sent to the API
+		logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: r.RemoteAddr, Timestamp: time.Now().Unix(), Request: b64RawRequest, Response: b64RawResponse, Findings: allFindings, RuleFindings: allRuleFindings}
+
+		if agentHandler.apiWsConn != nil {
+			agentHandler.logger.Debug("Sending log in adaptive mode to the API...")
+			//Send log information to the API
+			apiHandler := api.NewAPIHandler(agentHandler.logger, agentHandler.configuration)
+			_, err := apiHandler.SendLog(agentHandler.apiBaseURL, logData)
+			//Check if an error occured when sending log to the API
+			if err != nil {
+				agentHandler.logger.Error(err.Error())
+				//return
+			}
+		}
+
 		return
 	}
 
@@ -355,44 +418,8 @@ func (agentHandler *AgentHandler) HandleAdaptiveOperationMode(rw http.ResponseWr
 
 	//Combine the findings into a single structure
 	//In this case the response findings will always be empty list
+	agentHandler.sendAdaptiveLogToApi(r, make([]data.FindingData, 0), make([]*data.RuleFindingData, 0), *llm_response_data)
 
-	allFindings := agentHandler.combineFindings(requestFindings, make([]data.FindingData, 0))
-	//Combine the rule findings into a single structure
-	allRuleFindings := agentHandler.combineRuleFindings(requestRuleFindings, make([]*data.RuleFindingData, 0))
-
-	//Convert the request to base64 string
-	b64RawRequest, _ := agentHandler.convertRequestToB64(r)
-
-	//Create the response based on the headers and the body received from LLM API
-	var rawResponse string = "HTTP/1.1 200 OK\r\n"
-	//Add the headers
-	for header_name, header_value := range llm_response_data.Headers {
-		rawResponse += fmt.Sprintf("%s: %s\r\n", header_name, header_value)
-	}
-	//Add an empty line
-	rawResponse += "\r\n"
-	//Add the body
-	rawResponse += llm_response_data.Body
-
-	agentHandler.logger.Debug(rawResponse)
-
-	//Convert the raw response to base64
-	b64RawResponse := b64.StdEncoding.EncodeToString([]byte(rawResponse))
-
-	//Create the log structure that should be sent to the API
-	logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: r.RemoteAddr, Timestamp: time.Now().Unix(), Request: b64RawRequest, Response: b64RawResponse, Findings: allFindings, RuleFindings: allRuleFindings}
-
-	if agentHandler.apiWsConn != nil {
-		agentHandler.logger.Debug("Sending log in adaptive mode to the API...")
-		//Send log information to the API
-		apiHandler := api.NewAPIHandler(agentHandler.logger, agentHandler.configuration)
-		_, err := apiHandler.SendLog(agentHandler.apiBaseURL, logData)
-		//Check if an error occured when sending log to the API
-		if err != nil {
-			agentHandler.logger.Error(err.Error())
-			//return
-		}
-	}
 }
 
 // Handle the request if the agent is running in waf operation mode
