@@ -418,7 +418,7 @@ func (agentHandler *AgentHandler) HandleAdaptiveOperationMode(rw http.ResponseWr
 
 	//Combine the findings into a single structure
 	//In this case the response findings will always be empty list
-	agentHandler.sendAdaptiveLogToApi(r, make([]data.FindingData, 0), make([]*data.RuleFindingData, 0), *llm_response_data)
+	agentHandler.sendAdaptiveLogToApi(r, requestFindings, requestRuleFindings, *llm_response_data)
 
 }
 
