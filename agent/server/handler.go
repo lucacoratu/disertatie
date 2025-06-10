@@ -275,17 +275,17 @@ func (agentHandler *AgentHandler) sendAdaptiveLogToApi(r *http.Request, requestF
 	//Create the log structure that should be sent to the API
 	logData := data.LogData{AgentId: agentHandler.configuration.UUID, RemoteIP: r.RemoteAddr, Timestamp: time.Now().Unix(), Request: b64RawRequest, Response: b64RawResponse, Findings: allFindings, RuleFindings: allRuleFindings}
 
-	if agentHandler.apiWsConn != nil {
-		agentHandler.logger.Debug("Sending log in adaptive mode to the API...")
-		//Send log information to the API
-		apiHandler := api.NewAPIHandler(agentHandler.logger, agentHandler.configuration)
-		_, err := apiHandler.SendLog(agentHandler.apiBaseURL, logData)
-		//Check if an error occured when sending log to the API
-		if err != nil {
-			agentHandler.logger.Error(err.Error())
-			//return
-		}
+	//if agentHandler.apiWsConn != nil {
+	agentHandler.logger.Debug("Sending log in adaptive mode to the API...")
+	//Send log information to the API
+	apiHandler := api.NewAPIHandler(agentHandler.logger, agentHandler.configuration)
+	_, err := apiHandler.SendLog(agentHandler.apiBaseURL, logData)
+	//Check if an error occured when sending log to the API
+	if err != nil {
+		agentHandler.logger.Error(err.Error())
+		//return
 	}
+	//}
 }
 
 // Handle the request if the agent is running adaptive mode of operation
