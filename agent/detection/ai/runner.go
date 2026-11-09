@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
-	"strings"
 
 	"github.com/lucacoratu/disertatie/agent/config"
 	"github.com/lucacoratu/disertatie/agent/data"
@@ -18,10 +16,31 @@ import (
 type AIClassifierRunner struct {
 	logger        logging.ILogger
 	configuration config.Configuration
+	classifier    *ClassifierProcess //Long-running python classifier (nil if the AI classifier is disabled)
 }
 
-func NewAIClassifierRunner(logger logging.ILogger, configuration config.Configuration) *AIClassifierRunner {
-	return &AIClassifierRunner{logger: logger, configuration: configuration}
+// Creates the runner. If the AI classifier is enabled, the python classifier script
+// is started once here and kept alive; classification data is sent to it through pipes.
+func NewAIClassifierRunner(logger logging.ILogger, configuration config.Configuration) (*AIClassifierRunner, error) {
+	runner := &AIClassifierRunner{logger: logger, configuration: configuration}
+
+	if configuration.UseAIClassifier {
+		//Select the script to be used based on the model specified in the configuration
+		script := fmt.Sprintf("detection/ai/scripts/%s.py", configuration.Classifier)
+		runner.classifier = NewClassifierProcess(logger, "/usr/bin/python", script)
+		if err := runner.classifier.Start(); err != nil {
+			return nil, err
+		}
+	}
+
+	return runner, nil
+}
+
+// Stops the python classifier process
+func (acr *AIClassifierRunner) Close() {
+	if acr.classifier != nil {
+		acr.classifier.Stop()
+	}
 }
 
 func (acr *AIClassifierRunner) saveFeaturesInDataset(features data.RequestFeatures, filePath string) {
@@ -86,19 +105,16 @@ func (acr *AIClassifierRunner) RunAIClassifierOnRequest(r *http.Request) string 
 
 	acr.logger.Debug("Features", features)
 
-	if acr.configuration.UseAIClassifier {
-		//Select the script to be used based on the model specified in the configuration
-		model := fmt.Sprintf("detection/ai/scripts/%s.py", acr.configuration.Classifier)
-
-		//Send the features to the model for prediction
-		classification, err := exec.Command("/usr/bin/python", model, features.ToString()).Output()
+	if acr.configuration.UseAIClassifier && acr.classifier != nil {
+		//Send the features to the running classifier process through the pipe
+		classification, err := acr.classifier.Classify(features.ToString())
 		if err != nil {
-			acr.logger.Error("Failed to run command for prediction using AI model", err.Error())
+			acr.logger.Error("Failed to get prediction from AI model", err.Error())
 			return "benign"
 		}
 
-		acr.logger.Debug("Classification using AI for request is", string(classification))
-		return strings.TrimSpace(string(classification))
+		acr.logger.Debug("Classification using AI for request is", classification)
+		return classification
 	}
 
 	return "benign"

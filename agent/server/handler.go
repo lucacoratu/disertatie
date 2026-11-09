@@ -38,11 +38,12 @@ type AgentHandler struct {
 	checkers      []code.IValidator                 //The list of validators which will be run on the request and the response to find malicious activity
 	rules         []rules.Rule                      //The list of rules which will try to find anomalies in the requests and the responses
 	apiWsConn     *websocket.APIWebSocketConnection //The WS connection to the API
+	aiRunner      *ai.AIClassifierRunner            //The AI classifier runner (python process started once at boot)
 }
 
 // Creates a new AgentHandlerStructure
-func NewAgentHandler(logger logging.ILogger, apiBaseURL string, configuration config.Configuration, checkers []code.IValidator, rules []rules.Rule, apiWsConn *websocket.APIWebSocketConnection) *AgentHandler {
-	return &AgentHandler{logger: logger, apiBaseURL: apiBaseURL, configuration: configuration, checkers: checkers, rules: rules, apiWsConn: apiWsConn}
+func NewAgentHandler(logger logging.ILogger, apiBaseURL string, configuration config.Configuration, checkers []code.IValidator, rules []rules.Rule, apiWsConn *websocket.APIWebSocketConnection, aiRunner *ai.AIClassifierRunner) *AgentHandler {
+	return &AgentHandler{logger: logger, apiBaseURL: apiBaseURL, configuration: configuration, checkers: checkers, rules: rules, apiWsConn: apiWsConn, aiRunner: aiRunner}
 }
 
 // Forwards the request to the target server
@@ -617,8 +618,6 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 	validatorRunner := code.NewValidatorRunner(agentHandler.checkers, agentHandler.logger)
 	//Create the rule runner
 	ruleRunner := rules.NewRuleRunner(agentHandler.logger, agentHandler.rules, agentHandler.apiWsConn, agentHandler.configuration)
-	//Create the AI classifier runner
-	aiClassifierRunner := ai.NewAIClassifierRunner(agentHandler.logger, agentHandler.configuration)
 
 	//Run all the validators on the request
 	requestFindings, _ := validatorRunner.RunValidatorsOnRequest(r)
@@ -628,7 +627,7 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 	requestClassification := ""
 
 	if agentHandler.configuration.UseAIClassifier {
-		requestClassification = aiClassifierRunner.RunAIClassifierOnRequest(r)
+		requestClassification = agentHandler.aiRunner.RunAIClassifierOnRequest(r)
 	}
 
 	//Log request findings

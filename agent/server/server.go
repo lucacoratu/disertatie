@@ -15,6 +15,7 @@ import (
 	"github.com/lucacoratu/disertatie/agent/api"
 	"github.com/lucacoratu/disertatie/agent/config"
 	"github.com/lucacoratu/disertatie/agent/data"
+	ai "github.com/lucacoratu/disertatie/agent/detection/ai"
 	code "github.com/lucacoratu/disertatie/agent/detection/code"
 	rules "github.com/lucacoratu/disertatie/agent/detection/rules"
 	"github.com/lucacoratu/disertatie/agent/logging"
@@ -30,6 +31,7 @@ type AgentServer struct {
 	checkers      []code.IValidator
 	rules         []rules.Rule
 	configFile    string
+	aiRunner      *ai.AIClassifierRunner
 }
 
 // Initialize the proxy http server based on the configuration file
@@ -165,8 +167,16 @@ func (agent *AgentServer) Init() error {
 	//Create the router
 	r := mux.NewRouter()
 
+	//Start the AI classifier (the python process is started once and reused for every request)
+	aiRunner, err := ai.NewAIClassifierRunner(agent.logger, agent.configuration)
+	if err != nil {
+		agent.logger.Error("Could not start the AI classifier", err.Error())
+		return errors.New("could not start the AI classifier")
+	}
+	agent.aiRunner = aiRunner
+
 	//Create the handler which will contain the function to handle requests
-	handler := NewAgentHandler(agent.logger, agent.apiBaseURL, agent.configuration, agent.checkers, agent.rules, apiWsConnection)
+	handler := NewAgentHandler(agent.logger, agent.apiBaseURL, agent.configuration, agent.checkers, agent.rules, apiWsConnection, aiRunner)
 
 	//Create a single route that will catch every request on every method
 	r.PathPrefix("/").HandlerFunc(handler.HandleRequest)
@@ -220,5 +230,9 @@ func (agent *AgentServer) Run() {
 	// <-ctx.Done() if your application should wait for other services
 	// to finalize based on context cancellation.
 	agent.logger.Info("Received signal, shutting down")
+	//Stop the python classifier process
+	if agent.aiRunner != nil {
+		agent.aiRunner.Close()
+	}
 	os.Exit(0)
 }
