@@ -37,6 +37,7 @@ type Configuration struct {
 	IgnoreRulesDirectories []string           `json:"ignoreRulesDirectories"`                                                   //The directories with rules that should be ignored when loading the rules
 	UseAIClassifier        bool               `json:"useAIClassifier"`                                                          //If the agent should use the AI classifier
 	Classifier             string             `json:"classifier" validate:"required,oneof_insensitive=svc knn random-forest"`   //The classifier model to be used
+	ClassifierProcesses    int                `json:"classifierProcesses" validate:"gte=0"`                                     //The number of python classifier processes (0 means one for each CPU)
 	LLMAPIURL              string             `json:"llmAPIURL"`                                                                //The URL for the LLM API
 	CreateDataset          bool               `json:"createDataset"`                                                            //If the agent should save the requests features in a dataset
 	DatasetPath            string             `json:"datasetPath" validate:"required"`                                          //The path where the dataset will be saved

@@ -230,6 +230,7 @@ func (agentHandler *AgentHandler) sendB64RequestToLLMAPI(req *http.Request, clas
 		agentHandler.logger.Error("Failed to send request to LLM API", err.Error())
 		return nil
 	}
+	defer llm_response.Body.Close()
 
 	//Parse the response from the LLM
 	var llm_response_data data.LLMResponse
@@ -304,6 +305,7 @@ func (agentHandler *AgentHandler) HandleAdaptiveOperationMode(rw http.ResponseWr
 			agentHandler.logger.Error("Failed to send request to target server", err.Error())
 			return
 		}
+		defer response.Body.Close()
 		//Forward the response back to the client
 		agentHandler.forwardResponse(rw, response)
 
@@ -672,6 +674,7 @@ func (agentHandler *AgentHandler) HandleRequest(rw http.ResponseWriter, r *http.
 			agentHandler.logger.Error(err.Error())
 			return
 		}
+		defer response.Body.Close()
 
 		//Run the validators on the response
 		responseFindings, _ = validatorRunner.RunValidatorsOnResponse(response)

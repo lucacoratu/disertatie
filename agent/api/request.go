@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 
@@ -37,6 +38,7 @@ func (api *APIHandler) RegisterAgent(apiBaseUrl string, agentInfo data.AgentInfo
 	if err != nil {
 		return "", errors.New("could not register the agent to api, " + err.Error())
 	}
+	defer resp.Body.Close()
 	//Check if the response says the operation was successful and get the uuid from the body
 	responseData := data.RegisterProxyResponse{}
 	err = responseData.FromJSON(resp.Body)
@@ -62,6 +64,9 @@ func (api *APIHandler) SendLog(apiBaseUrl string, logData data.LogData) (bool, e
 	if err != nil {
 		return false, errors.New("could not send the logs to api, " + err.Error())
 	}
+	//Drain and close the body so the connection can be reused
+	defer resp.Body.Close()
+	defer io.Copy(io.Discard, resp.Body)
 	//Check the status code of the response
 	if resp.StatusCode != 200 {
 		apiErr := data.APIError{}

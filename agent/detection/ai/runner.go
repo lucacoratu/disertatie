@@ -16,18 +16,18 @@ import (
 type AIClassifierRunner struct {
 	logger        logging.ILogger
 	configuration config.Configuration
-	classifier    *ClassifierProcess //Long-running python classifier (nil if the AI classifier is disabled)
+	classifier    *ClassifierPool //Pool of long-running python classifiers (nil if the AI classifier is disabled)
 }
 
-// Creates the runner. If the AI classifier is enabled, the python classifier script
-// is started once here and kept alive; classification data is sent to it through pipes.
+// Creates the runner. If the AI classifier is enabled, a pool of python classifier processes
+// is started once here and kept alive; classification data is sent to them through pipes.
 func NewAIClassifierRunner(logger logging.ILogger, configuration config.Configuration) (*AIClassifierRunner, error) {
 	runner := &AIClassifierRunner{logger: logger, configuration: configuration}
 
 	if configuration.UseAIClassifier {
 		//Select the script to be used based on the model specified in the configuration
 		script := fmt.Sprintf("detection/ai/scripts/%s.py", configuration.Classifier)
-		runner.classifier = NewClassifierProcess(logger, "/usr/bin/python", script)
+		runner.classifier = NewClassifierPool(logger, "/usr/bin/python", script, configuration.ClassifierProcesses)
 		if err := runner.classifier.Start(); err != nil {
 			return nil, err
 		}
@@ -36,7 +36,7 @@ func NewAIClassifierRunner(logger logging.ILogger, configuration config.Configur
 	return runner, nil
 }
 
-// Stops the python classifier process
+// Stops the python classifier processes
 func (acr *AIClassifierRunner) Close() {
 	if acr.classifier != nil {
 		acr.classifier.Stop()
@@ -106,7 +106,7 @@ func (acr *AIClassifierRunner) RunAIClassifierOnRequest(r *http.Request) string 
 	acr.logger.Debug("Features", features)
 
 	if acr.configuration.UseAIClassifier && acr.classifier != nil {
-		//Send the features to the running classifier process through the pipe
+		//Send the features to an idle classifier process through its pipe
 		classification, err := acr.classifier.Classify(features.ToString())
 		if err != nil {
 			acr.logger.Error("Failed to get prediction from AI model", err.Error())

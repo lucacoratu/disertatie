@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-	"regexp"
 	"strings"
 	"time"
 
@@ -118,8 +117,8 @@ func (rl *RuleRunner) search(value string, mode *RuleSearchMode) []string {
 
 		//Check if the regex match is specified
 		if mode.Regex != "" {
-			//Compile the regex
-			r, err := regexp.Compile(mode.Regex)
+			//Get the regex compiled when the rules were loaded
+			r, err := getCompiledRegex(mode.Regex)
 			//Check if an error occured during the regex compilation
 			if err != nil {
 				rl.logger.Error("Could not the compile regex matcher from the rule, invalid regex:", mode.Regex)
@@ -325,6 +324,8 @@ func (rl *RuleRunner) RunRulesOnRequest(r *http.Request) ([]*data.RuleFindingDat
 		if rule.Request == nil {
 			continue
 		}
+		//The number of findings before running this rule (used to know if the rule matched)
+		findingsBefore := len(findings)
 		allMatches := make([]string, 0)
 		//Check the Method of the request
 		matches, _ := rl.checkMethod(r.Method, rule.Request.Method)
@@ -398,8 +399,8 @@ func (rl *RuleRunner) RunRulesOnRequest(r *http.Request) ([]*data.RuleFindingDat
 			}
 		}
 
-		//Check if the rule has at least high severity
-		if ConvertSeverityStringToInteger(rule.Info.Severity) >= data.HIGH {
+		//Check if the rule matched the request and has at least high severity
+		if len(findings) > findingsBefore && ConvertSeverityStringToInteger(rule.Info.Severity) >= data.HIGH {
 			//Send an alert to the API via WebSocket
 			if rl.apiWsConn != nil {
 				err := rl.apiWsConn.SendRuleDetectionAlert(websocket.RuleDetectionAlert{AgentId: rl.configuration.UUID, RuleId: rule.Id, RuleName: rule.Info.Name, RuleDescription: rule.Info.Description, Classification: rule.Info.Classification, Severity: rule.Info.Severity, Timestamp: time.Now().Unix()})
@@ -534,8 +535,8 @@ func (rl *RuleRunner) searchHex(value []byte, mode *RuleHexSearchMod) []string {
 
 	//Check if the regex match is specified
 	if mode.Regex != "" {
-		//Compile the regex
-		r, err := regexp.Compile(mode.Regex)
+		//Get the regex compiled when the rules were loaded
+		r, err := getCompiledRegex(mode.Regex)
 
 		//Check if an error occured during the regex compilation
 		if err != nil {

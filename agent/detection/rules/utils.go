@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/lucacoratu/disertatie/agent/config"
 	"github.com/lucacoratu/disertatie/agent/data"
@@ -14,6 +15,23 @@ import (
 )
 
 var SupportedEncodings = []string{"base64", "url"}
+
+// Cache of the compiled regexes used by the rules, keyed by the regex string
+// The regexes are compiled once (when the rules are checked at load time) and reused for every request
+var compiledRegexes sync.Map
+
+// Returns the compiled regex for the pattern, compiling and caching it on first use
+func getCompiledRegex(pattern string) (*regexp.Regexp, error) {
+	if r, ok := compiledRegexes.Load(pattern); ok {
+		return r.(*regexp.Regexp), nil
+	}
+	r, err := regexp.Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+	compiledRegexes.Store(pattern, r)
+	return r, nil
+}
 
 // Loads all the rules that can be found in the specified directory
 // Pass the logger as a parameter for better view of the problems
@@ -243,21 +261,21 @@ func CheckRule(rule Rule, logger logging.ILogger) error {
 		//Check if the URL regex compiles
 		if rule.Request.URL != nil {
 			for i, _ := range rule.Request.URL {
-				if _, err := regexp.Compile(rule.Request.URL[i].Regex); err != nil {
+				if _, err := getCompiledRegex(rule.Request.URL[i].Regex); err != nil {
 					return errors.New("cannot compile URL regex, " + err.Error())
 				}
 			}
 		}
 		//Check if the method regex compiles
 		if rule.Request.Method != nil {
-			if _, err := regexp.Compile(rule.Request.Method.Regex); err != nil {
+			if _, err := getCompiledRegex(rule.Request.Method.Regex); err != nil {
 				return errors.New("cannot compile Method regex, " + err.Error())
 			}
 		}
 		//Check if the parameters regex compiles
 		if rule.Request.Parameters != nil {
 			for _, parameter := range rule.Request.Parameters {
-				if _, err := regexp.Compile(parameter.Regex); err != nil {
+				if _, err := getCompiledRegex(parameter.Regex); err != nil {
 					return errors.New("cannot compile regex for parameter, " + parameter.Name + ", " + err.Error())
 				}
 			}
@@ -265,7 +283,7 @@ func CheckRule(rule Rule, logger logging.ILogger) error {
 		//Check if the headers regex compiles
 		if rule.Request.Headers != nil {
 			for _, header := range rule.Request.Headers {
-				if _, err := regexp.Compile(header.Regex); err != nil {
+				if _, err := getCompiledRegex(header.Regex); err != nil {
 					return errors.New("cannot compile regex for header, " + header.Name + ", " + err.Error())
 				}
 			}
@@ -273,7 +291,7 @@ func CheckRule(rule Rule, logger logging.ILogger) error {
 		//Check if the regex for body
 		if rule.Request.Body != nil {
 			for _, bodyRule := range rule.Request.Body {
-				if _, err := regexp.Compile(bodyRule.Regex); err != nil {
+				if _, err := getCompiledRegex(bodyRule.Regex); err != nil {
 					return errors.New("cannot compile regex for the body, " + err.Error())
 				}
 			}

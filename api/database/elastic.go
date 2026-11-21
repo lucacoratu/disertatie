@@ -88,9 +88,20 @@ func (elastic *ElasticConnection) InsertLog(log data.LogData) error {
 	}
 
 	//Insert the document in the elasticsearch index
-	_, err = elastic.connection.Index("logs", bytes.NewReader(logString))
+	res, err := elastic.connection.Index("logs", bytes.NewReader(logString))
+	if err != nil {
+		return err
+	}
+	//Drain and close the body so the connection can be reused
+	defer res.Body.Close()
+	defer io.Copy(io.Discard, res.Body)
 
-	return err
+	//Elasticsearch reports indexing failures in the status code, not in err
+	if res.IsError() {
+		return errors.New("could not index the log in elasticsearch, " + res.String())
+	}
+
+	return nil
 }
 
 type sourceElastic struct {
@@ -139,6 +150,7 @@ func (elastic *ElasticConnection) GetRecentLogs() []data.LogDataElastic {
 	//Create the response object
 	response := elasticAgentLogs{}
 	//Parse the response from json into a struct
+	defer res.Body.Close()
 	err := response.FromJSON(res.Body)
 
 	//Check if an error occured when parsing the response from json string to struct
@@ -195,6 +207,7 @@ func (elastic *ElasticConnection) GetRecentRuleClassifiedLogs() []data.LogDataEl
 	//Create the response object
 	response := elasticAgentLogs{}
 	//Parse the response from json into a struct
+	defer res.Body.Close()
 	err := response.FromJSON(res.Body)
 
 	//Check if an error occured when parsing the response from json string to struct
@@ -242,6 +255,7 @@ func (elastic *ElasticConnection) GetAllLogs() []data.LogDataElastic {
 	//Create the response object
 	response := elasticAgentLogs{}
 	//Parse the response from json into a struct
+	defer res.Body.Close()
 	err := response.FromJSON(res.Body)
 
 	//Check if an error occured when parsing the response from json string to struct
@@ -301,6 +315,7 @@ func (elastic *ElasticConnection) GetAllClassifiedLogs() []data.LogDataElastic {
 	//Create the response object
 	response := elasticAgentLogs{}
 	//Parse the response from json into a struct
+	defer res.Body.Close()
 	err := response.FromJSON(res.Body)
 
 	//Check if an error occured when parsing the response from json string to struct
@@ -353,6 +368,7 @@ func (elastic *ElasticConnection) GetLogsPaginated(agentId string) []data.LogDat
 	//Create the response object
 	response := elasticAgentLogs{}
 	//Parse the response from json into a struct
+	defer res.Body.Close()
 	err := response.FromJSON(res.Body)
 
 	//Check if an error occured when parsing the response from json string to struct
@@ -405,6 +421,7 @@ func (elastic *ElasticConnection) GetAllAgentLogs(agentId string) []data.LogData
 	//Create the response object
 	response := elasticAgentLogs{}
 	//Parse the response from json into a struct
+	defer res.Body.Close()
 	err := response.FromJSON(res.Body)
 
 	//Check if an error occured when parsing the response from json string to struct
@@ -516,6 +533,7 @@ func (elastic *ElasticConnection) GetAgentsStatistics() ([]data.AgentsMetrics, e
 	)
 
 	response := RuleFindingsAggregationResponse{}
+	defer res.Body.Close()
 	err := response.FromJSON(res.Body)
 	if err != nil {
 		return nil, err
@@ -547,6 +565,7 @@ func (elastic *ElasticConnection) GetRuleFindingsStats() ([]data.FindingsMetrics
 	)
 
 	response := RuleFindingsAggregationResponse{}
+	defer res.Body.Close()
 	err := response.FromJSON(res.Body)
 	if err != nil {
 		return nil, err
@@ -579,6 +598,7 @@ func (elastic *ElasticConnection) GetRuleIdStats() ([]data.FindingsMetrics, erro
 	)
 
 	response := RuleFindingsAggregationResponse{}
+	defer res.Body.Close()
 	err := response.FromJSON(res.Body)
 	if err != nil {
 		return nil, err
@@ -620,6 +640,7 @@ func (elastic *ElasticConnection) GetFindingsStats() (data.FindingsCountMetrics,
 	)
 
 	response := RuleStatisticsResponse{}
+	defer res.Body.Close()
 	err := response.FromJSON(res.Body)
 	if err != nil {
 		return data.FindingsCountMetrics{FindingsCount: 0, RuleFindingsCount: 0}, err

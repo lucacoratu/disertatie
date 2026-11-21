@@ -67,6 +67,7 @@ func CheckAPIConnection(apiBaseURL string) bool {
 	if err != nil {
 		return false
 	}
+	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
 		return false
