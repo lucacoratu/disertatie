@@ -64,7 +64,7 @@ cleanup() {
 	done
 	pkill -f "$WORK_DIR/agent-bin" 2>/dev/null
 	if [ "$KEEP_CONTAINERS" != 1 ]; then
-		$DOCKER rm -f "$CASSANDRA_CONTAINER" "$ELASTIC_CONTAINER" >/dev/null 2>&1
+		$DOCKER rm -f -v "$CASSANDRA_CONTAINER" "$ELASTIC_CONTAINER" >/dev/null 2>&1
 	fi
 }
 trap cleanup EXIT
@@ -106,7 +106,7 @@ PY
 
 # ---------------------------------------------------------------- databases
 log "Starting Cassandra and Elasticsearch"
-$DOCKER rm -f "$CASSANDRA_CONTAINER" "$ELASTIC_CONTAINER" >/dev/null 2>&1
+$DOCKER rm -f -v "$CASSANDRA_CONTAINER" "$ELASTIC_CONTAINER" >/dev/null 2>&1
 # The host network avoids the docker proxy, which drops connections under the load of the benchmark
 $DOCKER run -d --name "$CASSANDRA_CONTAINER" --network host \
 	-e CASSANDRA_CLUSTER_NAME=honeypot -e MAX_HEAP_SIZE=2G -e HEAP_NEWSIZE=400M \

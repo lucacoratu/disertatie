@@ -1,0 +1,80 @@
+- name: Check that the application of the agent is known
+  ansible.builtin.assert:
+    that:
+      - application in applications
+    fail_msg: "Unknown application '{{ application }}', it must be one of {{ applications.keys() | list }}"
+
+- name: Create the directories of the agent
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ project_dir }}/src"
+    - "{{ project_dir }}/agent/config"
+
+- name: Copy the source code of the agent
+  ansible.posix.synchronize:
+    src: "{{ repository_path }}/agent/"
+    dest: "{{ project_dir }}/src/agent/"
+    delete: true
+    rsync_opts:
+      - "--exclude=agent.conf"
+      - "--exclude=datasets"
+
+# Keep the UUID received from the API, otherwise the agent registers again as a new agent
+- name: Read the current configuration of the agent
+  ansible.builtin.slurp:
+    src: "{{ project_dir }}/agent/config/agent.conf"
+  register: current_agent_config
+  failed_when: false
+
+- name: Get the UUID of the agent
+  ansible.builtin.set_fact:
+    agent_uuid: >-
+      {{ (current_agent_config.content | b64decode | from_json).uuid | default('')
+         if current_agent_config.content is defined else '' }}
+
+- name: Write the configuration of the agent
+  ansible.builtin.template:
+    src: agent.conf.j2
+    dest: "{{ project_dir }}/agent/config/agent.conf"
+    mode: "0644"
+
+- name: Write the Compose file of the agent
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ project_dir }}/agent/docker-compose.yml"
+    mode: "0644"
+
+# The agent registers to the API only when it starts
+- name: Wait for the API to be reachable through the private network
+  ansible.builtin.uri:
+    url: "http://{{ central_private_ip }}:{{ api_port }}/api/v1/healthcheck"
+    status_code: 200
+  register: api_health
+  until: api_health.status == 200
+  retries: 60
+  delay: 5
+
+- name: Build the agent image and start the agent and the application
+  community.docker.docker_compose_v2:
+    project_src: "{{ project_dir }}/agent"
+    build: always
+    state: present
+    remove_orphans: true
+    recreate: always
+
+- name: Wait for the agent to answer
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ agent_port }}/"
+    status_code: [200, 302, 403]
+    follow_redirects: none
+  register: agent_health
+  until: agent_health.status in [200, 302, 403]
+  retries: 60
+  delay: 5
+
+- name: Show the address of the agent
+  ansible.builtin.debug:
+    msg: "Agent protecting {{ application }}: http://{{ ansible_host }}:{{ agent_port }}"

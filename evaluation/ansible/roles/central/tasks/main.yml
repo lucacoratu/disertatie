@@ -1,0 +1,76 @@
+- name: Warn if the default admin password is used
+  ansible.builtin.debug:
+    msg: "The dashboard uses the default admin password. Set admin_password in group_vars/all.yml (for example with ansible-vault)."
+  when: admin_password == "change-me"
+
+# Elasticsearch needs a larger number of memory map areas
+- name: Increase vm.max_map_count for Elasticsearch
+  ansible.posix.sysctl:
+    name: vm.max_map_count
+    value: "262144"
+    state: present
+    sysctl_set: true
+
+- name: Create the directories of the central services
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ project_dir }}/src"
+    - "{{ project_dir }}/central/config"
+
+- name: Copy the source code of the API and the dashboard
+  ansible.posix.synchronize:
+    src: "{{ repository_path }}/{{ item }}/"
+    dest: "{{ project_dir }}/src/{{ item }}/"
+    delete: true
+    rsync_opts:
+      - "--exclude=node_modules"
+      - "--exclude=.next"
+      - "--exclude=api.conf"
+  loop:
+    - api
+    - dashboard
+
+- name: Write the configuration of the API
+  ansible.builtin.template:
+    src: api.conf.j2
+    dest: "{{ project_dir }}/central/config/api.conf"
+    mode: "0600"
+
+- name: Write the Compose file of the central services
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ project_dir }}/central/docker-compose.yml"
+    mode: "0644"
+
+- name: Build the images and start the central services
+  community.docker.docker_compose_v2:
+    project_src: "{{ project_dir }}/central"
+    build: always
+    state: present
+    remove_orphans: true
+
+- name: Wait for the API to be ready
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ api_port }}/api/v1/healthcheck"
+    status_code: 200
+  register: api_health
+  until: api_health.status == 200
+  retries: 60
+  delay: 5
+
+- name: Wait for the dashboard to be ready
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ dashboard_port }}/"
+    status_code: [200, 307, 308]
+    follow_redirects: none
+  register: dashboard_health
+  until: dashboard_health.status in [200, 307, 308]
+  retries: 60
+  delay: 5
+
+- name: Show the address of the dashboard
+  ansible.builtin.debug:
+    msg: "Dashboard: http://{{ central_public_ip }}:{{ dashboard_port }} (user {{ admin_username }})"

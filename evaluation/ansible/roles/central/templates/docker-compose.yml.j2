@@ -1,0 +1,90 @@
+# Managed by Ansible (evaluation/ansible/roles/central)
+name: honeypot-central
+
+services:
+  cassandra:
+    image: {{ cassandra_image }}
+    environment:
+      CASSANDRA_CLUSTER_NAME: honeypot
+      MAX_HEAP_SIZE: {{ cassandra_heap_size }}
+      HEAP_NEWSIZE: {{ cassandra_heap_newsize }}
+    volumes:
+      - cassandra-data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe keyspaces' > /dev/null 2>&1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+    restart: unless-stopped
+
+  # Creates the keyspace of the API (the API creates the tables)
+  cassandra-init:
+    image: {{ cassandra_image }}
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    entrypoint:
+      - cqlsh
+      - cassandra
+      - -e
+      - "CREATE KEYSPACE IF NOT EXISTS api WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};"
+    restart: "no"
+
+  elasticsearch:
+    image: {{ elasticsearch_image }}
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      bootstrap.memory_lock: "true"
+      ES_JAVA_OPTS: -Xms{{ elasticsearch_heap_size }} -Xmx{{ elasticsearch_heap_size }}
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q -E '\"status\":\"(green|yellow)\"'"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+    restart: unless-stopped
+
+  api:
+    build: {{ project_dir }}/src/api
+    image: honeypot-api:latest
+    depends_on:
+      cassandra-init:
+        condition: service_completed_successfully
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - ./config/api.conf:/config/api.conf:ro
+    ports:
+      - "{{ api_port }}:{{ api_port }}"
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: {{ project_dir }}/src/dashboard
+      args:
+        # The server side of the dashboard reaches the API through the Docker network
+        NEXT_PUBLIC_API_URL: http://api:{{ api_port }}/api/v1
+        # The browser opens the WebSocket connection to the public address of the API
+        NEXT_PUBLIC_API_WS_URL: ws://{{ api_public_address }}:{{ api_port }}/api/v1/ws
+    image: honeypot-dashboard:latest
+    depends_on:
+      - api
+    ports:
+      - "{{ dashboard_port }}:3000"
+    restart: unless-stopped
+
+# Cassandra and Elasticsearch are not published, they are only reachable from the containers of this project
+volumes:
+  cassandra-data:
+  elasticsearch-data:

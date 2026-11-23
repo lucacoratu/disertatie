@@ -107,6 +107,21 @@ Example Agent configuration:
 ```
 
 
+# Docker images
+The agent, the API and the dashboard have a Dockerfile in their directory:
+```bash
+docker build -t honeypot-agent agent        # the configuration is mounted in /config/agent.conf
+docker build -t honeypot-api api            # the configuration is mounted in /config/api.conf
+docker build -t honeypot-dashboard \
+    --build-arg NEXT_PUBLIC_API_URL=http://<api>:8081/api/v1 \
+    --build-arg NEXT_PUBLIC_API_WS_URL=ws://<public address of the api>:8081/api/v1/ws \
+    dashboard
+```
+`NEXT_PUBLIC_API_URL` is used by the server side of the dashboard and `NEXT_PUBLIC_API_WS_URL` by the browser, so the second one must be reachable by the users of the dashboard. Both default to `127.0.0.1:8081`.
+
+# Evaluation deployment
+The `evaluation` directory contains the Terraform configuration which creates the virtual machines on OpenStack (one for the API, its databases and the dashboard, and two agents protecting DVWA and OWASP Juice Shop) and the Ansible playbooks which deploy every component in Docker. See [evaluation/README.md](evaluation/README.md).
+
 # Throughput benchmark
 The `scripts/benchmark` directory contains the scripts used to measure the throughput of the agent (the number of requests per second it can handle) with different modules enabled.
 

@@ -1,0 +1,20 @@
+# Managed by Ansible (evaluation/ansible/roles/agent)
+name: honeypot-agent
+
+services:
+  # The vulnerable application is not published, it is only reachable through the agent
+  {{ application }}:
+    image: {{ applications[application].image }}
+    restart: unless-stopped
+
+  agent:
+    build: {{ project_dir }}/src/agent
+    image: honeypot-agent:latest
+    depends_on:
+      - {{ application }}
+    volumes:
+      # The agent writes the UUID received from the API in its configuration
+      - ./config:/config
+    ports:
+      - "{{ agent_port }}:80"
+    restart: unless-stopped

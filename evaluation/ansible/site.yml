@@ -1,0 +1,23 @@
+# Configures the evaluation setup:
+#   - central: Cassandra, Elasticsearch, the API and the dashboard
+#   - agents: one agent and the vulnerable application it protects (DVWA or Juice Shop)
+# Every component runs in a Docker container.
+
+- name: Install Docker on all the virtual machines
+  hosts: all
+  become: true
+  roles:
+    - common
+
+# The central virtual machine is configured first, because the agents register to the API when they start
+- name: Deploy the API, its databases and the dashboard
+  hosts: central
+  become: true
+  roles:
+    - central
+
+- name: Deploy the agents and the vulnerable applications
+  hosts: agents
+  become: true
+  roles:
+    - agent

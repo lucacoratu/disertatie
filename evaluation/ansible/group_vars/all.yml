@@ -1,0 +1,45 @@
+# ---------------------------------------------------------------- paths
+# The local copy of the repository which is copied to the virtual machines
+repository_path: "{{ playbook_dir }}/../.."
+# The directory on the virtual machines
+project_dir: /opt/honeypot
+
+# ---------------------------------------------------------------- central virtual machine
+api_port: 8081
+dashboard_port: 3000
+# The admin account of the dashboard. Change the password (for example with ansible-vault)
+admin_username: admin
+admin_password: change-me
+cassandra_image: cassandra:4.1
+cassandra_heap_size: 2G
+cassandra_heap_newsize: 400M
+elasticsearch_image: docker.elastic.co/elasticsearch/elasticsearch:8.7.1
+elasticsearch_heap_size: 2g
+# The address used by the browser to open the WebSocket connection to the API
+api_public_address: "{{ central_public_ip }}"
+
+# ---------------------------------------------------------------- agents
+# The port open to the Internet on the agent virtual machines
+agent_port: 80
+# testing, waf or adaptive (adaptive needs llm_api_url)
+agent_operation_mode: waf
+agent_use_ai_classifier: true
+# svc, knn or random-forest
+agent_classifier: svc
+# 0 means one classifier process for each CPU of the virtual machine
+agent_classifier_processes: 0
+# The URL of the LLM API (llm/app.py), used in the adaptive mode
+llm_api_url: ""
+# Rule directories which are not loaded (the CVE rules are only useful when emulating those products)
+agent_ignored_rule_directories:
+  - CVEs
+
+# The vulnerable applications protected by the agents
+# image: the Docker image, port: the port of the application inside the container
+applications:
+  dvwa:
+    image: vulnerables/web-dvwa:latest
+    port: 80
+  juiceshop:
+    image: bkimminich/juice-shop:latest
+    port: 3000
