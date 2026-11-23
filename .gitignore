@@ -1,3 +1,6 @@
 data/**
 scripts/python/
 config/
+
+# Benchmark build outputs, virtual environment and logs
+scripts/benchmark/work/

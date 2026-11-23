@@ -83,6 +83,8 @@ The Agent needs the following fields in the configuration file in order to run:
 - uuid - This will be completed at first run (pulled from API) - leave empty
 - rulesDirectory - The rules directory
 - operationMode - The mode of operation of the agent
+- classifierProcesses - (optional) The number of python classifier processes started when `useAIClassifier` is true. `0` or missing means one process for each logical CPU. Each process uses about 130 MB of memory
+- pythonInterpreter - (optional) The python interpreter used to run the classifier (default `/usr/bin/python`), for example the interpreter of a virtual environment
 
 Example Agent configuration:
 ```json
@@ -104,6 +106,93 @@ Example Agent configuration:
 }
 ```
 
+
+# Throughput benchmark
+The `scripts/benchmark` directory contains the scripts used to measure the throughput of the agent (the number of requests per second it can handle) with different modules enabled.
+
+| File | Description |
+|---|---|
+| `run_benchmark.sh` | Main script. Prepares the environment, runs all the measurements, writes a summary and cleans up |
+| `bench_run.sh` | Runs and validates a single measurement (called by `run_benchmark.sh`) |
+| `summarize.py` | Computes the mean and the standard deviation of every configuration and writes Markdown tables |
+| `backend/` | Minimal Go web server used as the protected application. It returns the same static page for every request, so the measurement reflects the cost of the agent |
+
+## Requirements
+- Go, Python 3, `curl`, `ss` and Docker (the script uses `sudo docker` if the current user cannot access the Docker socket)
+- [ffuf](https://github.com/ffuf/ffuf), used to send the requests
+- The SecLists `common.txt` wordlist (`/usr/share/seclists/Discovery/Web-Content/common.txt` on Kali, or set `SOURCE_WORDLIST`)
+- Free ports: 8000 (agent), 8080 (target web server), 8081 (API), 9042 (Cassandra) and 9200 (Elasticsearch). The script stops if any of them is in use, so stop the containers from `docker-compose.yml` first
+- About 6 GB of free memory (Cassandra, Elasticsearch and up to one classifier process per CPU)
+
+## Running
+```bash
+./scripts/benchmark/run_benchmark.sh
+```
+With the default options the benchmark takes about 15 minutes. The script:
+1. creates a Python virtual environment in `scripts/benchmark/work/venv` with the version of scikit-learn used to serialize the models (only the first time)
+2. builds the agent, the API and the target web server
+3. starts temporary Cassandra and Elasticsearch containers (`bench-cassandra` and `bench-elastic`) on the host network
+4. starts the API and the target web server
+5. runs the two experiments described below, starting a new agent for every measurement
+6. writes the results to `scripts/benchmark/results/<date>/` and removes the containers and the processes it started
+
+The agent runs in `waf` mode with the rules from `agent/rules` (without the `CVEs` directory) and the SVC classifier. Every measurement sends a warm-up of 1,000 requests, then 12,000 requests of the form `/search?q=<word>&n=<i>` from 40 concurrent ffuf threads. The throughput is the number of requests divided by the time ffuf needs to receive all the responses.
+
+## Experiments
+- `modules` - all the combinations of logging, rule engine and ML classifier in Table 8 of the paper, with the default size of the classifier pool:
+
+| Name | Logging | Rule engine | ML classifier |
+|---|---|---|---|
+| `proxy` | | | |
+| `logging` | ✓ | | |
+| `rules` | | ✓ | |
+| `logging-rules` | ✓ | ✓ | |
+| `ml` | | | ✓ |
+| `rules-ml` | | ✓ | ✓ |
+| `all` | ✓ | ✓ | ✓ |
+
+- `pool` - the ML classifier alone and all the modules together, for every size of the classifier pool in `POOL_SIZES`
+
+"Logging" means that the agent sends every request to the API, which stores it in Cassandra and Elasticsearch. Without logging, the agent is configured with a closed API port, so it does not connect to the API.
+
+## Validation
+A measurement is marked `INVALID` and excluded from the tables if:
+- the agent did not start or could not bind its port (for example because another process uses it)
+- the agent did not log every request it should have received
+- the agent log contains errors from sending logs to the API or from the classifier
+- with logging enabled, Elasticsearch did not store one document for every request
+
+The script exits with an error if any measurement was invalid.
+
+## Options
+The options are set as environment variables:
+
+| Variable | Default | Description |
+|---|---|---|
+| `EXPERIMENTS` | `modules pool` | The experiments to run |
+| `REPETITIONS` | `3` | The number of times every configuration is measured |
+| `REQUESTS` | `12000` | The number of requests in every measurement |
+| `WARMUP_REQUESTS` | `1000` | The number of warm-up requests sent before every measurement |
+| `THREADS` | `40` | The number of concurrent ffuf threads |
+| `POOL_SIZES` | `1 2 4 8 16` | The sizes of the classifier pool used in the `pool` experiment |
+| `SOURCE_WORDLIST` | SecLists `common.txt` | The wordlist from which the requests are generated (lines containing spaces are removed) |
+| `AGENT_PORT`, `BACKEND_PORT`, `API_PORT` | `8000`, `8080`, `8081` | The ports of the agent, the target web server and the API |
+| `WORK_DIR` | `scripts/benchmark/work` | The directory with the binaries, the virtual environment, the generated configurations and the logs |
+| `RESULTS_DIR` | `scripts/benchmark/results/<date>` | The directory where the results are written |
+| `KEEP_CONTAINERS` | `0` | Set to `1` to keep the Cassandra and Elasticsearch containers after the benchmark |
+
+For example, a quick run of only the first experiment:
+```bash
+EXPERIMENTS=modules REPETITIONS=1 ./scripts/benchmark/run_benchmark.sh
+```
+Very short runs (a few thousand requests) finish in less than a second for the fastest configurations, so their results vary more.
+
+## Results
+The results directory contains:
+- `modules.txt` and `pool.txt` - one `RESULT` line for every measurement
+- `summary.md` - the hardware, the commit and the tables with the mean and the standard deviation of every configuration
+
+The logs of the agent (one file for every measurement), of the API and of the target web server are in `scripts/benchmark/work/logs`.
 
 # Starting IDE
 You can start the Visual Studio Code IDE using one of the scripts `start_ide.ps1` or `start_ide.sh` depending on the operating system you have installed on your machine (.ps1 for Windows, .sh for Linux)

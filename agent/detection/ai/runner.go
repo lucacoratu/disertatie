@@ -27,7 +27,12 @@ func NewAIClassifierRunner(logger logging.ILogger, configuration config.Configur
 	if configuration.UseAIClassifier {
 		//Select the script to be used based on the model specified in the configuration
 		script := fmt.Sprintf("detection/ai/scripts/%s.py", configuration.Classifier)
-		runner.classifier = NewClassifierPool(logger, "/usr/bin/python", script, configuration.ClassifierProcesses)
+		//Use the interpreter from the configuration (for example the one from a virtual environment)
+		interpreter := configuration.PythonInterpreter
+		if interpreter == "" {
+			interpreter = "/usr/bin/python"
+		}
+		runner.classifier = NewClassifierPool(logger, interpreter, script, configuration.ClassifierProcesses)
 		if err := runner.classifier.Start(); err != nil {
 			return nil, err
 		}
